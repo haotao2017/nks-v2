@@ -1,0 +1,143 @@
+'use client';
+
+/**
+ * PdfStepPanel —— WF13/14「Kontrollerklæring / Sluttrapport / Utført」:
+ * 生成 PDF 报告 → 预览 + 编辑随附邮件 → multipart 发送。
+ *
+ * 预览 GetProjectWFThirteen/FourteenEmailFormated 返回 attachmentURL(PDF) + 邮件字段。
+ * 用 iframe 内嵌预览 PDF。执行 ProjectWFThirteen/Fourteen 为 multipart:
+ * request=JSON(含邮件字段 + attachmentURL),file 字段可选(默认不重传,后端按 attachmentURL 附件)。
+ */
+import * as React from 'react';
+import { FileText, Send, Eye, Loader2 } from 'lucide-react';
+
+import type { ProjectWorkflowDto } from '@nks/api-types';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RichTextEditor } from '@/features/email-templates/rich-text-editor';
+
+import type { WorkflowStepDef } from './workflow-steps';
+import { buildStepBase, useEmailPreview, useExecuteStepMultipart } from './workflow-api';
+
+interface PdfStepPanelProps {
+  projectId: number;
+  step: WorkflowStepDef;
+  disabled?: boolean;
+}
+
+export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
+  const preview = useEmailPreview(step.preview);
+  const execMut = useExecuteStepMultipart(projectId, step, step.execute, {
+    successMessage: 'Rapport sendt',
+  });
+
+  const [emailFrom, setEmailFrom] = React.useState('');
+  const [emailTo, setEmailTo] = React.useState('');
+  const [emailSubject, setEmailSubject] = React.useState('');
+  const [emailContent, setEmailContent] = React.useState('');
+  const [attachmentURL, setAttachmentURL] = React.useState('');
+  const [file, setFile] = React.useState<File | null>(null);
+
+  const previewMutate = preview.mutate;
+  const apply = (pw?: ProjectWorkflowDto) => {
+    setEmailFrom(pw?.emailFrom ?? '');
+    setEmailTo(pw?.emailTo ?? '');
+    setEmailSubject(pw?.emailSubject ?? '');
+    setEmailContent(pw?.emailContent ?? '');
+    setAttachmentURL(pw?.attachmentURL ?? '');
+  };
+
+  React.useEffect(() => {
+    previewMutate(buildStepBase(projectId, step, { isTransfer: false }), { onSuccess: apply });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, step.key]);
+
+  function handleSubmit() {
+    const extra: Partial<ProjectWorkflowDto> = {
+      isTransfer: false,
+      emailFrom,
+      emailTo,
+      emailSubject,
+      emailContent,
+      attachmentURL,
+    };
+    execMut.mutate({ extra, files: file ? [file] : undefined });
+  }
+
+  if (preview.isPending) {
+    return (
+      <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
+        <Loader2 className="size-4 animate-spin" /> Genererer rapport og forhåndsvisning…
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {attachmentURL ? (
+        <div className="space-y-1.5">
+          <Label>Rapport (PDF)</Label>
+          <iframe title="Rapport" src={attachmentURL} className="h-96 w-full rounded-md border" />
+          <a
+            href={attachmentURL}
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary inline-flex items-center gap-1.5 text-sm underline"
+          >
+            <FileText className="size-4" /> Åpne PDF i ny fane
+          </a>
+        </div>
+      ) : (
+        preview.isError && <p className="text-destructive text-sm">Kunne ikke generere rapport.</p>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="wf-pdf-from">Fra</Label>
+          <Input id="wf-pdf-from" value={emailFrom} onChange={(e) => setEmailFrom(e.target.value)} disabled={disabled} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="wf-pdf-to">Til</Label>
+          <Input id="wf-pdf-to" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} disabled={disabled} />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="wf-pdf-subject">Emne</Label>
+        <Input id="wf-pdf-subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} disabled={disabled} />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Innhold</Label>
+        <RichTextEditor value={emailContent} onChange={setEmailContent} disabled={disabled} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="wf-pdf-file">
+          Erstatt vedlegg <span className="text-muted-foreground font-normal">(valgfritt)</span>
+        </Label>
+        <Input
+          id="wf-pdf-file"
+          type="file"
+          disabled={disabled}
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled || preview.isPending}
+          onClick={() => previewMutate(buildStepBase(projectId, step, { isTransfer: false }), { onSuccess: apply })}
+        >
+          <Eye className="size-4" /> Regenerer
+        </Button>
+        <Button type="button" disabled={disabled || execMut.isPending} onClick={handleSubmit}>
+          {execMut.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+          Send rapport
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,62 @@
+# NKS v2 单机部署(EC2 + Docker)。密钥来自同目录 .env(不入库)。
+# 服务:SQL Server(Express) + 建库 init + 后端 API(+ 后续 admin)。
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: nks-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD}"
+      MSSQL_PID: "Express"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
+    restart: unless-stopped
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: nks-db-init
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      SA_PASSWORD: "${SA_PASSWORD}"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >
+        /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P "$$SA_PASSWORD" -C
+        -Q "IF DB_ID('nks') IS NULL CREATE DATABASE [nks];"
+    restart: "no"
+
+  backend:
+    build:
+      context: ../backend
+    container_name: nks-backend
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    env_file: .env
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ..
+      dockerfile: deploy/admin.Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: "${NEXT_PUBLIC_API_BASE_URL}"
+    container_name: nks-admin
+    depends_on:
+      - backend
+    ports:
+      - "80:3000"
+    restart: unless-stopped
+
+volumes:
+  mssql-data:

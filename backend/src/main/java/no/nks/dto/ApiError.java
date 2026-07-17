@@ -1,0 +1,52 @@
+package no.nks.dto;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+import org.springframework.http.HttpStatus;
+
+import java.time.LocalDateTime;
+
+/**
+ * 统一的API错误响应对象
+ */
+@Data
+public class ApiError {
+
+    private HttpStatus status;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime timestamp;
+
+    private String message;
+    private String debugMessage;
+    private String path;
+
+    private ApiError() {
+        timestamp = LocalDateTime.now();
+    }
+
+    public ApiError(HttpStatus status) {
+        this();
+        this.status = status;
+    }
+
+    public ApiError(HttpStatus status, String message) {
+        this();
+        this.status = status;
+        this.message = message;
+    }
+
+    public ApiError(HttpStatus status, Throwable ex) {
+        this();
+        this.status = status;
+        this.message = "发生错误";
+        this.debugMessage = ex.getLocalizedMessage();
+    }
+
+    public ApiError(HttpStatus status, String message, Throwable ex) {
+        this();
+        this.status = status;
+        this.message = message;
+        this.debugMessage = ex.getLocalizedMessage();
+    }
+}

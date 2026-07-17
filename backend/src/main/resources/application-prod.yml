@@ -1,0 +1,32 @@
+# 生产环境覆盖(SPRING_PROFILES_ACTIVE=prod)。所有敏感值仍来自环境变量/Secrets Manager。
+spring:
+  jpa:
+    hibernate:
+      # 生产:Flyway 全权拥有 schema,关闭 Hibernate 校验,规避 SQL Server varchar/nvarchar
+      # 类型码差异导致的 validate 启动失败。schema 正确性由 Flyway 迁移保证。
+      ddl-auto: none
+    properties:
+      hibernate:
+        default_schema: nbkUser
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    schemas: nbkUser
+    default-schema: nbkUser
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+# 生产关闭 API 文档暴露
+springdoc:
+  api-docs:
+    enabled: false
+knife4j:
+  enable: false
+
+logging:
+  level:
+    root: INFO
+    no.nks: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN

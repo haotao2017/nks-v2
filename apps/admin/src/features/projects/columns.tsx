@@ -1,0 +1,153 @@
+'use client';
+
+/**
+ * Project 列表列定义 —— 工厂函数,按列表变体(active/archived/deleted)决定行操作。
+ *
+ * 行数据用共同的窄类型 ProjectRow 承接:活动列表是精简 ProjectListDto(仅 id/title/dated),
+ * 归档/删除列表是全量 ProjectDto。缺失字段(address/projectStatus)回退 '—'。
+ */
+import type { ColumnDef } from '@tanstack/react-table';
+import { ArrowUpDown, MoreHorizontal, Archive, ArchiveRestore, Trash2, RotateCcw, ExternalLink } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+/** 三个列表共用的窄行类型。 */
+export interface ProjectRow {
+  id?: number;
+  title?: string;
+  dated?: string;
+  address?: string;
+  projectStatus?: string;
+}
+
+export type ProjectListVariant = 'active' | 'archived' | 'deleted';
+
+export interface ProjectColumnActions {
+  variant: ProjectListVariant;
+  onOpen: (row: ProjectRow) => void;
+  onArchive?: (row: ProjectRow) => void;
+  onUnarchive?: (row: ProjectRow) => void;
+  onDelete?: (row: ProjectRow) => void;
+  onRestore?: (row: ProjectRow) => void;
+}
+
+/** 挪威语短日期(容错:非法值回退 '—')。 */
+function formatDate(value?: string): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('nb-NO', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
+export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<ProjectRow>[] {
+  const { variant, onOpen, onArchive, onUnarchive, onDelete, onRestore } = actions;
+
+  return [
+    {
+      accessorKey: 'title',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          className="-ml-3 h-8"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Tittel
+          <ArrowUpDown className="size-3.5" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <button
+          type="button"
+          onClick={() => onOpen(row.original)}
+          className="text-primary font-medium hover:underline"
+        >
+          {row.original.title || '—'}
+        </button>
+      ),
+    },
+    {
+      accessorKey: 'address',
+      header: 'Adresse',
+      cell: ({ row }) => row.original.address || '—',
+    },
+    {
+      accessorKey: 'projectStatus',
+      header: 'Status',
+      cell: ({ row }) =>
+        row.original.projectStatus ? (
+          <Badge variant="secondary">{row.original.projectStatus}</Badge>
+        ) : (
+          '—'
+        ),
+    },
+    {
+      accessorKey: 'dated',
+      header: 'Dato',
+      cell: ({ row }) => formatDate(row.original.dated),
+    },
+    {
+      id: 'actions',
+      header: () => <span className="sr-only">Handlinger</span>,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const item = row.original;
+        return (
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8">
+                  <MoreHorizontal className="size-4" />
+                  <span className="sr-only">Åpne meny</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onOpen(item)}>
+                  <ExternalLink className="size-4" />
+                  Åpne arbeidsbenk
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+
+                {variant === 'active' && (
+                  <>
+                    <DropdownMenuItem onClick={() => onArchive?.(item)}>
+                      <Archive className="size-4" />
+                      Arkiver
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onClick={() => onDelete?.(item)}>
+                      <Trash2 className="size-4" />
+                      Slett
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {variant === 'archived' && (
+                  <DropdownMenuItem onClick={() => onUnarchive?.(item)}>
+                    <ArchiveRestore className="size-4" />
+                    Gjenopprett fra arkiv
+                  </DropdownMenuItem>
+                )}
+
+                {variant === 'deleted' && (
+                  <DropdownMenuItem onClick={() => onRestore?.(item)}>
+                    <RotateCcw className="size-4" />
+                    Gjenopprett
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    },
+  ];
+}

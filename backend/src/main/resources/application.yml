@@ -1,0 +1,105 @@
+spring:
+  application:
+    name: nks-backend
+
+  profiles:
+    # 默认激活 dev；生产环境用 SPRING_PROFILES_ACTIVE 覆盖
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      # 建表由 Flyway 负责(V2__create_all_tables.sql)，Hibernate 仅校验一致性。
+      # 若因 varchar/nvarchar 等细微类型差异导致 validate 失败，可临时改为 none 启动。
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: nbkUser
+        # 保持列名与 SQL Server 实际列名一字不差
+        physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    schemas: nbkUser
+    default-schema: nbkUser
+    # 全新空库：由 Flyway 从 V1 起建表，无需 baseline。
+    # ⚠️ 对已有数据的旧库改回 baseline-on-migrate=true + baseline-version=2
+    #    (让旧库跳过 V2 建表脚本；见 V2__create_all_tables.sql 顶部说明)。
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=10m
+
+# JWT 配置：无硬编码回退，缺失或过短则 fail-fast（见 JwtService）
+nks:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:604800000}
+
+# 前端来源白名单（逗号分隔，支持多来源）；CORS 由此收敛，禁止 "*"
+frontend:
+  url: ${FRONTEND_URL:http://localhost:3000}
+
+# AWS S3
+aws:
+  access-key-id: ${AWS_ACCESS_KEY_ID:}
+  secret-key: ${AWS_SECRET_KEY:}
+  region: ${AWS_REGION:eu-north-1}
+  s3:
+    bucket:
+      name: ${AWS_S3_BUCKET_NAME:}
+    url:
+      static-part: ${AWS_S3_URL_STATIC_PART:.s3.amazonaws.com/}
+
+# Tripletex 集成
+tripletex:
+  api:
+    base-url: ${TRIPLETEX_BASE_URL:https://tripletex.no}
+    consumer-token: ${TRIPLETEX_CONSUMER_TOKEN:}
+    employee-token: ${TRIPLETEX_EMPLOYEE_TOKEN:}
+    company-id: ${TRIPLETEX_COMPANY_ID:}
+  # 业务默认常量（原旧代码硬编码，现抽为配置，默认值保持行为不变）
+  defaults:
+    account-manager: ${TRIPLETEX_DEFAULT_ACCOUNT_MANAGER:1180852}
+    vat-type: ${TRIPLETEX_DEFAULT_VAT_TYPE:3}
+    product-unit: ${TRIPLETEX_DEFAULT_PRODUCT_UNIT:448331}
+    currency: ${TRIPLETEX_DEFAULT_CURRENCY:1}
+    invoices-due-in-days: ${TRIPLETEX_DEFAULT_INVOICES_DUE_IN_DAYS:10}
+  # session token 创建时申请的有效期天数（原旧代码硬编码 +1 天）
+  session:
+    expiration-days: ${TRIPLETEX_SESSION_EXPIRATION_DAYS:1}
+    # 缓存刷新的安全余量（分钟）：在 token 实际过期前提前刷新
+    safety-margin-minutes: ${TRIPLETEX_SESSION_SAFETY_MARGIN_MINUTES:60}
+
+# Knife4j / SpringDoc
+springdoc:
+  api-docs:
+    enabled: true
+knife4j:
+  enable: true
+  setting:
+    title: NKS
+
+server:
+  port: ${SERVER_PORT:8080}
