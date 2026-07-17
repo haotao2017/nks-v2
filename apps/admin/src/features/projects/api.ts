@@ -246,6 +246,32 @@ export function useArchiveProject() {
   });
 }
 
+/**
+ * 删除项目下已存在的某条服务。参数 ProjectID + ProjectServiceID(PascalCase,对齐旧系统 deleteServcie)。
+ * 端点 DELETE /Project/DeleteProjectService。仅在编辑模式删除「有 id」的服务行时调用;
+ * 新增行(无 id)由 UpdateProject 一并保存,不走此接口。
+ */
+export function useDeleteProjectService() {
+  const { t } = useTranslation();
+  return useApiMutation<
+    DeleteProjectResponseDto,
+    { projectId: number; projectServiceId: number }
+  >({
+    mutationFn: async ({ projectId, projectServiceId }) => {
+      return getApiClient().delete<DeleteProjectResponseDto>(
+        endpoints.project.deleteService.path,
+        { params: { ProjectID: projectId, ProjectServiceID: projectServiceId } },
+      );
+    },
+    invalidateKeys: [projectKeys.all],
+    successMessage: false,
+    errorMessage: t('projects.toast.updateError'),
+    onSuccess: (data) => {
+      if (data?.message) toast.success(data.message);
+    },
+  });
+}
+
 /** 项目检查清单列表。参数 ProjectID;解包 res.multiProjectChecklist。 */
 export function useProjectChecklists(projectId: number | undefined) {
   return useQuery({

@@ -10,6 +10,10 @@ import workflowNo from '@/locales/no/workflow.json';
 import masterdataANo from '@/locales/no/masterdataA.json';
 import masterdataBNo from '@/locales/no/masterdataB.json';
 import teamNo from '@/locales/no/team.json';
+import projectChecklistNo from '@/locales/no/project-checklist.json';
+import projectPartiesNo from '@/locales/no/project-parties.json';
+import projectDocsNo from '@/locales/no/project-docs.json';
+import projectOverviewNo from '@/locales/no/project-overview.json';
 
 import commonEn from '@/locales/en/common.json';
 import projectsEn from '@/locales/en/projects.json';
@@ -17,6 +21,10 @@ import workflowEn from '@/locales/en/workflow.json';
 import masterdataAEn from '@/locales/en/masterdataA.json';
 import masterdataBEn from '@/locales/en/masterdataB.json';
 import teamEn from '@/locales/en/team.json';
+import projectChecklistEn from '@/locales/en/project-checklist.json';
+import projectPartiesEn from '@/locales/en/project-parties.json';
+import projectDocsEn from '@/locales/en/project-docs.json';
+import projectOverviewEn from '@/locales/en/project-overview.json';
 
 export const STORAGE_KEY = 'nks_lang';
 
@@ -27,6 +35,10 @@ const no = {
   ...masterdataANo,
   ...masterdataBNo,
   ...teamNo,
+  ...projectChecklistNo,
+  ...projectPartiesNo,
+  ...projectDocsNo,
+  ...projectOverviewNo,
 };
 
 const en = {
@@ -36,6 +48,10 @@ const en = {
   ...masterdataAEn,
   ...masterdataBEn,
   ...teamEn,
+  ...projectChecklistEn,
+  ...projectPartiesEn,
+  ...projectDocsEn,
+  ...projectOverviewEn,
 };
 
 if (!i18n.isInitialized) {

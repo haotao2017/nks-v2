@@ -1,0 +1,57 @@
+{
+  "docsPanel": {
+    "title": "Project documents",
+    "description": "Upload and manage documents related to the project.",
+    "workflow": {
+      "label": "Service",
+      "placeholder": "Select service…",
+      "default": "Default workflow",
+      "fallback": "Workflow {{id}}"
+    },
+    "tabs": {
+      "foretak": "Parties",
+      "generert": "Generated",
+      "andre": "Other"
+    },
+    "foretak": {
+      "noParties": "No parties associated with the project.",
+      "unknownParty": "Unknown party",
+      "generalUpload": "Upload",
+      "upload": "Upload",
+      "required": "Required",
+      "notUploaded": "Not uploaded",
+      "uploadedFile": "Uploaded file",
+      "unnamedDocType": "Unnamed",
+      "noDocTypes": "No document types.",
+      "columns": {
+        "docType": "Document type",
+        "file": "File"
+      }
+    },
+    "generert": {
+      "empty": "No generated documents.",
+      "unknownStep": "Unknown step",
+      "unnamedFile": "Unnamed",
+      "download": "Download",
+      "noFile": "No file",
+      "columns": {
+        "file": "File"
+      }
+    },
+    "andre": {
+      "description": "Upload general attachments not tied to a specific party.",
+      "upload": "Upload attachment"
+    },
+    "delete": {
+      "title": "Delete document",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "uploaded": "Document uploaded",
+      "uploadError": "Could not upload document",
+      "deleted": "Document deleted",
+      "deleteError": "Could not delete document"
+    }
+  }
+}

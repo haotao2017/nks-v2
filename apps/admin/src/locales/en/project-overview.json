@@ -1,0 +1,24 @@
+{
+  "overviewPanel": {
+    "title": "Project summary",
+    "address": "Address",
+    "created": "Created",
+    "modified": "Last modified",
+    "buildingSupplier": "Building supplier",
+    "customer": "Customer",
+    "contactPerson": "Contact person",
+    "description": {
+      "label": "Description",
+      "empty": "No description.",
+      "placeholder": "Write a description…"
+    },
+    "services": {
+      "label": "Services",
+      "empty": "No services."
+    },
+    "parties": {
+      "label": "Parties",
+      "empty": "No parties."
+    }
+  }
+}

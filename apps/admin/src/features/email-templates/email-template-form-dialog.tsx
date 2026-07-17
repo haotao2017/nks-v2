@@ -80,12 +80,16 @@ export function EmailTemplateFormDialog({
     defaultValues: { title: '' },
   });
 
-  // 每次打开时同步:新建清空 / 编辑回填。
+  // 每次打开时同步:富文本本地草稿用渲染期调整重置(不在 effect 内 setState,避免级联渲染)。
+  const [prevOpen, setPrevOpen] = React.useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setTemplateHtml(emailTemplate?.template ?? '');
+  }
+
+  // title 走 react-hook-form:reset 是 RHF 内部同步,放 effect(非本地 state 的级联 setState)。
   React.useEffect(() => {
-    if (open) {
-      form.reset({ title: emailTemplate?.title ?? '' });
-      setTemplateHtml(emailTemplate?.template ?? '');
-    }
+    if (open) form.reset({ title: emailTemplate?.title ?? '' });
   }, [open, emailTemplate, form]);
 
   const onSubmit = form.handleSubmit((values) => {

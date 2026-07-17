@@ -6,7 +6,20 @@
       "progress": "{{done}} of {{total}} steps completed for project #{{projectId}}.",
       "loadError": "Could not load workflow status.",
       "stepperAria": "Workflow steps",
-      "loadingShort": "Loading…"
+      "loadingShort": "Loading…",
+      "docsLink": "Documents"
+    },
+    "selector": {
+      "label": "Service",
+      "placeholder": "Select workflow",
+      "fallback": "Workflow {{id}}",
+      "default": "Workflow"
+    },
+    "tabs": {
+      "todo": "To do",
+      "done": "Done",
+      "todoEmpty": "No remaining steps.",
+      "doneEmpty": "No completed steps yet."
     },
     "status": {
       "done": "Completed",
@@ -103,7 +116,8 @@
       "regenerate": "Regenerate",
       "sendReport": "Send report",
       "approveAndComplete": "Approve and complete",
-      "confirmAndComplete": "Confirm and complete"
+      "confirmAndComplete": "Confirm and complete",
+      "edit": "Edit"
     },
     "toast": {
       "inspectionDateSaved": "Inspection date saved",

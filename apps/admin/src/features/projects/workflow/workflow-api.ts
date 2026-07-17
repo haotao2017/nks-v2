@@ -251,7 +251,12 @@ export function useSendEmail(
   });
 }
 
-/** 推进(Transfer)—— 标记完成/跳过而不发信(isTransfer=true)。 */
+/**
+ * 推进(Transfer)—— 标记完成/跳过而不发信(isTransfer=true)。
+ * 多数步骤没有专用 *Transfer 端点,而是复用执行端点并置 isTransfer=true(对齐旧 admin
+ * Transfer/requests.js);仅 WF8/9/10 有专用 *Transfer 端点。执行端点为 multipart 的步骤
+ * (WF2/3)按旧 admin 用「仅 request 字段的 FormData」推进。
+ */
 export function useTransferStep(
   projectId: number,
   step: WorkflowStepDef,
@@ -262,6 +267,12 @@ export function useTransferStep(
     mutationFn: async () => {
       if (!endpoint) throw new Error(t('workflow.errors.noTransferEndpoint'));
       const body = buildStepBase(projectId, step, { isTransfer: true });
+      if (endpoint.multipart) {
+        const form = new FormData();
+        form.append('request', JSON.stringify(wrap(body)));
+        const res = await getApiClient().postForm<RequestResponse>(endpoint.path, form);
+        return assertOk(res);
+      }
       const res = await getApiClient().post<RequestResponse>(endpoint.path, wrap(body));
       return assertOk(res);
     },

@@ -85,6 +85,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowStepId: 1,
     preview: pw.getWFOneEmailFormated,
     execute: pw.wfOne,
+    transfer: pw.wfOne, // Overføre = re-post execute med isTransfer:true (som gammel admin)
   },
   {
     seq: 2,
@@ -96,6 +97,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowStepId: 2,
     preview: pw.getWFTwoEmailFormated,
     execute: pw.wfTwo, // multipart, felt: file (én)
+    transfer: pw.wfTwo, // multipart transfer (request-only FormData, som gammel admin)
   },
   {
     seq: 3,
@@ -106,6 +108,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowId: WORKFLOW_ID,
     workflowStepId: 3,
     execute: pw.wfThree, // multipart, felt: files (flere)
+    transfer: pw.wfThree, // multipart transfer (request-only FormData)
     multiFile: true,
   },
   {
@@ -118,6 +121,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowStepId: 4,
     preview: pw.getWFFourEmailFormated,
     execute: pw.wfFour,
+    transfer: pw.wfFour,
   },
   {
     seq: 5,
@@ -128,6 +132,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowId: WORKFLOW_ID,
     workflowStepId: 5,
     execute: pw.wfFive,
+    transfer: pw.wfFive,
   },
   {
     seq: 6,
@@ -138,6 +143,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowId: WORKFLOW_ID,
     workflowStepId: 6,
     execute: pw.wfSix,
+    transfer: pw.wfSix,
   },
   {
     seq: 7,
@@ -148,6 +154,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowId: WORKFLOW_ID,
     workflowStepId: 7,
     execute: pw.wfSeven,
+    transfer: pw.wfSeven,
     dateField: true,
   },
   {
@@ -195,6 +202,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowId: WORKFLOW_ID,
     workflowStepId: 11,
     execute: pw.wfElevenDone,
+    transfer: pw.wfElevenDone,
     approve: true,
   },
   {
@@ -218,6 +226,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     workflowStepId: 15,
     preview: pw.wfFifteenGetDetails,
     execute: pw.wfFifteen,
+    transfer: pw.wfFifteen,
   },
   {
     seq: 14,
@@ -257,4 +266,50 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
 /** 用 seq 定位步骤。 */
 export function getStepBySeq(seq: number): WorkflowStepDef | undefined {
   return WORKFLOW_STEPS.find((s) => s.seq === seq);
+}
+
+// ───────────────────────────── 按服务类型过滤步骤 ─────────────────────────────
+/**
+ * 对齐旧 admin projectSlice 的 `checklistOnly` / `docsOnly`:一个项目按服务类型
+ * 只展示部分步骤。旧系统按后端 `step.id` 过滤(1..16,含 s4 缺口);本 admin 的
+ * `seq` 是「去缺口后的连续序号」,故此处按 step.key(语义,最稳定)映射:
+ *
+ *  - 'Kontroll'(检验/清单)→ 旧 step.id {1,6,9,11,12,15}
+ *      = {takk, opprett-sjekklister, epost-kommende-kontroll, kontroll-dato, gjennomgå-rapport, sluttrapport}
+ *  - 'Innhenting av dokumentasjon'(收资料)→ 旧 step.id {7,10}
+ *      = {la-til-foretak, epost-innhenting-av-dokumentasjon}
+ *  - 其余服务 → 全部步骤。
+ */
+const KONTROLL_STEP_KEYS = new Set<string>([
+  'takk-for-bestillingen',
+  'opprett-sjekklister',
+  'epost-kommende-kontroll',
+  'kontroll-dato',
+  'gjennomgaa-rapport',
+  'sluttrapport',
+]);
+
+const DOCS_STEP_KEYS = new Set<string>([
+  'la-til-foretak',
+  'innhenting-av-dokumentasjon',
+]);
+
+/** 服务 description 常量(对齐旧 admin 与后端 ServiceDto.description)。 */
+export const SERVICE_KONTROLL = 'Kontroll';
+export const SERVICE_INNHENTING = 'Innhenting av dokumentasjon';
+
+/**
+ * 按服务 description 过滤要显示的步骤。description 未知/为空时返回全部步骤。
+ */
+export function filterStepsByService(
+  steps: WorkflowStepDef[],
+  serviceDescription?: string,
+): WorkflowStepDef[] {
+  if (serviceDescription === SERVICE_KONTROLL) {
+    return steps.filter((s) => KONTROLL_STEP_KEYS.has(s.key));
+  }
+  if (serviceDescription === SERVICE_INNHENTING) {
+    return steps.filter((s) => DOCS_STEP_KEYS.has(s.key));
+  }
+  return steps;
 }

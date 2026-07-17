@@ -1,0 +1,57 @@
+{
+  "docsPanel": {
+    "title": "Prosjektdokumenter",
+    "description": "Last opp og administrer dokumenter knyttet til prosjektet.",
+    "workflow": {
+      "label": "Tjeneste",
+      "placeholder": "Velg tjeneste…",
+      "default": "Standard arbeidsflyt",
+      "fallback": "Arbeidsflyt {{id}}"
+    },
+    "tabs": {
+      "foretak": "Foretak",
+      "generert": "Generert",
+      "andre": "Andre"
+    },
+    "foretak": {
+      "noParties": "Ingen foretak tilknyttet prosjektet.",
+      "unknownParty": "Ukjent foretak",
+      "generalUpload": "Last opp",
+      "upload": "Last opp",
+      "required": "Påkrevd",
+      "notUploaded": "Ikke lastet opp",
+      "uploadedFile": "Opplastet fil",
+      "unnamedDocType": "Uten navn",
+      "noDocTypes": "Ingen dokumenttyper.",
+      "columns": {
+        "docType": "Dokumenttype",
+        "file": "Fil"
+      }
+    },
+    "generert": {
+      "empty": "Ingen genererte dokumenter.",
+      "unknownStep": "Ukjent steg",
+      "unnamedFile": "Uten navn",
+      "download": "Last ned",
+      "noFile": "Ingen fil",
+      "columns": {
+        "file": "Fil"
+      }
+    },
+    "andre": {
+      "description": "Last opp generelle vedlegg som ikke er knyttet til et foretak.",
+      "upload": "Last opp vedlegg"
+    },
+    "delete": {
+      "title": "Slett dokument",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Handlingen kan ikke angres."
+    },
+    "toast": {
+      "uploaded": "Dokument lastet opp",
+      "uploadError": "Kunne ikke laste opp dokument",
+      "deleted": "Dokument slettet",
+      "deleteError": "Kunne ikke slette dokument"
+    }
+  }
+}

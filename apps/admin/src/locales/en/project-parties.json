@@ -1,0 +1,29 @@
+{
+  "partiesPanel": {
+    "title": "Parties",
+    "description": "Link contacts to the project's party types.",
+    "columns": {
+      "partyType": "Party type",
+      "contact": "Contact"
+    },
+    "empty": "No party types.",
+    "notBound": "Not linked",
+    "bindButton": "Link",
+    "changeButton": "Change",
+    "dialog": {
+      "bindTitle": "Link contact – {{name}}",
+      "changeTitle": "Change contact – {{name}}",
+      "description": "Select a contact to link to this party type.",
+      "contactLabel": "Contact"
+    },
+    "select": {
+      "placeholder": "Select contact…",
+      "search": "Search contact…",
+      "empty": "No contacts found."
+    },
+    "toast": {
+      "associated": "Contact linked",
+      "associateError": "Could not link contact"
+    }
+  }
+}

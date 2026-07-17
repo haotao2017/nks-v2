@@ -1,0 +1,82 @@
+{
+  "checklistPanel": {
+    "title": "Checklists",
+    "description": "Manage the project's checklists and items.",
+    "empty": "No checklists yet.",
+    "columns": {
+      "name": "Name",
+      "itemCount": "Item count",
+      "actions": "Actions"
+    },
+    "template": {
+      "placeholder": "Select checklist template",
+      "createButton": "Create from template",
+      "none": "No templates available"
+    },
+    "emptyChecklistButton": "Empty checklist",
+    "actions": {
+      "items": "Items",
+      "rename": "Rename"
+    },
+    "validation": {
+      "nameRequired": "Name is required"
+    },
+    "create": {
+      "title": "New checklist",
+      "description": "Create an empty checklist.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Checklist name"
+    },
+    "rename": {
+      "title": "Edit checklist",
+      "description": "Change the checklist name."
+    },
+    "delete": {
+      "title": "Delete checklist",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "items": {
+      "dialogTitle": "Items – {{name}}",
+      "dialogDescription": "Add, edit or remove items in the checklist.",
+      "newButton": "New item",
+      "empty": "No items yet.",
+      "columns": {
+        "sequence": "#",
+        "title": "Title"
+      },
+      "validation": {
+        "titleRequired": "Title is required"
+      },
+      "form": {
+        "createTitle": "New item",
+        "editTitle": "Edit item",
+        "createDescription": "Add a new item to the checklist.",
+        "editDescription": "Change the item.",
+        "title": "Title",
+        "titlePlaceholder": "Item description",
+        "sortOrder": "Order",
+        "sortOrderPlaceholder": "Order (optional)"
+      },
+      "delete": {
+        "title": "Delete item",
+        "confirmPrefix": "Are you sure you want to delete",
+        "confirmSuffix": "?"
+      }
+    },
+    "toast": {
+      "created": "Checklist created",
+      "createError": "Could not create checklist",
+      "updated": "Checklist updated",
+      "updateError": "Could not update checklist",
+      "deleted": "Checklist deleted",
+      "deleteBlocked": "Could not delete checklist",
+      "itemCreated": "Item created",
+      "itemCreateError": "Could not create item",
+      "itemUpdated": "Item updated",
+      "itemUpdateError": "Could not update item",
+      "itemDeleted": "Item deleted",
+      "itemDeleteBlocked": "Could not delete item"
+    }
+  }
+}

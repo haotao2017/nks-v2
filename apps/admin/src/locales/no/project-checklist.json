@@ -1,0 +1,82 @@
+{
+  "checklistPanel": {
+    "title": "Sjekklister",
+    "description": "Administrer prosjektets sjekklister og punkter.",
+    "empty": "Ingen sjekklister ennå.",
+    "columns": {
+      "name": "Navn",
+      "itemCount": "Antall punkter",
+      "actions": "Handlinger"
+    },
+    "template": {
+      "placeholder": "Velg sjekklistemal",
+      "createButton": "Opprett fra mal",
+      "none": "Ingen maler tilgjengelig"
+    },
+    "emptyChecklistButton": "Tom sjekkliste",
+    "actions": {
+      "items": "Punkter",
+      "rename": "Rediger navn"
+    },
+    "validation": {
+      "nameRequired": "Navn er påkrevd"
+    },
+    "create": {
+      "title": "Ny sjekkliste",
+      "description": "Opprett en tom sjekkliste.",
+      "nameLabel": "Navn",
+      "namePlaceholder": "Navn på sjekkliste"
+    },
+    "rename": {
+      "title": "Rediger sjekkliste",
+      "description": "Endre navnet på sjekklisten."
+    },
+    "delete": {
+      "title": "Slett sjekkliste",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Handlingen kan ikke angres."
+    },
+    "items": {
+      "dialogTitle": "Punkter – {{name}}",
+      "dialogDescription": "Legg til, rediger eller fjern punkter i sjekklisten.",
+      "newButton": "Nytt punkt",
+      "empty": "Ingen punkter ennå.",
+      "columns": {
+        "sequence": "#",
+        "title": "Tittel"
+      },
+      "validation": {
+        "titleRequired": "Tittel er påkrevd"
+      },
+      "form": {
+        "createTitle": "Nytt punkt",
+        "editTitle": "Rediger punkt",
+        "createDescription": "Legg til et nytt punkt i sjekklisten.",
+        "editDescription": "Endre punktet.",
+        "title": "Tittel",
+        "titlePlaceholder": "Beskrivelse av punktet",
+        "sortOrder": "Rekkefølge",
+        "sortOrderPlaceholder": "Rekkefølge (valgfritt)"
+      },
+      "delete": {
+        "title": "Slett punkt",
+        "confirmPrefix": "Er du sikker på at du vil slette",
+        "confirmSuffix": "?"
+      }
+    },
+    "toast": {
+      "created": "Sjekkliste opprettet",
+      "createError": "Kunne ikke opprette sjekkliste",
+      "updated": "Sjekkliste oppdatert",
+      "updateError": "Kunne ikke oppdatere sjekkliste",
+      "deleted": "Sjekkliste slettet",
+      "deleteBlocked": "Kunne ikke slette sjekkliste",
+      "itemCreated": "Punkt opprettet",
+      "itemCreateError": "Kunne ikke opprette punkt",
+      "itemUpdated": "Punkt oppdatert",
+      "itemUpdateError": "Kunne ikke oppdatere punkt",
+      "itemDeleted": "Punkt slettet",
+      "itemDeleteBlocked": "Kunne ikke slette punkt"
+    }
+  }
+}

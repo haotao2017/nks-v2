@@ -26,9 +26,16 @@
     },
     "actions": {
       "open": "Open workbench",
+      "edit": "Edit",
       "archive": "Archive",
       "unarchive": "Restore from archive",
-      "restore": "Restore"
+      "restore": "Restore",
+      "delete": "Delete",
+      "more": "More actions"
+    },
+    "editDialog": {
+      "title": "Edit project",
+      "description": "Update the project information."
     },
     "archiveDialog": {
       "title": "Archive project?",
@@ -116,6 +123,7 @@
     },
     "fields": {
       "responsibleApplicant": "Responsible applicant",
+      "buildingSupplier": "Building supplier",
       "title": "Title",
       "titlePlaceholder": "Project title",
       "address": "Address",
@@ -138,6 +146,29 @@
       "quantity": "Quantity",
       "price": "Price"
     },
+    "buildingSupplierSelect": {
+      "placeholder": "Select building supplier",
+      "search": "Search building supplier...",
+      "empty": "No building supplier found.",
+      "addAria": "New building supplier",
+      "titleLabel": "Name",
+      "create": "Add",
+      "cancel": "Cancel"
+    },
+    "validation": {
+      "address": "Address is required",
+      "gardsNo": "Land no. is required",
+      "bruksnummer": "Unit no. is required",
+      "postNo": "Postal code is required",
+      "poststed": "City is required",
+      "kommune": "Municipality is required",
+      "buildingSupplier": "Building supplier is required",
+      "customer": "Customer is required",
+      "contactPerson": "Contact person is required",
+      "service": "Select a service",
+      "servicesMin": "You must add at least one service"
+    },
+    "currency": "kr",
     "noServices": "No services added yet.",
     "addService": "Add service",
     "removeService": "Remove service",

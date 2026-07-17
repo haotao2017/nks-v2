@@ -70,30 +70,33 @@ export function ContactSelect({ value, onChange }: ContactSelectProps) {
     [contacts, value],
   );
 
-  // 只读态:选中项(或列表加载完成)变化时同步展示字段;编辑/新建态不覆盖用户输入。
-  React.useEffect(() => {
-    if (mode !== 'view') return;
-    setFields(
-      selected
-        ? {
-            name: selected.name ?? '',
-            companyName: selected.companyName ?? '',
-            contactNo: selected.contactNo ?? '',
-            email: selected.email ?? '',
-          }
-        : EMPTY_FIELDS,
-    );
-  }, [selected, mode]);
-
   const editing = mode === 'edit' || mode === 'add';
+
+  /** 选中项映射到展示字段(公司名等空值归一为空串)。 */
+  const fieldsFromSelected = (c: ContactDto | undefined): Fields =>
+    c
+      ? {
+          name: c.name ?? '',
+          companyName: c.companyName ?? '',
+          contactNo: c.contactNo ?? '',
+          email: c.email ?? '',
+        }
+      : EMPTY_FIELDS;
+
+  // 只读态:展示字段直接从选中项派生(无需 effect+setState);编辑/新建态用本地草稿 fields。
+  const displayFields = editing ? fields : fieldsFromSelected(selected);
+
   const setField = (k: keyof Fields, v: string) => setFields((prev) => ({ ...prev, [k]: v }));
 
-  const startEdit = () => setMode('edit'); // 字段已是选中项展示值
+  const startEdit = () => {
+    setFields(fieldsFromSelected(selected)); // 从选中项种入草稿
+    setMode('edit');
+  };
   const startAdd = () => {
     setFields(EMPTY_FIELDS);
     setMode('add');
   };
-  const cancel = () => setMode('view'); // effect 会把字段恢复为选中项
+  const cancel = () => setMode('view'); // 回只读态,展示字段自动派生回选中项
 
   const submit = () => {
     // 查重:同 name+companyName+contactNo+email 已存在(与旧系统一致)。
@@ -220,7 +223,7 @@ export function ContactSelect({ value, onChange }: ContactSelectProps) {
           <Input
             id="contact-name"
             disabled={!editing}
-            value={fields.name}
+            value={displayFields.name}
             onChange={(e) => setField('name', e.target.value)}
           />
         </div>
@@ -229,7 +232,7 @@ export function ContactSelect({ value, onChange }: ContactSelectProps) {
           <Input
             id="contact-company"
             disabled={!editing}
-            value={fields.companyName}
+            value={displayFields.companyName}
             onChange={(e) => setField('companyName', e.target.value)}
           />
         </div>
@@ -238,7 +241,7 @@ export function ContactSelect({ value, onChange }: ContactSelectProps) {
           <Input
             id="contact-no"
             disabled={!editing}
-            value={fields.contactNo}
+            value={displayFields.contactNo}
             onChange={(e) => setField('contactNo', e.target.value)}
           />
         </div>
@@ -247,7 +250,7 @@ export function ContactSelect({ value, onChange }: ContactSelectProps) {
           <Input
             id="contact-email"
             disabled={!editing}
-            value={fields.email}
+            value={displayFields.email}
             onChange={(e) => setField('email', e.target.value)}
           />
         </div>

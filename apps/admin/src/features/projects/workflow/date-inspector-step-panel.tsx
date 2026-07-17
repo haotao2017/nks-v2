@@ -74,9 +74,9 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
   const [notifyInspector, setNotifyInspector] = React.useState(true);
   const [hydrated, setHydrated] = React.useState(false);
 
-  // 回填已保存详情(仅一次)。
-  React.useEffect(() => {
-    if (hydrated || saved.isPending) return;
+  // 回填已保存详情(仅一次):用渲染期调整 state(数据到达时同步一次),不在 effect 内 setState。
+  if (!hydrated && !saved.isPending) {
+    setHydrated(true);
     const d = saved.data;
     if (d) {
       if (d.projectInspectorId) setInspectorId(String(d.projectInspectorId));
@@ -84,8 +84,7 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
       if (d.projectInspectionEventComment) setComment(d.projectInspectionEventComment);
       if (typeof d.projectSkipInspection === 'boolean') setSkip(d.projectSkipInspection);
     }
-    setHydrated(true);
-  }, [saved.data, saved.isPending, hydrated]);
+  }
 
   const inspectorOptions = (inspectors.data ?? []).filter((u) => u.contactId != null);
   const busy = execMut.isPending || transferMut.isPending;

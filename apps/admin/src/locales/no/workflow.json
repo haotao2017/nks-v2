@@ -6,7 +6,20 @@
       "progress": "{{done}} av {{total}} steg fullført for prosjekt #{{projectId}}.",
       "loadError": "Kunne ikke hente arbeidsflytstatus.",
       "stepperAria": "Arbeidsflyt-steg",
-      "loadingShort": "Laster…"
+      "loadingShort": "Laster…",
+      "docsLink": "Dokumenter"
+    },
+    "selector": {
+      "label": "Tjeneste",
+      "placeholder": "Velg arbeidsflyt",
+      "fallback": "Arbeidsflyt {{id}}",
+      "default": "Arbeidsflyt"
+    },
+    "tabs": {
+      "todo": "Å gjøre",
+      "done": "Fullført",
+      "todoEmpty": "Ingen gjenstående steg.",
+      "doneEmpty": "Ingen fullførte steg ennå."
     },
     "status": {
       "done": "Fullført",
@@ -103,7 +116,8 @@
       "regenerate": "Regenerer",
       "sendReport": "Send rapport",
       "approveAndComplete": "Godkjenn og fullfør",
-      "confirmAndComplete": "Bekreft og fullfør"
+      "confirmAndComplete": "Bekreft og fullfør",
+      "edit": "Rediger"
     },
     "toast": {
       "inspectionDateSaved": "Kontrolldato lagret",

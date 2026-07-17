@@ -1,0 +1,29 @@
+{
+  "partiesPanel": {
+    "title": "Foretak",
+    "description": "Knytt kontakter til prosjektets foretakstyper.",
+    "columns": {
+      "partyType": "Foretakstype",
+      "contact": "Kontakt"
+    },
+    "empty": "Ingen foretakstyper.",
+    "notBound": "Ikke tilknyttet",
+    "bindButton": "Tilknytt",
+    "changeButton": "Bytt",
+    "dialog": {
+      "bindTitle": "Tilknytt kontakt – {{name}}",
+      "changeTitle": "Bytt kontakt – {{name}}",
+      "description": "Velg en kontakt som skal knyttes til denne foretakstypen.",
+      "contactLabel": "Kontakt"
+    },
+    "select": {
+      "placeholder": "Velg kontakt…",
+      "search": "Søk kontakt…",
+      "empty": "Ingen kontakter funnet."
+    },
+    "toast": {
+      "associated": "Kontakt tilknyttet",
+      "associateError": "Kunne ikke tilknytte kontakt"
+    }
+  }
+}

@@ -1,0 +1,271 @@
+'use client';
+
+/**
+ * 项目概览侧栏 —— 对应原系统 projectWorkplace/ProjectWorkplaceSidenav.js 的摘要卡。
+ *
+ * 展示:
+ *  - 地址(address, postNo poststed, kommune)
+ *  - 创建 / 最后修改日期(dated / modifiedDate)
+ *  - Beskrivelse(描述):可内联编辑 —— 点「编辑」切出 textarea,保存调 useUpdateProject。
+ *  - Husleverandør(建材供应商名,按 buildingSupplierId 从 useBuildingSuppliers 映射)
+ *  - Kunde / Kontaktperson(按 customerId / contactPersonId 从 useContacts 映射)
+ *  - Tjenester(服务列表,来自 project.projectService)
+ *  - Foretak(参与方摘要,来自 useProjectParties)
+ *
+ * 说明:
+ *  - 名字映射查不到时回退显示原始 id;完全缺失时显示占位 '—'。
+ *  - 描述保存回传完整 project(`{ ...project, description }`),避免后端整单覆盖丢字段
+ *    (参考向导 project-wizard.tsx 的 `{ ...(project ?? {}) }` 做法)。
+ *  - useUpdateProject 内部已统一 toast(successMessage/errorMessage),此处不重复弹。
+ *  - 不译接口数据 / 用户输入(地址、名字、描述等原样显示)。
+ */
+import * as React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Loader2, Pencil } from 'lucide-react';
+
+import type { ProjectDto } from '@nks/api-types';
+
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+
+import { useBuildingSuppliers } from '../building-suppliers/api';
+import { useContacts } from '../contacts/api';
+import { useProjectParties, useUpdateProject } from './api';
+
+/** 挪威语短日期(容错:非法/缺失值回退 '—',对齐 columns.tsx)。 */
+function formatDate(value?: string): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('nb-NO', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
+/** 拼接地址第二行:`postNo poststed`(任一缺失只显示存在的部分)。 */
+function postLine(postNo?: string, poststed?: string): string {
+  return [postNo, poststed].filter(Boolean).join(' ');
+}
+
+/** 小节标题 + 分隔线的通用包装。 */
+function Section({
+  label,
+  action,
+  children,
+}: {
+  label: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between border-b pb-1">
+        <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+          {label}
+        </span>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+export function ProjectOverview({ project }: { project: ProjectDto }) {
+  const { t } = useTranslation();
+
+  const { data: suppliers = [] } = useBuildingSuppliers();
+  const { data: contacts = [] } = useContacts();
+  const { data: parties = [] } = useProjectParties(project.id);
+  const updateMutation = useUpdateProject();
+
+  // ── 名字映射(id → 名称,查不到回退 id 字符串,完全缺失回退 '—')──────────
+  const supplierName = React.useMemo(() => {
+    if (project.buildingSupplierId == null) return '—';
+    const hit = suppliers.find((s) => s.id === project.buildingSupplierId);
+    return hit?.title || String(project.buildingSupplierId);
+  }, [suppliers, project.buildingSupplierId]);
+
+  const customerName = React.useMemo(() => {
+    if (project.customerId == null) return '—';
+    const hit = contacts.find((c) => c.id === project.customerId);
+    return hit?.name || String(project.customerId);
+  }, [contacts, project.customerId]);
+
+  const contactPersonName = React.useMemo(() => {
+    if (project.contactPersonId == null) return '—';
+    const hit = contacts.find((c) => c.id === project.contactPersonId);
+    return hit?.name || String(project.contactPersonId);
+  }, [contacts, project.contactPersonId]);
+
+  const services = project.projectService ?? [];
+
+  // ── 描述内联编辑 ────────────────────────────────────────────────────────
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(project.description ?? '');
+
+  const startEdit = () => {
+    setDraft(project.description ?? '');
+    setEditing(true);
+  };
+  const cancelEdit = () => setEditing(false);
+  const saveDescription = () => {
+    // 回传完整 project,仅覆盖 description,避免后端整单覆盖丢字段。
+    updateMutation.mutate(
+      { ...project, description: draft.trim() || undefined },
+      { onSuccess: () => setEditing(false) },
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('overviewPanel.title')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* 地址 */}
+        <div className="space-y-0.5">
+          <p className="text-base font-medium">{project.address || '—'}</p>
+          {postLine(project.postNo, project.poststed) ? (
+            <p className="text-muted-foreground text-sm">
+              {postLine(project.postNo, project.poststed)}
+            </p>
+          ) : null}
+          {project.kommune ? (
+            <p className="text-muted-foreground text-sm">{project.kommune}</p>
+          ) : null}
+        </div>
+
+        {/* 创建 / 最后修改日期 */}
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">{t('overviewPanel.created')}</span>
+          <span>{formatDate(project.dated)}</span>
+        </div>
+        {project.modifiedDate ? (
+          <div className="-mt-4 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">{t('overviewPanel.modified')}</span>
+            <span>{formatDate(project.modifiedDate)}</span>
+          </div>
+        ) : null}
+
+        {/* Beskrivelse —— 内联编辑 */}
+        <Section
+          label={t('overviewPanel.description.label')}
+          action={
+            editing ? null : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 px-2"
+                onClick={startEdit}
+              >
+                <Pencil className="size-3.5" />
+                {t('common.edit')}
+              </Button>
+            )
+          }
+        >
+          {editing ? (
+            <div className="space-y-2">
+              <Textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder={t('overviewPanel.description.placeholder')}
+                rows={4}
+                autoFocus
+                disabled={updateMutation.isPending}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelEdit}
+                  disabled={updateMutation.isPending}
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={saveDescription}
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                  {t('common.save')}
+                </Button>
+              </div>
+            </div>
+          ) : project.description ? (
+            <p className="text-sm whitespace-pre-wrap">{project.description}</p>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {t('overviewPanel.description.empty')}
+            </p>
+          )}
+        </Section>
+
+        {/* Husleverandør */}
+        <Section label={t('overviewPanel.buildingSupplier')}>
+          <p className="text-sm">{supplierName}</p>
+        </Section>
+
+        {/* Kunde / Kontaktperson */}
+        <Section label={t('overviewPanel.customer')}>
+          <div className="space-y-0.5 text-sm">
+            <p>{customerName}</p>
+            <p className="text-muted-foreground">
+              {t('overviewPanel.contactPerson')}: {contactPersonName}
+            </p>
+          </div>
+        </Section>
+
+        {/* Tjenester */}
+        <Section label={t('overviewPanel.services.label')}>
+          {services.length ? (
+            <ul className="space-y-1 text-sm">
+              {services.map((s) => (
+                <li key={s.id} className="flex items-baseline justify-between gap-3">
+                  <span>
+                    {s.service?.name || `#${s.serviceId ?? ''}`}
+                    {s.service?.description ? (
+                      <span className="text-muted-foreground"> ({s.service.description})</span>
+                    ) : null}
+                  </span>
+                  {s.price ? (
+                    <span className="text-muted-foreground shrink-0">{s.price}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground text-sm">{t('overviewPanel.services.empty')}</p>
+          )}
+        </Section>
+
+        {/* Foretak */}
+        <Section label={t('overviewPanel.parties.label')}>
+          {parties.length ? (
+            <ul className="space-y-2 text-sm">
+              {parties.map((p) => (
+                <li key={p.id} className="space-y-0.5">
+                  <p className="text-muted-foreground text-xs">{p.partyTypeName || '—'}</p>
+                  <p>{p.partyName || '—'}</p>
+                  {p.email ? (
+                    <p className="text-muted-foreground text-xs">{p.email}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground text-sm">{t('overviewPanel.parties.empty')}</p>
+          )}
+        </Section>
+      </CardContent>
+    </Card>
+  );
+}

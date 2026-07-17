@@ -1,0 +1,24 @@
+{
+  "overviewPanel": {
+    "title": "Prosjektsammendrag",
+    "address": "Adresse",
+    "created": "Opprettet",
+    "modified": "Sist endret",
+    "buildingSupplier": "Husleverandør",
+    "customer": "Kunde",
+    "contactPerson": "Kontaktperson",
+    "description": {
+      "label": "Beskrivelse",
+      "empty": "Ingen beskrivelse.",
+      "placeholder": "Skriv en beskrivelse…"
+    },
+    "services": {
+      "label": "Tjenester",
+      "empty": "Ingen tjenester."
+    },
+    "parties": {
+      "label": "Foretak",
+      "empty": "Ingen foretak."
+    }
+  }
+}

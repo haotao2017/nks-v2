@@ -3,11 +3,17 @@
 /**
  * 新建/编辑项目向导 —— 自包含三步 stepper(不依赖 Dialog,页面直用或外层套 Dialog 均可)。
  *
- * 三步:
- *  1. ProjectInfo   —— 标题(必填)、地址、gårdsnr/bruksnummer、kommune、postnr/poststed、
- *                       经纬度、beskrivelse、kommentarer。
- *  2. CustomerInfo  —— 客户(customerId)与 kontaktperson(contactPersonId),下拉取自 Contact 列表。
- *  3. Pricing       —— 选服务并定价:serviceId + quantity + price(可多行,来自 Service 列表)。
+ * 三步(顺序对齐旧系统 projectConfig 的 tab 顺序:Contact → Project → Services):
+ *  1. Kontaktinfo   —— 客户(customerId)与 kontaktperson(contactPersonId),下拉取自 Contact 列表。
+ *  2. Prosjektinfo  —— Husleverandør(buildingSupplierId,下拉+加号新建)、地址、gårdsnr/bruksnummer、
+ *                       postnr(邮编联动回填 poststed/kommune)、beskrivelse、经纬度、kommentarer。
+ *  3. Priser        —— 选服务并定价:serviceId + quantity + price(可多行,来自 Service 列表)。
+ *
+ * 与旧系统对齐要点:
+ *  - 旧系统 ProjectInfo.js 无 title 输入框;ProjectHeader.js 的必填 keyArray 不含 title,
+ *    CreatProject 直接把表单值(title 默认空串)透传后端。故本向导不设 title 输入,
+ *    提交时用 address 作为可读标题派生(新建),编辑保留原 title —— 不自造必填 title。
+ *  - Husleverandør / postnr 联动 / 计价 / 删除服务,均 1:1 复刻旧系统 ProjectInfo.js + PricingTab.js。
  *
  * 编辑模式:传入 project(GetProject 结果)。提交时以原始 project 为底,仅覆盖表单编辑过的字段
  * 与 projectService,未展示字段原样回传,避免丢失。
@@ -18,7 +24,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Plus, Trash2, Check } from 'lucide-react';
 
-import type { ProjectDto, ProjectServiceDto } from '@nks/api-types';
+import type { ProjectDto, ProjectServiceDto, ServiceDto } from '@nks/api-types';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -41,10 +47,12 @@ import {
 import { cn } from '@/lib/utils';
 
 import { useServices } from '@/features/services/api';
+import { usePostCodes } from '@/features/misc/api';
 
-import { useCreateProject, useUpdateProject } from '../api';
-import { wizardSchema, stepFields, type WizardValues } from './schema';
+import { useCreateProject, useUpdateProject, useDeleteProjectService } from '../api';
+import { makeWizardSchema, stepFields, type WizardValues } from './schema';
 import { ContactSelect } from './contact-select';
+import { BuildingSupplierSelect } from './building-supplier-select';
 
 const STEP_LABEL_KEYS = [
   'projectWizard.steps.contactInfo',
@@ -61,6 +69,27 @@ const strToNum = (v?: string) => {
   return Number.isFinite(n) ? n : undefined;
 };
 
+/**
+ * 计价 —— 对齐旧系统 PricingTab.js:
+ *  - serviceChargedAs===2(阶梯):按当前 quantity 落入 servicePerSlabList 的 [rangeFrom, rangeTo] 区间取 slab.rate。
+ *  - 否则:price = quantity × service.rate。
+ * rate 为 String,做数值换算后回写 string。找不到区间/无 rate 时回退空串。
+ */
+function computePrice(service: ServiceDto | undefined, quantityStr: string): string {
+  if (!service) return '';
+  const q = Number(quantityStr);
+  const qty = Number.isFinite(q) ? q : 0;
+  if (service.serviceChargedAs === 2) {
+    const slab = (service.servicePerSlabList ?? []).find(
+      (s) => (s.rangeFrom ?? 0) <= qty && (s.rangeTo ?? 0) >= qty,
+    );
+    return slab?.rate ?? '';
+  }
+  const rate = Number(service.rate);
+  const unit = Number.isFinite(rate) ? rate : 0;
+  return String(unit * qty);
+}
+
 export interface ProjectWizardProps {
   /** 传入即编辑模式;否则新建。 */
   project?: ProjectDto;
@@ -76,21 +105,25 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
   const [step, setStep] = React.useState(0);
 
   const { data: services = [] } = useServices();
+  const { data: postCodes = [] } = usePostCodes();
 
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject();
+  const deleteServiceMutation = useDeleteProjectService();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const wizardSchema = React.useMemo(() => makeWizardSchema(t), [t]);
 
   const form = useForm<WizardValues>({
     resolver: zodResolver(wizardSchema),
     defaultValues: {
-      title: '',
       address: '',
       gardsNo: '',
       bruksnmmer: '',
       kommune: '',
       postNo: '',
       poststed: '',
+      buildingSupplierId: '',
       description: '',
       comments: '',
       longitude: '',
@@ -110,13 +143,13 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
   React.useEffect(() => {
     if (!project) return;
     form.reset({
-      title: project.title ?? '',
       address: project.address ?? '',
       gardsNo: project.gardsNo ?? '',
       bruksnmmer: project.bruksnmmer ?? '',
       kommune: project.kommune ?? '',
       postNo: project.postNo ?? '',
       poststed: project.poststed ?? '',
+      buildingSupplierId: numToStr(project.buildingSupplierId),
       description: project.description ?? '',
       comments: project.comments ?? '',
       longitude: project.longitude ?? '',
@@ -124,6 +157,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
       customerId: numToStr(project.customerId),
       contactPersonId: numToStr(project.contactPersonId),
       services: (project.projectService ?? []).map((ps) => ({
+        id: numToStr(ps.id),
         serviceId: numToStr(ps.serviceId),
         quantity: numToStr(ps.quantity),
         price: ps.price ?? '',
@@ -132,6 +166,44 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
     // 仅在 project 变化时回填。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
+
+  /** postnr 变化 → 4 位时本地匹配邮编,回填 poststed / kommune(旧系统 findPostcodeInfo)。 */
+  const handlePostNoChange = (value: string) => {
+    form.setValue('postNo', value, { shouldValidate: true });
+    if (/^\d{4}$/.test(value)) {
+      const found = postCodes.find((p) => p.postnummer === value);
+      if (found) {
+        form.setValue('poststed', found.poststed ?? '', { shouldValidate: true });
+        form.setValue('kommune', found.kommunenavn ?? '', { shouldValidate: true });
+      }
+    }
+  };
+
+  /** 选服务 → 写回 serviceId,数量置 1,并算初始价(旧系统 selectService)。 */
+  const handleServiceSelect = (index: number, serviceIdStr: string) => {
+    form.setValue(`services.${index}.serviceId`, serviceIdStr, { shouldValidate: true });
+    const service = services.find((s) => String(s.id) === serviceIdStr);
+    const qty = '1';
+    form.setValue(`services.${index}.quantity`, qty);
+    form.setValue(`services.${index}.price`, computePrice(service, qty));
+  };
+
+  /** 数量变化 → 重算价(旧系统 handleQuantityChange)。 */
+  const handleQuantityChange = (index: number, value: string) => {
+    form.setValue(`services.${index}.quantity`, value);
+    const serviceId = form.getValues(`services.${index}.serviceId`);
+    const service = services.find((s) => String(s.id) === serviceId);
+    form.setValue(`services.${index}.price`, computePrice(service, value));
+  };
+
+  /** 删除某服务行:编辑模式且该行已存在(有 id)→ 调 DeleteProjectService;之后从表单移除。 */
+  const handleRemoveService = (index: number) => {
+    const row = form.getValues(`services.${index}`);
+    if (isEdit && project?.id && row?.id) {
+      deleteServiceMutation.mutate({ projectId: project.id, projectServiceId: Number(row.id) });
+    }
+    remove(index);
+  };
 
   const goNext = async () => {
     const valid = await form.trigger(stepFields[step] as never);
@@ -143,21 +215,24 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
     const projectServices: ProjectServiceDto[] = values.services
       .filter((s) => s.serviceId)
       .map((s) => ({
+        ...(s.id ? { id: Number(s.id) } : {}),
         serviceId: strToNum(s.serviceId),
         quantity: strToNum(s.quantity),
         price: s.price || undefined,
       }));
 
     // 以原始 project 为底,仅覆盖编辑字段与关联服务,保留未展示字段。
+    // title:旧系统无输入,新建时用 address 派生一个可读标题,编辑保留原 title。
     const payload: ProjectDto = {
       ...(project ?? {}),
-      title: values.title,
+      title: project?.title || values.address || undefined,
       address: values.address || undefined,
       gardsNo: values.gardsNo || undefined,
       bruksnmmer: values.bruksnmmer || undefined,
       kommune: values.kommune || undefined,
       postNo: values.postNo || undefined,
       poststed: values.poststed || undefined,
+      buildingSupplierId: strToNum(values.buildingSupplierId),
       description: values.description || undefined,
       comments: values.comments || undefined,
       longitude: values.longitude || undefined,
@@ -244,16 +319,15 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
         {/* Steg 2 —— Prosjektinfo */}
         {step === 1 && (
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* Husleverandør —— 下拉 + 加号新建 */}
             <div className="sm:col-span-2">
               <FormField
                 control={form.control}
-                name="title"
+                name="buildingSupplierId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('projectWizard.fields.title')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('projectWizard.fields.titlePlaceholder')} {...field} />
-                    </FormControl>
+                    <FormLabel>{t('projectWizard.fields.buildingSupplier')}</FormLabel>
+                    <BuildingSupplierSelect value={field.value ?? ''} onChange={field.onChange} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -300,6 +374,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 </FormItem>
               )}
             />
+            {/* postnr:4 位时联动回填 poststed / kommune */}
             <FormField
               control={form.control}
               name="postNo"
@@ -307,12 +382,18 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 <FormItem>
                   <FormLabel>{t('projectWizard.fields.postNo')}</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input
+                      value={field.value ?? ''}
+                      onChange={(e) => handlePostNoChange(e.target.value)}
+                      inputMode="numeric"
+                      maxLength={4}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {/* poststed:只读,由邮编联动回填(对齐旧系统 disabled 字段) */}
             <FormField
               control={form.control}
               name="poststed"
@@ -320,12 +401,13 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 <FormItem>
                   <FormLabel>{t('projectWizard.fields.poststed')}</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {/* kommune:只读,由邮编联动回填 */}
             <div className="sm:col-span-2">
               <FormField
                 control={form.control}
@@ -334,7 +416,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                   <FormItem>
                     <FormLabel>{t('projectWizard.fields.kommune')}</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} disabled />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -415,7 +497,10 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                     render={({ field }) => (
                       <FormItem>
                         {index === 0 && <FormLabel>{t('projectWizard.fields.service')}</FormLabel>}
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={(v) => handleServiceSelect(index, v)}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder={t('projectWizard.fields.servicePlaceholder')} />
@@ -424,7 +509,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                           <SelectContent>
                             {services.map((s) => (
                               <SelectItem key={s.id} value={String(s.id)}>
-                                {s.name ?? `Tjeneste #${s.id}`}
+                                {s.description ? `${s.name} (${s.description})` : (s.name ?? `#${s.id}`)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -442,7 +527,12 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                       <FormItem>
                         {index === 0 && <FormLabel>{t('projectWizard.fields.quantity')}</FormLabel>}
                         <FormControl>
-                          <Input type="number" min={0} {...field} />
+                          <Input
+                            type="number"
+                            min={0}
+                            value={field.value ?? ''}
+                            onChange={(e) => handleQuantityChange(index, e.target.value)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -457,7 +547,12 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                       <FormItem>
                         {index === 0 && <FormLabel>{t('projectWizard.fields.price')}</FormLabel>}
                         <FormControl>
-                          <Input placeholder="0" {...field} />
+                          <div className="relative">
+                            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+                              {t('projectWizard.currency')}
+                            </span>
+                            <Input className="pl-8" placeholder="0" {...field} />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -469,7 +564,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => remove(index)}
+                    onClick={() => handleRemoveService(index)}
                     aria-label={t('projectWizard.removeService')}
                   >
                     <Trash2 className="size-4" />

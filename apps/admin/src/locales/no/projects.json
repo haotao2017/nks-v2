@@ -26,9 +26,16 @@
     },
     "actions": {
       "open": "Åpne arbeidsbenk",
+      "edit": "Rediger",
       "archive": "Arkiver",
       "unarchive": "Gjenopprett fra arkiv",
-      "restore": "Gjenopprett"
+      "restore": "Gjenopprett",
+      "delete": "Slett",
+      "more": "Flere handlinger"
+    },
+    "editDialog": {
+      "title": "Rediger prosjekt",
+      "description": "Oppdater informasjonen for prosjektet."
     },
     "archiveDialog": {
       "title": "Arkivere prosjekt?",
@@ -116,6 +123,7 @@
     },
     "fields": {
       "responsibleApplicant": "Ansvarlig søker",
+      "buildingSupplier": "Husleverandør",
       "title": "Tittel",
       "titlePlaceholder": "Prosjekttittel",
       "address": "Adresse",
@@ -138,6 +146,29 @@
       "quantity": "Antall",
       "price": "Pris"
     },
+    "buildingSupplierSelect": {
+      "placeholder": "Velg husleverandør",
+      "search": "Søk husleverandør...",
+      "empty": "Ingen husleverandør funnet.",
+      "addAria": "Ny husleverandør",
+      "titleLabel": "Navn",
+      "create": "Legg til",
+      "cancel": "Avbryt"
+    },
+    "validation": {
+      "address": "Adresse er påkrevd",
+      "gardsNo": "Gårdsnr er påkrevd",
+      "bruksnummer": "Bruksnummer er påkrevd",
+      "postNo": "Postnr er påkrevd",
+      "poststed": "Poststed er påkrevd",
+      "kommune": "Kommune er påkrevd",
+      "buildingSupplier": "Husleverandør er påkrevd",
+      "customer": "Kunde er påkrevd",
+      "contactPerson": "Kontaktperson er påkrevd",
+      "service": "Velg en tjeneste",
+      "servicesMin": "Du må legge til minst én tjeneste"
+    },
+    "currency": "kr",
     "noServices": "Ingen tjenester lagt til enda.",
     "addService": "Legg til tjeneste",
     "removeService": "Fjern tjeneste",

@@ -51,17 +51,13 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
   const [emailSubject, setEmailSubject] = React.useState('');
   const [emailContent, setEmailContent] = React.useState('');
   const [parties, setParties] = React.useState<EmailProjectPartiesWorkflowEntDto[]>([]);
-  const [loaded, setLoaded] = React.useState(false);
+  // 无预览步骤直接视为已加载;组件按 step.key 重挂载,故初值即等价于旧的进入时重置。
+  const [loaded, setLoaded] = React.useState(!step.preview);
 
-  // 进入步骤时自动取预览一次。
+  // 进入步骤时自动取预览一次(setState 仅在 mutation 异步回调里,非 effect 体内同步调用)。
   const previewMutate = preview.mutate;
   React.useEffect(() => {
-    setLoaded(false);
-    setParties([]);
-    if (!step.preview) {
-      setLoaded(true);
-      return;
-    }
+    if (!step.preview) return;
     previewMutate(buildStepBase(projectId, step, { isTransfer: false }), {
       onSuccess: (pw?: ProjectWorkflowDto) => {
         setEmailFrom(pw?.emailFrom ?? '');
