@@ -11,6 +11,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Trans, useTranslation } from 'react-i18next';
 
 import {
   AlertDialog,
@@ -36,10 +37,10 @@ import {
 } from './api';
 import { getProjectColumns, type ProjectListVariant, type ProjectRow } from './columns';
 
-const SUBNAV: { variant: ProjectListVariant; label: string; href: string }[] = [
-  { variant: 'active', label: 'Aktive', href: '/projects' },
-  { variant: 'archived', label: 'Arkiverte', href: '/projects/archived' },
-  { variant: 'deleted', label: 'Slettede', href: '/projects/deleted' },
+const SUBNAV: { variant: ProjectListVariant; labelKey: string; href: string }[] = [
+  { variant: 'active', labelKey: 'projects.subnav.active', href: '/projects' },
+  { variant: 'archived', labelKey: 'projects.subnav.archived', href: '/projects/archived' },
+  { variant: 'deleted', labelKey: 'projects.subnav.deleted', href: '/projects/deleted' },
 ];
 
 function useProjectsByVariant(variant: ProjectListVariant) {
@@ -56,6 +57,7 @@ export interface ProjectsListProps {
 }
 
 export function ProjectsList({ variant }: ProjectsListProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const query = useProjectsByVariant(variant);
   const { data: count } = useProjectsCount();
@@ -74,6 +76,7 @@ export function ProjectsList({ variant }: ProjectsListProps) {
     () =>
       getProjectColumns({
         variant,
+        t,
         onOpen: openWorkplace,
         onArchive: (row) => setArchiveTarget(row),
         onDelete: (row) => setDeleteTarget(row),
@@ -84,9 +87,9 @@ export function ProjectsList({ variant }: ProjectsListProps) {
           if (row.id) deleteMutation.mutate({ projectId: row.id, isDelete: false });
         },
       }),
-    // openWorkplace / mutations 稳定引用足够;变体切换时重建。
+    // openWorkplace / mutations 稳定引用足够;变体切换或语言切换时重建。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [variant],
+    [variant, t],
   );
 
   const countMap: Record<ProjectListVariant, number | undefined> = {
@@ -129,7 +132,7 @@ export function ProjectsList({ variant }: ProjectsListProps) {
                   : 'text-muted-foreground hover:text-foreground border-transparent',
               )}
             >
-              {tab.label}
+              {t(tab.labelKey)}
               {typeof c === 'number' && (
                 <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1">
                   {c}
@@ -145,13 +148,13 @@ export function ProjectsList({ variant }: ProjectsListProps) {
         data={(query.data ?? []) as ProjectRow[]}
         isLoading={query.isLoading}
         searchColumn="title"
-        searchPlaceholder="Søk etter tittel…"
+        searchPlaceholder={t('projects.searchPlaceholder')}
         emptyMessage={
           variant === 'active'
-            ? 'Ingen aktive prosjekter enda.'
+            ? t('projects.empty.active')
             : variant === 'archived'
-              ? 'Ingen arkiverte prosjekter.'
-              : 'Ingen slettede prosjekter.'
+              ? t('projects.empty.archived')
+              : t('projects.empty.deleted')
         }
       />
 
@@ -162,15 +165,19 @@ export function ProjectsList({ variant }: ProjectsListProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Arkivere prosjekt?</AlertDialogTitle>
+            <AlertDialogTitle>{t('projects.archiveDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Vil du arkivere{' '}
-              <span className="font-medium">{archiveTarget?.title}</span>? Du kan gjenopprette det
-              fra arkivet senere.
+              <Trans
+                i18nKey="projects.archiveDialog.description"
+                values={{ title: archiveTarget?.title }}
+                components={{ strong: <span className="font-medium" /> }}
+              />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={archiveMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={archiveMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -178,7 +185,7 @@ export function ProjectsList({ variant }: ProjectsListProps) {
               }}
               disabled={archiveMutation.isPending}
             >
-              Arkiver
+              {t('projects.actions.archive')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -191,15 +198,19 @@ export function ProjectsList({ variant }: ProjectsListProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette prosjekt?</AlertDialogTitle>
+            <AlertDialogTitle>{t('projects.deleteDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Vil du slette{' '}
-              <span className="font-medium">{deleteTarget?.title}</span>? Prosjektet flyttes til
-              slettede og kan gjenopprettes.
+              <Trans
+                i18nKey="projects.deleteDialog.description"
+                values={{ title: deleteTarget?.title }}
+                components={{ strong: <span className="font-medium" /> }}
+              />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -208,7 +219,7 @@ export function ProjectsList({ variant }: ProjectsListProps) {
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

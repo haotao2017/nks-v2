@@ -16,6 +16,7 @@
  * 以便统一配置(v2 下该 key 会被忽略,亦安全)。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -73,69 +74,75 @@ function ToolbarButton({
 }
 
 function Toolbar({ editor }: { editor: Editor }) {
+  const { t } = useTranslation();
+
   const setLink = React.useCallback(() => {
     const prev = editor.getAttributes('link').href as string | undefined;
-    const url = window.prompt('Lenke-URL', prev ?? 'https://');
+    const url = window.prompt(t('emailTemplates.editor.linkPrompt'), prev ?? 'https://');
     if (url === null) return; // 取消
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-  }, [editor]);
+  }, [editor, t]);
 
   return (
     <div className="border-input flex flex-wrap items-center gap-1 border-b p-1">
       <ToolbarButton
-        label="Fet"
+        label={t('emailTemplates.editor.bold')}
         active={editor.isActive('bold')}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
         <Bold className="size-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Kursiv"
+        label={t('emailTemplates.editor.italic')}
         active={editor.isActive('italic')}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <Italic className="size-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Overskrift"
+        label={t('emailTemplates.editor.heading')}
         active={editor.isActive('heading', { level: 2 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
       >
         <Heading2 className="size-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Punktliste"
+        label={t('emailTemplates.editor.bulletList')}
         active={editor.isActive('bulletList')}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
         <List className="size-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Nummerert liste"
+        label={t('emailTemplates.editor.orderedList')}
         active={editor.isActive('orderedList')}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       >
         <ListOrdered className="size-4" />
       </ToolbarButton>
-      <ToolbarButton label="Lenke" active={editor.isActive('link')} onClick={setLink}>
+      <ToolbarButton
+        label={t('emailTemplates.editor.link')}
+        active={editor.isActive('link')}
+        onClick={setLink}
+      >
         <Link2 className="size-4" />
       </ToolbarButton>
 
       <span className="bg-border mx-1 h-5 w-px" aria-hidden />
 
       <ToolbarButton
-        label="Angre"
+        label={t('emailTemplates.editor.undo')}
         disabled={!editor.can().undo()}
         onClick={() => editor.chain().focus().undo().run()}
       >
         <Undo2 className="size-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Gjør om"
+        label={t('emailTemplates.editor.redo')}
         disabled={!editor.can().redo()}
         onClick={() => editor.chain().focus().redo().run()}
       >
@@ -152,6 +159,7 @@ export function RichTextEditor({
   hashtagsLoading = false,
   disabled = false,
 }: RichTextEditorProps) {
+  const { t } = useTranslation();
   const editor = useEditor({
     immediatelyRender: false,
     editable: !disabled,
@@ -191,10 +199,14 @@ export function RichTextEditor({
     <div className="space-y-2">
       {/* 插入变量按钮排 */}
       <div className="space-y-1">
-        <p className="text-muted-foreground text-xs font-medium">Sett inn variabel</p>
+        <p className="text-muted-foreground text-xs font-medium">
+          {t('emailTemplates.editor.insertVariable')}
+        </p>
         <div className="flex flex-wrap gap-1.5">
           {hashtagsLoading ? (
-            <span className="text-muted-foreground text-xs">Laster variabler…</span>
+            <span className="text-muted-foreground text-xs">
+              {t('emailTemplates.editor.loadingVariables')}
+            </span>
           ) : hashtags.length ? (
             hashtags.map((tag) => (
               <Button
@@ -210,7 +222,9 @@ export function RichTextEditor({
               </Button>
             ))
           ) : (
-            <span className="text-muted-foreground text-xs">Ingen variabler tilgjengelig.</span>
+            <span className="text-muted-foreground text-xs">
+              {t('emailTemplates.editor.noVariables')}
+            </span>
           )}
         </div>
       </div>

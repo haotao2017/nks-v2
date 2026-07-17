@@ -8,6 +8,8 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -36,17 +38,19 @@ import { Switch } from '@/components/ui/switch';
 
 import { useCreateWorkflowCategoryStep, useUpdateWorkflowCategoryStep } from './api';
 
-const stepSchema = z.object({
-  stepName: z.string().trim().min(1, 'Stegnavn er påkrevd'),
-  stepSequence: z
-    .number()
-    .int('Rekkefølge må være et heltall')
-    .min(0, 'Kan ikke være negativt'),
-  isActive: z.boolean(),
-  isTransferable: z.boolean(),
-});
+/** 校验消息随语言变化,故 schema 按 t 构建。 */
+const makeStepSchema = (t: TFunction) =>
+  z.object({
+    stepName: z.string().trim().min(1, t('workflowCategories.steps.validation.nameRequired')),
+    stepSequence: z
+      .number()
+      .int(t('workflowCategories.steps.validation.sequenceInt'))
+      .min(0, t('workflowCategories.steps.validation.sequenceMin')),
+    isActive: z.boolean(),
+    isTransferable: z.boolean(),
+  });
 
-type StepFormValues = z.infer<typeof stepSchema>;
+type StepFormValues = z.infer<ReturnType<typeof makeStepSchema>>;
 
 export interface StepFormDialogProps {
   open: boolean;
@@ -65,10 +69,13 @@ export function StepFormDialog({
   step,
   defaultSequence = 1,
 }: StepFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(step?.id);
   const createMutation = useCreateWorkflowCategoryStep(categoryId);
   const updateMutation = useUpdateWorkflowCategoryStep(categoryId);
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const stepSchema = React.useMemo(() => makeStepSchema(t), [t]);
 
   const form = useForm<StepFormValues>({
     resolver: zodResolver(stepSchema),
@@ -111,9 +118,15 @@ export function StepFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger steg' : 'Nytt steg'}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? t('workflowCategories.steps.form.editTitle')
+              : t('workflowCategories.steps.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
-            {isEdit ? 'Oppdater steget nedenfor.' : 'Fyll ut informasjonen for det nye steget.'}
+            {isEdit
+              ? t('workflowCategories.steps.form.editDescription')
+              : t('workflowCategories.steps.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -124,9 +137,12 @@ export function StepFormDialog({
               name="stepName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Stegnavn</FormLabel>
+                  <FormLabel>{t('workflowCategories.steps.form.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="F.eks. Befaring" {...field} />
+                    <Input
+                      placeholder={t('workflowCategories.steps.form.namePlaceholder')}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -137,7 +153,7 @@ export function StepFormDialog({
               name="stepSequence"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rekkefølge</FormLabel>
+                  <FormLabel>{t('workflowCategories.steps.form.sequence')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -163,8 +179,10 @@ export function StepFormDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between gap-4 rounded-md border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Aktiv</FormLabel>
-                    <FormDescription>Steget er aktivt i arbeidsflyten.</FormDescription>
+                    <FormLabel>{t('workflowCategories.steps.form.active')}</FormLabel>
+                    <FormDescription>
+                      {t('workflowCategories.steps.form.activeDescription')}
+                    </FormDescription>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -178,8 +196,10 @@ export function StepFormDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between gap-4 rounded-md border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Overførbar</FormLabel>
-                    <FormDescription>Steget kan overføres.</FormDescription>
+                    <FormLabel>{t('workflowCategories.steps.form.transferable')}</FormLabel>
+                    <FormDescription>
+                      {t('workflowCategories.steps.form.transferableDescription')}
+                    </FormDescription>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -195,11 +215,11 @@ export function StepFormDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

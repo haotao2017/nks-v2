@@ -7,6 +7,7 @@
  * 归档/删除列表是全量 ProjectDto。缺失字段(address/projectStatus)回退 '—'。
  */
 import type { ColumnDef } from '@tanstack/react-table';
+import type { TFunction } from 'i18next';
 import { ArrowUpDown, MoreHorizontal, Archive, ArchiveRestore, Trash2, RotateCcw, ExternalLink } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,7 @@ export type ProjectListVariant = 'active' | 'archived' | 'deleted';
 
 export interface ProjectColumnActions {
   variant: ProjectListVariant;
+  t: TFunction;
   onOpen: (row: ProjectRow) => void;
   onArchive?: (row: ProjectRow) => void;
   onUnarchive?: (row: ProjectRow) => void;
@@ -49,7 +51,7 @@ function formatDate(value?: string): string {
 }
 
 export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<ProjectRow>[] {
-  const { variant, onOpen, onArchive, onUnarchive, onDelete, onRestore } = actions;
+  const { variant, t, onOpen, onArchive, onUnarchive, onDelete, onRestore } = actions;
 
   return [
     {
@@ -60,7 +62,7 @@ export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<Proj
           className="-ml-3 h-8"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Tittel
+          {t('projects.columns.title')}
           <ArrowUpDown className="size-3.5" />
         </Button>
       ),
@@ -76,12 +78,12 @@ export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<Proj
     },
     {
       accessorKey: 'address',
-      header: 'Adresse',
+      header: t('projects.columns.address'),
       cell: ({ row }) => row.original.address || '—',
     },
     {
       accessorKey: 'projectStatus',
-      header: 'Status',
+      header: t('projects.columns.status'),
       cell: ({ row }) =>
         row.original.projectStatus ? (
           <Badge variant="secondary">{row.original.projectStatus}</Badge>
@@ -91,12 +93,12 @@ export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<Proj
     },
     {
       accessorKey: 'dated',
-      header: 'Dato',
+      header: t('projects.columns.date'),
       cell: ({ row }) => formatDate(row.original.dated),
     },
     {
       id: 'actions',
-      header: () => <span className="sr-only">Handlinger</span>,
+      header: () => <span className="sr-only">{t('common.actions')}</span>,
       enableSorting: false,
       cell: ({ row }) => {
         const item = row.original;
@@ -106,14 +108,14 @@ export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<Proj
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="size-8">
                   <MoreHorizontal className="size-4" />
-                  <span className="sr-only">Åpne meny</span>
+                  <span className="sr-only">{t('common.openMenu')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onOpen(item)}>
                   <ExternalLink className="size-4" />
-                  Åpne arbeidsbenk
+                  {t('projects.actions.open')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
 
@@ -121,11 +123,11 @@ export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<Proj
                   <>
                     <DropdownMenuItem onClick={() => onArchive?.(item)}>
                       <Archive className="size-4" />
-                      Arkiver
+                      {t('projects.actions.archive')}
                     </DropdownMenuItem>
                     <DropdownMenuItem variant="destructive" onClick={() => onDelete?.(item)}>
                       <Trash2 className="size-4" />
-                      Slett
+                      {t('common.delete')}
                     </DropdownMenuItem>
                   </>
                 )}
@@ -133,14 +135,14 @@ export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<Proj
                 {variant === 'archived' && (
                   <DropdownMenuItem onClick={() => onUnarchive?.(item)}>
                     <ArchiveRestore className="size-4" />
-                    Gjenopprett fra arkiv
+                    {t('projects.actions.unarchive')}
                   </DropdownMenuItem>
                 )}
 
                 {variant === 'deleted' && (
                   <DropdownMenuItem onClick={() => onRestore?.(item)}>
                     <RotateCcw className="size-4" />
-                    Gjenopprett
+                    {t('projects.actions.restore')}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

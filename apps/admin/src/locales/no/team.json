@@ -1,0 +1,215 @@
+{
+  "team": {
+    "title": "Team",
+    "subtitle": "Administrer brukere, egen profil og selskap.",
+    "tabs": {
+      "users": "Brukere",
+      "profile": "Min profil",
+      "company": "Selskap"
+    },
+    "userTypes": {
+      "1": "Mobil kontroll app",
+      "2": "Desktop kontroll system",
+      "3": "Begge",
+      "unknown": "—"
+    },
+    "users": {
+      "newUser": "Ny bruker",
+      "searchPlaceholder": "Søk etter navn…",
+      "empty": "Ingen brukere enda.",
+      "deleteTitle": "Slette bruker?",
+      "deleteConfirm": "Er du sikker på at du vil slette <0>{{name}}</0>? Denne handlingen kan ikke angres.",
+      "columns": {
+        "name": "Navn",
+        "userName": "Brukernavn",
+        "designation": "Tittel",
+        "userType": "Brukertype",
+        "admin": "Admin",
+        "status": "Status"
+      },
+      "badges": {
+        "admin": "Admin",
+        "active": "Aktiv",
+        "inactive": "Inaktiv"
+      },
+      "dialog": {
+        "createTitle": "Ny bruker",
+        "editTitle": "Rediger bruker",
+        "createDesc": "Fyll ut informasjonen for å opprette en ny bruker.",
+        "editDesc": "Oppdater brukerinformasjonen nedenfor.",
+        "name": "Navn",
+        "namePlaceholder": "Ola Nordmann",
+        "userName": "Brukernavn",
+        "userNamePlaceholder": "ola",
+        "designation": "Tittel",
+        "designationPlaceholder": "Inspektør",
+        "password": "Passord",
+        "passwordPlaceholderCreate": "••••••••",
+        "passwordPlaceholderEdit": "La stå tomt for å beholde",
+        "passwordEditHint": "La stå tomt for å beholde nåværende passord.",
+        "userType": "Brukertype",
+        "userTypePlaceholder": "Velg brukertype",
+        "admin": "Admin",
+        "adminHint": "Gi brukeren administratorrettigheter.",
+        "active": "Aktiv",
+        "activeHint": "Inaktive brukere kan ikke logge inn."
+      },
+      "validation": {
+        "nameRequired": "Navn er påkrevd",
+        "userNameRequired": "Brukernavn er påkrevd",
+        "userTypeRequired": "Brukertype er påkrevd",
+        "passwordRequired": "Passord er påkrevd"
+      }
+    },
+    "profile": {
+      "title": "Min profil",
+      "administrator": "Administrator",
+      "name": "Navn",
+      "userName": "Brukernavn",
+      "designation": "Tittel",
+      "newPassword": "Nytt passord",
+      "passwordPlaceholder": "La stå tomt for å beholde",
+      "passwordHint": "La stå tomt for å beholde nåværende passord.",
+      "validation": {
+        "nameRequired": "Navn er påkrevd",
+        "userNameRequired": "Brukernavn er påkrevd"
+      }
+    },
+    "toast": {
+      "userCreated": "Bruker opprettet",
+      "userCreateError": "Kunne ikke opprette bruker",
+      "userUpdated": "Bruker oppdatert",
+      "userUpdateError": "Kunne ikke oppdatere bruker",
+      "userDeleted": "Bruker slettet",
+      "userDeleteBlocked": "Brukeren kan ikke slettes",
+      "profileUpdated": "Profil oppdatert",
+      "profileUpdateError": "Kunne ikke oppdatere profil",
+      "companyProfileUpdated": "Selskapsinformasjon oppdatert",
+      "companyProfileUpdateError": "Kunne ikke oppdatere selskapsinformasjon",
+      "folderUpdated": "Mappe oppdatert",
+      "folderUpdateError": "Kunne ikke oppdatere mappe"
+    },
+    "company": {
+      "infoTitle": "Selskapsinformasjon",
+      "infoDesc": "Generelle opplysninger om selskapet.",
+      "fields": {
+        "companyName": "Selskapsnavn",
+        "orgNumber": "Organisasjonsnummer",
+        "owner": "Eier",
+        "postCode": "Postnummer",
+        "address": "Adresse",
+        "telephone": "Telefon",
+        "mobile": "Mobil"
+      },
+      "emailTitle": "E-post og avsender",
+      "emailDesc": "Avsenderadresse og SMTP-innstillinger per selskap.",
+      "emailFields": {
+        "emailAddress": "E-postadresse",
+        "senderName": "Navn på avsender",
+        "senderEmail": "Avsender e-post",
+        "smtpDisplayName": "Visningsnavn (SMTP)",
+        "smtpHost": "SMTP-vert",
+        "smtpPort": "SMTP-port",
+        "smtpUserName": "SMTP-brukernavn",
+        "smtpPassword": "SMTP-passord"
+      },
+      "saveInfo": "Lagre selskapsinformasjon",
+      "folderTitle": "Selskapsmappe",
+      "folderDesc": "Dokumentmappe for selskapet.",
+      "folderName": "Mappenavn",
+      "folderPath": "Mappesti",
+      "saveFolder": "Lagre mappe",
+      "folderNoAccess": "Mappeinnstillinger krever systemeier-tilgang.",
+      "validation": {
+        "companyNameRequired": "Selskapsnavn er påkrevd"
+      }
+    }
+  },
+  "companies": {
+    "title": "Selskaper",
+    "subtitle": "Administrer alle selskaper i systemet.",
+    "newCompany": "Nytt selskap",
+    "searchPlaceholder": "Søk etter selskap…",
+    "empty": "Ingen selskaper enda.",
+    "noAccessTitle": "Ingen tilgang",
+    "noAccessDesc": "Denne siden er kun tilgjengelig for systemeiere.",
+    "columns": {
+      "company": "Selskap",
+      "orgNumber": "Org.nr",
+      "owner": "Eier",
+      "email": "E-post",
+      "systemOwner": "Systemeier",
+      "status": "Status"
+    },
+    "badges": {
+      "systemOwner": "Systemeier",
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "bucket": {
+      "title": "S3-lagring",
+      "desc": "Global bøtte-konfigurasjon for dokumentlagring.",
+      "name": "Bøttenavn",
+      "urlStatic": "URL (statisk del)",
+      "loadError": "Kunne ikke laste bøtteinnstillinger."
+    },
+    "dialog": {
+      "title": "Nytt selskap",
+      "desc": "Opprett et nytt selskap i systemet.",
+      "companyName": "Selskapsnavn",
+      "orgNumber": "Organisasjonsnummer",
+      "owner": "Eier",
+      "address": "Adresse",
+      "email": "E-postadresse"
+    },
+    "validation": {
+      "companyNameRequired": "Selskapsnavn er påkrevd"
+    },
+    "toast": {
+      "created": "Selskap opprettet",
+      "createError": "Kunne ikke opprette selskap",
+      "bucketUpdated": "S3-bøtte oppdatert",
+      "bucketUpdateError": "Kunne ikke oppdatere S3-bøtte"
+    }
+  },
+  "external": {
+    "invalidLinkTitle": "Ugyldig lenke",
+    "invalidLinkDesc": "Lenken mangler nødvendig informasjon eller er utløpt. Åpne lenken fra e-posten på nytt, eller kontakt kontrolløren om problemet vedvarer.",
+    "loading": "Laster …",
+    "loadErrorTitle": "Kunne ikke laste data",
+    "loadErrorDesc": "Noe gikk galt. Prøv igjen senere.",
+    "retry": "Prøv på nytt",
+    "upload": {
+      "title": "Last opp dokumenter",
+      "subtitle": "Last opp dokumentene som kreves for prosjektet. Du kan laste opp flere filer per dokumenttype.",
+      "loading": "Laster dokumenter …",
+      "noDocs": "Ingen dokumenter er etterspurt.",
+      "defaultDocName": "Dokument",
+      "required": "Kreves",
+      "uploadedCount": "{{count}} opplastet",
+      "chooseFiles": "Velg filer",
+      "removeFile": "Fjern {{name}}",
+      "uploadButton": "Last opp dokumentet",
+      "uploading": "Laster opp …",
+      "uploadSuccess": "«{{name}}» lastet opp",
+      "uploadError": "Opplasting feilet"
+    },
+    "deviation": {
+      "title": "Oppdater avvik",
+      "subtitle": "Last opp bilder som dokumenterer utbedring av avvikene under. Du kan laste opp flere bilder per punkt.",
+      "loading": "Laster avvik …",
+      "noItems": "Ingen avvik å vise.",
+      "defaultTitle": "Kontrollpunkt",
+      "deviation": "Avvik",
+      "imagesReceived": "Bilder mottatt",
+      "uploadedImages": "Opplastede bilder",
+      "defaultImageAlt": "Bilde",
+      "chooseImages": "Velg bilder",
+      "removeFile": "Fjern {{name}}",
+      "uploadButton": "Last opp bilder",
+      "uploading": "Laster opp …",
+      "uploadSuccess": "Bilder lastet opp",
+      "uploadError": "Opplasting feilet"
+    }
+  }
+}

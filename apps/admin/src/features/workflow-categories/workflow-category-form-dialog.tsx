@@ -7,6 +7,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -35,12 +36,11 @@ import { Switch } from '@/components/ui/switch';
 
 import { useCreateWorkflowCategory, useUpdateWorkflowCategory } from './api';
 
-const categorySchema = z.object({
-  name: z.string().trim().min(1, 'Navn er påkrevd'),
-  isDefault: z.boolean(),
-});
-
-type CategoryFormValues = z.infer<typeof categorySchema>;
+/** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
+type CategoryFormValues = {
+  name: string;
+  isDefault: boolean;
+};
 
 export interface WorkflowCategoryFormDialogProps {
   open: boolean;
@@ -54,10 +54,20 @@ export function WorkflowCategoryFormDialog({
   onOpenChange,
   category,
 }: WorkflowCategoryFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(category?.id);
   const createMutation = useCreateWorkflowCategory();
   const updateMutation = useUpdateWorkflowCategory();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const categorySchema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().trim().min(1, t('workflowCategories.validation.nameRequired')),
+        isDefault: z.boolean(),
+      }),
+    [t],
+  );
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -90,11 +100,15 @@ export function WorkflowCategoryFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger arbeidsflyt' : 'Ny arbeidsflyt'}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? t('workflowCategories.form.editTitle')
+              : t('workflowCategories.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Oppdater arbeidsflyten nedenfor.'
-              : 'Fyll ut informasjonen for å opprette en ny arbeidsflyt.'}
+              ? t('workflowCategories.form.editDescription')
+              : t('workflowCategories.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -105,9 +119,9 @@ export function WorkflowCategoryFormDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navn</FormLabel>
+                  <FormLabel>{t('workflowCategories.form.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="F.eks. Standard inspeksjon" {...field} />
+                    <Input placeholder={t('workflowCategories.form.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -119,8 +133,10 @@ export function WorkflowCategoryFormDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between gap-4 rounded-md border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Standard</FormLabel>
-                    <FormDescription>Bruk denne arbeidsflyten som standard.</FormDescription>
+                    <FormLabel>{t('workflowCategories.form.isDefault')}</FormLabel>
+                    <FormDescription>
+                      {t('workflowCategories.form.isDefaultDescription')}
+                    </FormDescription>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -136,11 +152,11 @@ export function WorkflowCategoryFormDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

@@ -21,6 +21,7 @@
  *    随请求体一并发送;若后端确实忽略则无副作用(见页面末尾存疑点)。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type {
@@ -59,6 +60,7 @@ export function useBuildingSuppliers() {
 
 /** 创建建材供应商。body 根键小写 buildingSupplier;返回 res.buildingSupplier。 */
 export function useCreateBuildingSupplier() {
+  const { t } = useTranslation();
   return useApiMutation<BuildingSupplierDto | undefined, BuildingSupplierPayload>({
     mutationFn: async (buildingSupplier) => {
       const body: WrapperBuildingSupplier = { buildingSupplier };
@@ -69,13 +71,14 @@ export function useCreateBuildingSupplier() {
       return res?.buildingSupplier;
     },
     invalidateKeys: [buildingSupplierKeys.list()],
-    successMessage: 'Byggevareleverandør opprettet',
-    errorMessage: 'Kunne ikke opprette byggevareleverandør',
+    successMessage: t('buildingSuppliers.toast.created'),
+    errorMessage: t('buildingSuppliers.toast.createError'),
   });
 }
 
 /** 更新建材供应商。body 根键小写 buildingSupplier;返回 res.buildingSupplier。 */
 export function useUpdateBuildingSupplier() {
+  const { t } = useTranslation();
   return useApiMutation<BuildingSupplierDto | undefined, BuildingSupplierPayload>({
     mutationFn: async (buildingSupplier) => {
       const body: WrapperBuildingSupplier = { buildingSupplier };
@@ -86,8 +89,8 @@ export function useUpdateBuildingSupplier() {
       return res?.buildingSupplier;
     },
     invalidateKeys: [buildingSupplierKeys.list()],
-    successMessage: 'Byggevareleverandør oppdatert',
-    errorMessage: 'Kunne ikke oppdatere byggevareleverandør',
+    successMessage: t('buildingSuppliers.toast.updated'),
+    errorMessage: t('buildingSuppliers.toast.updateError'),
   });
 }
 
@@ -98,6 +101,7 @@ export function useUpdateBuildingSupplier() {
  * 由 onError 统一 toast(展示后端 message)。
  */
 export function useDeleteBuildingSupplier() {
+  const { t } = useTranslation();
   return useApiMutation<ResponseBuildingSupplier, number>({
     mutationFn: async (buildingSupplierId) => {
       try {
@@ -117,7 +121,7 @@ export function useDeleteBuildingSupplier() {
     invalidateKeys: [buildingSupplierKeys.list()],
     successMessage: false, // 用后端返回的 message 提示
     onSuccess: (data) => {
-      toast.success(data?.requestResponse?.message || 'Byggevareleverandør slettet');
+      toast.success(data?.requestResponse?.message || t('buildingSuppliers.toast.deleted'));
     },
   });
 }

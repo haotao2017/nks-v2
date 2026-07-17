@@ -13,6 +13,7 @@
 import * as React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 
@@ -40,26 +41,15 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { useCreateService, useUpdateService } from './api';
 
-const slabSchema = z.object({
-  rangeFrom: z.string().optional(),
-  rangeTo: z.string().optional(),
-  rate: z.string().optional(),
-});
-
-const workflowCategorySchema = z.object({
-  workflowCategoryId: z.string().optional(),
-});
-
-const serviceSchema = z.object({
-  name: z.string().trim().min(1, 'Navn er påkrevd'),
-  description: z.string().optional(),
-  rate: z.string().optional(),
-  serviceChargedAs: z.string().optional(),
-  servicePerSlabList: z.array(slabSchema),
-  serviceWorkflowCategory: z.array(workflowCategorySchema),
-});
-
-type ServiceFormValues = z.infer<typeof serviceSchema>;
+/** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
+type ServiceFormValues = {
+  name: string;
+  description?: string;
+  rate?: string;
+  serviceChargedAs?: string;
+  servicePerSlabList: { rangeFrom?: string; rangeTo?: string; rate?: string }[];
+  serviceWorkflowCategory: { workflowCategoryId?: string }[];
+};
 
 /** number | undefined → 表单字符串。 */
 const numStr = (v: number | undefined) => (v === undefined || v === null ? '' : String(v));
@@ -78,10 +68,32 @@ export interface ServiceFormDialogProps {
 }
 
 export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(service?.id);
   const createMutation = useCreateService();
   const updateMutation = useUpdateService();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const serviceSchema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().trim().min(1, t('services.validation.nameRequired')),
+        description: z.string().optional(),
+        rate: z.string().optional(),
+        serviceChargedAs: z.string().optional(),
+        servicePerSlabList: z.array(
+          z.object({
+            rangeFrom: z.string().optional(),
+            rangeTo: z.string().optional(),
+            rate: z.string().optional(),
+          }),
+        ),
+        serviceWorkflowCategory: z.array(
+          z.object({ workflowCategoryId: z.string().optional() }),
+        ),
+      }),
+    [t],
+  );
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
@@ -150,11 +162,11 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger tjeneste' : 'Ny tjeneste'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('services.form.editTitle') : t('services.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? 'Oppdater tjenesteinformasjonen nedenfor.'
-              : 'Fyll ut informasjonen for å opprette en ny tjeneste.'}
+            {isEdit ? t('services.form.editDescription') : t('services.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -165,9 +177,9 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navn</FormLabel>
+                  <FormLabel>{t('services.form.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Tjenestenavn" {...field} />
+                    <Input placeholder={t('services.form.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -178,9 +190,9 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Beskrivelse</FormLabel>
+                  <FormLabel>{t('services.form.description')}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Beskrivelse av tjenesten" {...field} />
+                    <Textarea placeholder={t('services.form.descriptionPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -192,9 +204,9 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                 name="rate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sats</FormLabel>
+                    <FormLabel>{t('services.form.rate')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="f.eks. 1200" {...field} />
+                      <Input placeholder={t('services.form.ratePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -205,7 +217,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                 name="serviceChargedAs"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Belastes som (kode)</FormLabel>
+                    <FormLabel>{t('services.form.chargedAs')}</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="0" {...field} />
                     </FormControl>
@@ -218,7 +230,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
             {/* 阶梯价子表单 */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <FormLabel>Prisintervaller</FormLabel>
+                <FormLabel>{t('services.form.slabsLabel')}</FormLabel>
                 <Button
                   type="button"
                   variant="outline"
@@ -226,11 +238,11 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                   onClick={() => slabs.append({ rangeFrom: '', rangeTo: '', rate: '' })}
                 >
                   <Plus className="size-4" />
-                  Legg til
+                  {t('common.add')}
                 </Button>
               </div>
               {slabs.fields.length === 0 && (
-                <p className="text-muted-foreground text-sm">Ingen prisintervaller.</p>
+                <p className="text-muted-foreground text-sm">{t('services.form.slabsEmpty')}</p>
               )}
               {slabs.fields.map((row, index) => (
                 <div key={row.id} className="flex items-end gap-2">
@@ -240,7 +252,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input type="number" placeholder="Fra" {...field} />
+                          <Input type="number" placeholder={t('services.form.slabFrom')} {...field} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -251,7 +263,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input type="number" placeholder="Til" {...field} />
+                          <Input type="number" placeholder={t('services.form.slabTo')} {...field} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -262,7 +274,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input placeholder="Sats" {...field} />
+                          <Input placeholder={t('services.form.slabRate')} {...field} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -273,7 +285,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                     size="icon"
                     className="size-9 shrink-0"
                     onClick={() => slabs.remove(index)}
-                    aria-label="Fjern intervall"
+                    aria-label={t('services.form.slabRemove')}
                   >
                     <Trash2 className="size-4" />
                   </Button>
@@ -284,7 +296,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
             {/* 工作流类别关联子表单 */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <FormLabel>Arbeidsflytkategorier</FormLabel>
+                <FormLabel>{t('services.form.categoriesLabel')}</FormLabel>
                 <Button
                   type="button"
                   variant="outline"
@@ -292,11 +304,13 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                   onClick={() => categories.append({ workflowCategoryId: '' })}
                 >
                   <Plus className="size-4" />
-                  Legg til
+                  {t('common.add')}
                 </Button>
               </div>
               {categories.fields.length === 0 && (
-                <p className="text-muted-foreground text-sm">Ingen tilknyttede kategorier.</p>
+                <p className="text-muted-foreground text-sm">
+                  {t('services.form.categoriesEmpty')}
+                </p>
               )}
               {categories.fields.map((row, index) => (
                 <div key={row.id} className="flex items-end gap-2">
@@ -308,7 +322,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                         <FormControl>
                           <Input
                             type="number"
-                            placeholder="Kategori-ID"
+                            placeholder={t('services.form.categoryIdPlaceholder')}
                             {...field}
                           />
                         </FormControl>
@@ -321,7 +335,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                     size="icon"
                     className="size-9 shrink-0"
                     onClick={() => categories.remove(index)}
-                    aria-label="Fjern kategori"
+                    aria-label={t('services.form.categoryRemove')}
                   >
                     <Trash2 className="size-4" />
                   </Button>
@@ -336,11 +350,11 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

@@ -13,6 +13,7 @@
  *    文件字段 `file`(单个)或 `files`(数组,仅 WF3)。
  */
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import type {
   ProjectWorkflowDto,
@@ -25,6 +26,7 @@ import type {
 import { endpoints } from '@nks/api-types/endpoints';
 
 import { getApiClient } from '@/lib/api';
+import i18n from '@/lib/i18n';
 import { useApiMutation } from '@/lib/query';
 
 import type { EndpointDescriptor, WorkflowStepDef } from './workflow-steps';
@@ -70,7 +72,7 @@ function unwrapWorkflow(res: unknown): ProjectWorkflowDto | undefined {
 function assertOk(res: RequestResponse | undefined): RequestResponse {
   const ok = res?.success ?? res?.isSuccess;
   if (ok === false) {
-    throw new Error(res?.message || 'Handlingen mislyktes');
+    throw new Error(res?.message || i18n.t('workflow.errors.actionFailed'));
   }
   return res ?? {};
 }
@@ -151,9 +153,10 @@ export function useWfTenSavedDetails(projectId: number, enabled = true) {
  * 用 mutation:进入步骤时手动触发,返回 emailFrom/emailTo/emailSubject/emailContent/attachmentURL 等。
  */
 export function useEmailPreview(previewEndpoint?: EndpointDescriptor) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (body: ProjectWorkflowDto) => {
-      if (!previewEndpoint) throw new Error('Ingen forhåndsvisning tilgjengelig for dette steget');
+      if (!previewEndpoint) throw new Error(t('workflow.errors.noPreview'));
       const res = await getApiClient().post<WrapperProjectWorkflowDto>(previewEndpoint.path, wrap(body));
       return unwrapWorkflow(res);
     },
@@ -172,15 +175,16 @@ export function useExecuteStepJson(
   endpoint: EndpointDescriptor | undefined,
   opts?: { successMessage?: string | false },
 ) {
+  const { t } = useTranslation();
   return useApiMutation<RequestResponse, ProjectWorkflowDto>({
     mutationFn: async (extra) => {
-      if (!endpoint) throw new Error('Ingen handling definert for dette steget');
+      if (!endpoint) throw new Error(t('workflow.errors.noAction'));
       const body = buildStepBase(projectId, step, extra);
       const res = await getApiClient().post<RequestResponse>(endpoint.path, wrap(body));
       return assertOk(res);
     },
     invalidateKeys: [workflowKeys.progress(projectId, step.workflowId)],
-    successMessage: opts?.successMessage ?? 'Steget er utført',
+    successMessage: opts?.successMessage ?? t('workflow.toast.stepCompleted'),
     errorMessage: false, // 用后端 message
   });
 }
@@ -202,9 +206,10 @@ export function useExecuteStepMultipart(
   endpoint: EndpointDescriptor | undefined,
   opts?: { successMessage?: string | false },
 ) {
+  const { t } = useTranslation();
   return useApiMutation<RequestResponse, MultipartVars>({
     mutationFn: async ({ extra, files }) => {
-      if (!endpoint) throw new Error('Ingen handling definert for dette steget');
+      if (!endpoint) throw new Error(t('workflow.errors.noAction'));
       const body = buildStepBase(projectId, step, extra);
       const form = new FormData();
       form.append('request', JSON.stringify(wrap(body)));
@@ -219,7 +224,7 @@ export function useExecuteStepMultipart(
       return assertOk(res);
     },
     invalidateKeys: [workflowKeys.progress(projectId, step.workflowId)],
-    successMessage: opts?.successMessage ?? 'Steget er utført',
+    successMessage: opts?.successMessage ?? t('workflow.toast.stepCompleted'),
     errorMessage: false,
   });
 }
@@ -232,15 +237,16 @@ export function useSendEmail(
   step: WorkflowStepDef,
   endpoint: EndpointDescriptor | undefined,
 ) {
+  const { t } = useTranslation();
   return useApiMutation<RequestResponse, ProjectWorkflowDto>({
     mutationFn: async (extra) => {
-      if (!endpoint) throw new Error('Ingen e-post-endepunkt definert for dette steget');
+      if (!endpoint) throw new Error(t('workflow.errors.noEmailEndpoint'));
       const body = buildStepBase(projectId, step, { isTransfer: false, ...extra });
       const res = await getApiClient().post<RequestResponse>(endpoint.path, wrap(body));
       return assertOk(res);
     },
     invalidateKeys: [workflowKeys.progress(projectId, step.workflowId)],
-    successMessage: 'E-post sendt',
+    successMessage: t('workflow.toast.emailSent'),
     errorMessage: false,
   });
 }
@@ -251,15 +257,16 @@ export function useTransferStep(
   step: WorkflowStepDef,
   endpoint: EndpointDescriptor | undefined,
 ) {
+  const { t } = useTranslation();
   return useApiMutation<RequestResponse, void>({
     mutationFn: async () => {
-      if (!endpoint) throw new Error('Ingen overførings-endepunkt definert for dette steget');
+      if (!endpoint) throw new Error(t('workflow.errors.noTransferEndpoint'));
       const body = buildStepBase(projectId, step, { isTransfer: true });
       const res = await getApiClient().post<RequestResponse>(endpoint.path, wrap(body));
       return assertOk(res);
     },
     invalidateKeys: [workflowKeys.progress(projectId, step.workflowId)],
-    successMessage: 'Steget er overført',
+    successMessage: t('workflow.toast.transferred'),
     errorMessage: false,
   });
 }

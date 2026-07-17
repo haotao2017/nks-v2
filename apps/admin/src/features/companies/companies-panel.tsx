@@ -8,6 +8,7 @@
  */
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Lock, Plus } from 'lucide-react';
@@ -48,6 +49,7 @@ const bucketSchema = z.object({
 type BucketFormValues = z.infer<typeof bucketSchema>;
 
 function BucketCard() {
+  const { t } = useTranslation();
   const { data: bucket, isLoading, isError } = useBucketDetail();
   const updateMutation = useUpdateBucket();
 
@@ -78,14 +80,14 @@ function BucketCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>S3-lagring</CardTitle>
-        <CardDescription>Global bøtte-konfigurasjon for dokumentlagring.</CardDescription>
+        <CardTitle>{t('companies.bucket.title')}</CardTitle>
+        <CardDescription>{t('companies.bucket.desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <Skeleton className="h-10 w-full" />
         ) : isError || !bucket ? (
-          <p className="text-muted-foreground text-sm">Kunne ikke laste bøtteinnstillinger.</p>
+          <p className="text-muted-foreground text-sm">{t('companies.bucket.loadError')}</p>
         ) : (
           <Form {...form}>
             <form onSubmit={onSubmit} className="space-y-4">
@@ -94,7 +96,7 @@ function BucketCard() {
                 name="s3bucketName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bøttenavn</FormLabel>
+                    <FormLabel>{t('companies.bucket.name')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -107,7 +109,7 @@ function BucketCard() {
                 name="s3urlStaticPart"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL (statisk del)</FormLabel>
+                    <FormLabel>{t('companies.bucket.urlStatic')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -118,7 +120,7 @@ function BucketCard() {
               <div className="flex justify-end">
                 <Button type="submit" disabled={updateMutation.isPending}>
                   {updateMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-                  Lagre
+                  {t('common.save')}
                 </Button>
               </div>
             </form>
@@ -134,12 +136,13 @@ function BucketCard() {
 /* -------------------------------------------------------------------------- */
 
 export function CompaniesPanel() {
+  const { t } = useTranslation();
   const { data: isSystemOwner, isLoading } = useSystemOwnerStatus();
   const [createOpen, setCreateOpen] = React.useState(false);
 
   const enabled = isSystemOwner === true;
   const { data: companies = [], isLoading: companiesLoading } = useAllCompanyProfiles(enabled);
-  const columns = React.useMemo(() => getCompanyColumns(), []);
+  const columns = React.useMemo(() => getCompanyColumns(t), [t]);
 
   if (isLoading) {
     return <Skeleton className="h-40 w-full max-w-2xl" />;
@@ -151,11 +154,9 @@ export function CompaniesPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="text-muted-foreground size-5" />
-            Ingen tilgang
+            {t('companies.noAccessTitle')}
           </CardTitle>
-          <CardDescription>
-            Denne siden er kun tilgjengelig for systemeiere.
-          </CardDescription>
+          <CardDescription>{t('companies.noAccessDesc')}</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -166,7 +167,7 @@ export function CompaniesPanel() {
       <div className="flex justify-end">
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="size-4" />
-          Nytt selskap
+          {t('companies.newCompany')}
         </Button>
       </div>
 
@@ -175,8 +176,8 @@ export function CompaniesPanel() {
         data={companies}
         isLoading={companiesLoading}
         searchColumn="companyName"
-        searchPlaceholder="Søk etter selskap…"
-        emptyMessage="Ingen selskaper enda."
+        searchPlaceholder={t('companies.searchPlaceholder')}
+        emptyMessage={t('companies.empty')}
       />
 
       <BucketCard />

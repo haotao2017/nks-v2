@@ -19,12 +19,13 @@ import {
 import { toast } from 'sonner';
 
 import { NksApiError } from '@nks/api-client';
+import i18n from '@/lib/i18n';
 
 /** 从任意错误里取可读信息(优先后端 ApiError.message)。 */
 export function getErrorMessage(err: unknown): string {
   if (err instanceof NksApiError) return err.message;
   if (err instanceof Error) return err.message;
-  return 'Ukjent feil';
+  return i18n.t('common.unknownError');
 }
 
 export interface ApiMutationConfig<TData, TVariables>

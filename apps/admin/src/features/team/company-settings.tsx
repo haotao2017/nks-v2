@@ -11,7 +11,9 @@
  */
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { TFunction } from 'i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -42,8 +44,9 @@ import {
 /* 公司资料表单                                                               */
 /* -------------------------------------------------------------------------- */
 
-const companySchema = z.object({
-  companyName: z.string().trim().min(1, 'Selskapsnavn er påkrevd'),
+const makeCompanySchema = (t: TFunction) =>
+  z.object({
+  companyName: z.string().trim().min(1, t('team.company.validation.companyNameRequired')),
   organizationalNumber: z.string().optional(),
   address: z.string().optional(),
   ownerName: z.string().optional(),
@@ -58,13 +61,16 @@ const companySchema = z.object({
   compEmailUserName: z.string().optional(),
   compEmailPassword: z.string().optional(),
   compEmailDisplayName: z.string().optional(),
-});
+  });
 
-type CompanyFormValues = z.infer<typeof companySchema>;
+type CompanyFormValues = z.infer<ReturnType<typeof makeCompanySchema>>;
 
 function CompanyProfileForm({ companyId }: { companyId?: number }) {
+  const { t } = useTranslation();
   const { data: profile, isLoading } = useCompanyProfile(companyId);
   const updateMutation = useUpdateCompanyProfile(companyId);
+
+  const companySchema = React.useMemo(() => makeCompanySchema(t), [t]);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
@@ -169,41 +175,43 @@ function CompanyProfileForm({ companyId }: { companyId?: number }) {
       <form onSubmit={onSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Selskapsinformasjon</CardTitle>
-            <CardDescription>Generelle opplysninger om selskapet.</CardDescription>
+            <CardTitle>{t('team.company.infoTitle')}</CardTitle>
+            <CardDescription>{t('team.company.infoDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            {textField('companyName', 'Selskapsnavn')}
-            {textField('organizationalNumber', 'Organisasjonsnummer')}
-            {textField('ownerName', 'Eier')}
-            {textField('postCode', 'Postnummer')}
-            <div className="sm:col-span-2">{textField('address', 'Adresse')}</div>
-            {textField('telephone', 'Telefon')}
-            {textField('mobile', 'Mobil')}
+            {textField('companyName', t('team.company.fields.companyName'))}
+            {textField('organizationalNumber', t('team.company.fields.orgNumber'))}
+            {textField('ownerName', t('team.company.fields.owner'))}
+            {textField('postCode', t('team.company.fields.postCode'))}
+            <div className="sm:col-span-2">
+              {textField('address', t('team.company.fields.address'))}
+            </div>
+            {textField('telephone', t('team.company.fields.telephone'))}
+            {textField('mobile', t('team.company.fields.mobile'))}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>E-post og avsender</CardTitle>
-            <CardDescription>Avsenderadresse og SMTP-innstillinger per selskap.</CardDescription>
+            <CardTitle>{t('team.company.emailTitle')}</CardTitle>
+            <CardDescription>{t('team.company.emailDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            {textField('emailAddress', 'E-postadresse', 'email')}
-            {textField('nameOnEmailAddress', 'Navn på avsender')}
-            {textField('senderEmailAddress', 'Avsender e-post', 'email')}
-            {textField('compEmailDisplayName', 'Visningsnavn (SMTP)')}
-            {textField('compEmailHost', 'SMTP-vert')}
-            {textField('compEmailPort', 'SMTP-port')}
-            {textField('compEmailUserName', 'SMTP-brukernavn')}
-            {textField('compEmailPassword', 'SMTP-passord', 'password')}
+            {textField('emailAddress', t('team.company.emailFields.emailAddress'), 'email')}
+            {textField('nameOnEmailAddress', t('team.company.emailFields.senderName'))}
+            {textField('senderEmailAddress', t('team.company.emailFields.senderEmail'), 'email')}
+            {textField('compEmailDisplayName', t('team.company.emailFields.smtpDisplayName'))}
+            {textField('compEmailHost', t('team.company.emailFields.smtpHost'))}
+            {textField('compEmailPort', t('team.company.emailFields.smtpPort'))}
+            {textField('compEmailUserName', t('team.company.emailFields.smtpUserName'))}
+            {textField('compEmailPassword', t('team.company.emailFields.smtpPassword'), 'password')}
           </CardContent>
         </Card>
 
         <div className="flex justify-end">
           <Button type="submit" disabled={updateMutation.isPending}>
             {updateMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            Lagre selskapsinformasjon
+            {t('team.company.saveInfo')}
           </Button>
         </div>
       </form>
@@ -222,6 +230,7 @@ const folderSchema = z.object({
 type FolderFormValues = z.infer<typeof folderSchema>;
 
 function CompanyFolderCard({ companyId }: { companyId?: number }) {
+  const { t } = useTranslation();
   const { data: folder, isLoading, isError } = useCompanyFolder(companyId);
   const updateMutation = useUpdateCompanyFolder(companyId);
 
@@ -249,16 +258,14 @@ function CompanyFolderCard({ companyId }: { companyId?: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Selskapsmappe</CardTitle>
-        <CardDescription>Dokumentmappe for selskapet.</CardDescription>
+        <CardTitle>{t('team.company.folderTitle')}</CardTitle>
+        <CardDescription>{t('team.company.folderDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <Skeleton className="h-10 w-full" />
         ) : isError || !folder ? (
-          <p className="text-muted-foreground text-sm">
-            Mappeinnstillinger krever systemeier-tilgang.
-          </p>
+          <p className="text-muted-foreground text-sm">{t('team.company.folderNoAccess')}</p>
         ) : (
           <Form {...form}>
             <form onSubmit={onSubmit} className="space-y-4">
@@ -267,7 +274,7 @@ function CompanyFolderCard({ companyId }: { companyId?: number }) {
                 name="folderName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mappenavn</FormLabel>
+                    <FormLabel>{t('team.company.folderName')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -280,7 +287,7 @@ function CompanyFolderCard({ companyId }: { companyId?: number }) {
                 name="folderPath"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mappesti</FormLabel>
+                    <FormLabel>{t('team.company.folderPath')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -291,7 +298,7 @@ function CompanyFolderCard({ companyId }: { companyId?: number }) {
               <div className="flex justify-end">
                 <Button type="submit" disabled={updateMutation.isPending}>
                   {updateMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-                  Lagre mappe
+                  {t('team.company.saveFolder')}
                 </Button>
               </div>
             </form>

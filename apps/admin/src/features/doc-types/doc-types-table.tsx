@@ -5,6 +5,7 @@
  * 组合 DataTable + 表单弹窗 + 删除确认。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { DocType } from '@nks/api-types';
 
@@ -31,6 +32,7 @@ export interface DocTypesTableProps {
 }
 
 export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableProps) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useDocTypes();
   const deleteMutation = useDeleteDocType();
 
@@ -40,10 +42,11 @@ export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableP
   const columns = React.useMemo(
     () =>
       getDocTypeColumns({
+        t,
         onEdit: (docType) => setEditTarget(docType),
         onDelete: (docType) => setDeleteTarget(docType),
       }),
-    [],
+    [t],
   );
 
   const confirmDelete = () => {
@@ -60,8 +63,8 @@ export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableP
         data={data}
         isLoading={isLoading}
         searchColumn="docName"
-        searchPlaceholder="Søk etter navn…"
-        emptyMessage="Ingen dokumenttyper enda."
+        searchPlaceholder={t('docTypes.searchPlaceholder')}
+        emptyMessage={t('docTypes.empty')}
       />
 
       {/* 新建 */}
@@ -81,15 +84,17 @@ export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableP
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette dokumenttype?</AlertDialogTitle>
+            <AlertDialogTitle>{t('docTypes.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.docName}</span>? Denne handlingen kan
-              ikke angres.
+              {t('docTypes.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.docName}</span>
+              {t('docTypes.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -98,7 +103,7 @@ export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableP
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

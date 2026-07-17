@@ -5,6 +5,7 @@
  * 列表列:docName / isRequired。
  */
 import type { ColumnDef } from '@tanstack/react-table';
+import type { TFunction } from 'i18next';
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 import type { DocType } from '@nks/api-types';
@@ -21,11 +22,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export interface DocTypeColumnActions {
+  /** i18n 翻译函数,由表格层传入以本地化表头/行操作。 */
+  t: TFunction;
   onEdit: (docType: DocType) => void;
   onDelete: (docType: DocType) => void;
 }
 
 export function getDocTypeColumns({
+  t,
   onEdit,
   onDelete,
 }: DocTypeColumnActions): ColumnDef<DocType>[] {
@@ -38,7 +42,7 @@ export function getDocTypeColumns({
           className="-ml-3 h-8"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Navn
+          {t('docTypes.columns.name')}
           <ArrowUpDown className="size-3.5" />
         </Button>
       ),
@@ -46,17 +50,17 @@ export function getDocTypeColumns({
     },
     {
       accessorKey: 'isRequired',
-      header: 'Påkrevd',
+      header: t('docTypes.columns.required'),
       cell: ({ row }) =>
         row.original.isRequired ? (
-          <Badge variant="default">Ja</Badge>
+          <Badge variant="default">{t('common.yes')}</Badge>
         ) : (
-          <Badge variant="secondary">Nei</Badge>
+          <Badge variant="secondary">{t('common.no')}</Badge>
         ),
     },
     {
       id: 'actions',
-      header: () => <span className="sr-only">Handlinger</span>,
+      header: () => <span className="sr-only">{t('common.actions')}</span>,
       enableSorting: false,
       cell: ({ row }) => {
         const docType = row.original;
@@ -66,19 +70,19 @@ export function getDocTypeColumns({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="size-8">
                   <MoreHorizontal className="size-4" />
-                  <span className="sr-only">Åpne meny</span>
+                  <span className="sr-only">{t('common.openMenu')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onEdit(docType)}>
                   <Pencil className="size-4" />
-                  Rediger
+                  {t('common.edit')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onClick={() => onDelete(docType)}>
                   <Trash2 className="size-4" />
-                  Slett
+                  {t('common.delete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

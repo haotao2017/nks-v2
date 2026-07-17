@@ -5,6 +5,7 @@
  * 由页面通过 ref 暴露的 openCreate 触发新建(或页面自持 open 状态)。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { ContactDto } from '@nks/api-types';
 
@@ -31,6 +32,7 @@ export interface ContactsTableProps {
 }
 
 export function ContactsTable({ createOpen, onCreateOpenChange }: ContactsTableProps) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useContacts();
   const deleteMutation = useDeleteContact();
 
@@ -40,10 +42,11 @@ export function ContactsTable({ createOpen, onCreateOpenChange }: ContactsTableP
   const columns = React.useMemo(
     () =>
       getContactColumns({
+        t,
         onEdit: (contact) => setEditTarget(contact),
         onDelete: (contact) => setDeleteTarget(contact),
       }),
-    [],
+    [t],
   );
 
   const confirmDelete = () => {
@@ -60,8 +63,8 @@ export function ContactsTable({ createOpen, onCreateOpenChange }: ContactsTableP
         data={data}
         isLoading={isLoading}
         searchColumn="name"
-        searchPlaceholder="Søk etter navn…"
-        emptyMessage="Ingen kontakter enda."
+        searchPlaceholder={t('contacts.searchPlaceholder')}
+        emptyMessage={t('contacts.empty')}
       />
 
       {/* 新建 */}
@@ -81,15 +84,17 @@ export function ContactsTable({ createOpen, onCreateOpenChange }: ContactsTableP
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette kontakt?</AlertDialogTitle>
+            <AlertDialogTitle>{t('contacts.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.name}</span>? Denne handlingen kan ikke
-              angres.
+              {t('contacts.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.name}</span>
+              {t('contacts.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -98,7 +103,7 @@ export function ContactsTable({ createOpen, onCreateOpenChange }: ContactsTableP
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

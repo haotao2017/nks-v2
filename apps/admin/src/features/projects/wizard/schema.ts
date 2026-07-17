@@ -33,9 +33,12 @@ export const wizardSchema = z.object({
 
 export type WizardValues = z.infer<typeof wizardSchema>;
 
-/** 每步用于 form.trigger 的字段(仅第一步含必填校验)。 */
+/**
+ * 每步用于 form.trigger 的字段。步骤顺序:ContactInfo → ProjectInfo → Pricing。
+ * ContactInfo 的 customerId/contactPersonId 设为可选(旧系统亦不强制),仅 ProjectInfo 的 title 必填。
+ */
 export const stepFields: (keyof WizardValues)[][] = [
-  ['title', 'address', 'gardsNo', 'bruksnmmer', 'kommune', 'postNo', 'poststed', 'description', 'comments', 'longitude', 'latitude'],
   ['customerId', 'contactPersonId'],
+  ['title', 'address', 'gardsNo', 'bruksnmmer', 'kommune', 'postNo', 'poststed', 'description', 'comments', 'longitude', 'latitude'],
   ['services'],
 ];

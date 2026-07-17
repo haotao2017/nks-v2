@@ -13,6 +13,7 @@
 
 import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle2,
   ClipboardCheck,
@@ -41,6 +42,7 @@ export default function UpdateDeviationPage() {
 }
 
 function UpdateDeviationContent() {
+  const { t } = useTranslation();
   const sp = useSearchParams();
   const params = useMemo(() => parsePartyParams(sp), [sp]);
   const valid = isValidDeviationParams(params);
@@ -50,7 +52,7 @@ function UpdateDeviationContent() {
   if (!valid) return <InvalidLinkCard />;
 
   if (inspection.isLoading) {
-    return <LoadingCard label="Laster avvik …" />;
+    return <LoadingCard label={t('external.deviation.loading')} />;
   }
   if (inspection.isError) {
     return <LoadErrorCard onRetry={() => inspection.refetch()} />;
@@ -62,11 +64,8 @@ function UpdateDeviationContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Oppdater avvik</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Last opp bilder som dokumenterer utbedring av avvikene under. Du kan
-          laste opp flere bilder per punkt.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('external.deviation.title')}</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{t('external.deviation.subtitle')}</p>
         {data?.checklistName ? (
           <p className="text-muted-foreground mt-2 inline-flex items-center gap-1.5 text-sm">
             <ClipboardCheck className="size-4" aria-hidden />
@@ -78,7 +77,7 @@ function UpdateDeviationContent() {
       {items.length === 0 ? (
         <Card>
           <CardContent className="text-muted-foreground py-10 text-center text-sm">
-            Ingen avvik å vise.
+            {t('external.deviation.noItems')}
           </CardContent>
         </Card>
       ) : (
@@ -99,6 +98,7 @@ function ChecklistItemRow({
   params: PartyParams;
   item: ProjectChecklistItemsInspDataDto;
 }) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<File[]>([]);
   const upload = useUploadInspectionImages(params);
 
@@ -120,11 +120,11 @@ function ChecklistItemRow({
       { checklistItemId, files: selected },
       {
         onSuccess: () => {
-          toast.success('Bilder lastet opp');
+          toast.success(t('external.deviation.uploadSuccess'));
           setSelected([]);
         },
         onError: (err) =>
-          toast.error(err instanceof Error ? err.message : 'Opplasting feilet'),
+          toast.error(err instanceof Error ? err.message : t('external.deviation.uploadError')),
       },
     );
   }
@@ -134,15 +134,17 @@ function ChecklistItemRow({
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-base">
-            {item.title ?? 'Kontrollpunkt'}
+            {item.title ?? t('external.deviation.defaultTitle')}
           </CardTitle>
           <div className="flex items-center gap-2">
-            {item.wasDev ? <Badge variant="destructive">Avvik</Badge> : null}
+            {item.wasDev ? (
+              <Badge variant="destructive">{t('external.deviation.deviation')}</Badge>
+            ) : null}
             {item.status ? <Badge variant="secondary">{item.status}</Badge> : null}
             {item.isImageUploadedByParty ? (
               <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
                 <CheckCircle2 className="size-3.5 text-green-600" aria-hidden />
-                Bilder mottatt
+                {t('external.deviation.imagesReceived')}
               </span>
             ) : null}
           </div>
@@ -156,7 +158,7 @@ function ChecklistItemRow({
           <div>
             <p className="text-muted-foreground mb-2 inline-flex items-center gap-1.5 text-xs">
               <ImageIcon className="size-3.5" aria-hidden />
-              Opplastede bilder
+              {t('external.deviation.uploadedImages')}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {images.map((img) =>
@@ -171,7 +173,7 @@ function ChecklistItemRow({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={img.imageURL}
-                      alt={img.imageName ?? 'Bilde'}
+                      alt={img.imageName ?? t('external.deviation.defaultImageAlt')}
                       loading="lazy"
                       className="aspect-square h-full w-full object-cover"
                     />
@@ -184,7 +186,7 @@ function ChecklistItemRow({
 
         <label className="border-input hover:bg-accent/50 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed px-4 py-3 text-sm transition-colors">
           <Upload className="size-4" aria-hidden />
-          <span>Velg bilder</span>
+          <span>{t('external.deviation.chooseImages')}</span>
           <input
             type="file"
             accept="image/*"
@@ -212,7 +214,7 @@ function ChecklistItemRow({
                 </span>
                 <button
                   type="button"
-                  aria-label={`Fjern ${f.name}`}
+                  aria-label={t('external.deviation.removeFile', { name: f.name })}
                   onClick={() => removeAt(i)}
                   className="text-muted-foreground hover:text-foreground"
                 >
@@ -232,10 +234,10 @@ function ChecklistItemRow({
             {upload.isPending ? (
               <>
                 <Loader2 className="size-4 animate-spin" aria-hidden />
-                Laster opp …
+                {t('external.deviation.uploading')}
               </>
             ) : (
-              'Last opp bilder'
+              t('external.deviation.uploadButton')
             )}
           </Button>
         </div>

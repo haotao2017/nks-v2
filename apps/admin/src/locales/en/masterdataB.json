@@ -1,0 +1,255 @@
+{
+  "buildingSuppliers": {
+    "title": "Building suppliers",
+    "subtitle": "Manage building suppliers.",
+    "newButton": "New building supplier",
+    "searchPlaceholder": "Search by name…",
+    "empty": "No building suppliers yet.",
+    "columns": {
+      "name": "Name"
+    },
+    "form": {
+      "createTitle": "New building supplier",
+      "editTitle": "Edit building supplier",
+      "createDescription": "Fill in the information to create a new building supplier.",
+      "editDescription": "Update the building supplier below.",
+      "name": "Name",
+      "namePlaceholder": "E.g. Byggmax",
+      "sortOrder": "Sort order",
+      "sortOrderPlaceholder": "E.g. 1",
+      "sortOrderDescription": "Order in the list (optional)."
+    },
+    "delete": {
+      "title": "Delete building supplier?",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Building supplier created",
+      "createError": "Could not create building supplier",
+      "updated": "Building supplier updated",
+      "updateError": "Could not update building supplier",
+      "deleted": "Building supplier deleted"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "sortOrderNumber": "Must be a number"
+    }
+  },
+  "emailTemplates": {
+    "title": "Email templates",
+    "subtitle": "Manage email templates with variables.",
+    "newButton": "New email template",
+    "searchPlaceholder": "Search by title…",
+    "empty": "No email templates yet.",
+    "columns": {
+      "title": "Title"
+    },
+    "actions": {
+      "preview": "Preview"
+    },
+    "form": {
+      "createTitle": "New email template",
+      "editTitle": "Edit email template",
+      "createDescription": "Fill in the template. Use variables to insert dynamic fields.",
+      "editDescription": "Update the template below. Use variables to insert dynamic fields.",
+      "title": "Title",
+      "titlePlaceholder": "E.g. Welcome email",
+      "content": "Content"
+    },
+    "editor": {
+      "insertVariable": "Insert variable",
+      "loadingVariables": "Loading variables…",
+      "noVariables": "No variables available.",
+      "linkPrompt": "Link URL",
+      "bold": "Bold",
+      "italic": "Italic",
+      "heading": "Heading",
+      "bulletList": "Bullet list",
+      "orderedList": "Numbered list",
+      "link": "Link",
+      "undo": "Undo",
+      "redo": "Redo"
+    },
+    "preview": {
+      "fallbackTitle": "Preview",
+      "description": "Preview of the template as it will appear.",
+      "empty": "No content."
+    },
+    "delete": {
+      "title": "Delete email template?",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Email template created",
+      "createError": "Could not create email template",
+      "updated": "Email template updated",
+      "updateError": "Could not update email template",
+      "deleted": "Email template deleted",
+      "deleteBlocked": "The email template cannot be deleted"
+    },
+    "validation": {
+      "titleRequired": "Title is required"
+    }
+  },
+  "workflowCategories": {
+    "title": "Workflow",
+    "subtitle": "Manage workflows and steps.",
+    "newButton": "New workflow",
+    "searchPlaceholder": "Search by name…",
+    "empty": "No workflows yet.",
+    "manageSteps": "Manage steps",
+    "defaultBadge": "Default",
+    "columns": {
+      "name": "Name",
+      "isDefault": "Default"
+    },
+    "form": {
+      "createTitle": "New workflow",
+      "editTitle": "Edit workflow",
+      "createDescription": "Fill in the information to create a new workflow.",
+      "editDescription": "Update the workflow below.",
+      "name": "Name",
+      "namePlaceholder": "E.g. Standard inspection",
+      "isDefault": "Default",
+      "isDefaultDescription": "Use this workflow as the default."
+    },
+    "delete": {
+      "title": "Delete workflow?",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Workflow created",
+      "createError": "Could not create workflow",
+      "updated": "Workflow updated",
+      "updateError": "Could not update workflow",
+      "deleted": "Workflow deleted",
+      "deleteError": "Could not delete workflow"
+    },
+    "validation": {
+      "nameRequired": "Name is required"
+    },
+    "steps": {
+      "dialogTitle": "Steps — {{name}}",
+      "dialogDescription": "Manage the steps in this workflow.",
+      "newButton": "New step",
+      "empty": "No steps yet.",
+      "activeBadge": "Active",
+      "inactiveBadge": "Inactive",
+      "transferableBadge": "Yes",
+      "columns": {
+        "sequence": "No.",
+        "name": "Step name",
+        "active": "Active",
+        "transferable": "Transferable"
+      },
+      "form": {
+        "createTitle": "New step",
+        "editTitle": "Edit step",
+        "createDescription": "Fill in the information for the new step.",
+        "editDescription": "Update the step below.",
+        "name": "Step name",
+        "namePlaceholder": "E.g. Site inspection",
+        "sequence": "Order",
+        "active": "Active",
+        "activeDescription": "The step is active in the workflow.",
+        "transferable": "Transferable",
+        "transferableDescription": "The step can be transferred."
+      },
+      "delete": {
+        "title": "Delete step?",
+        "confirmPrefix": "Are you sure you want to delete",
+        "confirmSuffix": "? This action cannot be undone."
+      },
+      "toast": {
+        "created": "Step created",
+        "createError": "Could not create step",
+        "updated": "Step updated",
+        "updateError": "Could not update step",
+        "deleted": "Step deleted",
+        "deleteError": "Could not delete step"
+      },
+      "validation": {
+        "nameRequired": "Step name is required",
+        "sequenceInt": "Order must be a whole number",
+        "sequenceMin": "Cannot be negative"
+      }
+    }
+  },
+  "checklists": {
+    "title": "Checklists",
+    "subtitle": "Manage checklists and checklist items.",
+    "newButton": "New checklist",
+    "searchPlaceholder": "Search by title…",
+    "empty": "No checklists yet.",
+    "manageItems": "Manage checklist items",
+    "columns": {
+      "title": "Title",
+      "itemCount": "Items"
+    },
+    "form": {
+      "createTitle": "New checklist",
+      "editTitle": "Edit checklist",
+      "createDescription": "Fill in the title and optionally add checklist items.",
+      "editDescription": "Update the checklist below.",
+      "title": "Title",
+      "titlePlaceholder": "E.g. Standard checklist",
+      "itemsLabel": "Checklist items",
+      "itemsEmpty": "No checklist items yet. You can also add them later.",
+      "itemPlaceholder": "Item {{index}}",
+      "itemRemove": "Remove"
+    },
+    "delete": {
+      "title": "Delete checklist?",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Checklist created",
+      "createError": "Could not create checklist",
+      "updated": "Checklist updated",
+      "updateError": "Could not update checklist",
+      "deleted": "Checklist deleted",
+      "deleteBlocked": "The checklist cannot be deleted"
+    },
+    "validation": {
+      "titleRequired": "Title is required"
+    },
+    "items": {
+      "dialogTitle": "Checklist items — {{name}}",
+      "dialogDescription": "Manage the items in this checklist.",
+      "newButton": "New item",
+      "empty": "No items yet.",
+      "columns": {
+        "sequence": "No.",
+        "title": "Title"
+      },
+      "form": {
+        "createTitle": "New item",
+        "editTitle": "Edit item",
+        "createDescription": "Fill in the title for the new item.",
+        "editDescription": "Update the item below.",
+        "title": "Title",
+        "titlePlaceholder": "E.g. Check foundation"
+      },
+      "delete": {
+        "title": "Delete item?",
+        "confirmPrefix": "Are you sure you want to delete",
+        "confirmSuffix": "? This action cannot be undone."
+      },
+      "toast": {
+        "created": "Item created",
+        "createError": "Could not create item",
+        "updated": "Item updated",
+        "updateError": "Could not update item",
+        "deleted": "Item deleted",
+        "deleteBlocked": "The item cannot be deleted"
+      },
+      "validation": {
+        "titleRequired": "Title is required"
+      }
+    }
+  }
+}

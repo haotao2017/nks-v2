@@ -26,6 +26,7 @@
  *    message 取自响应体,由 useApiMutation 的 onError 统一 toast。此处再防御式判断 success===false。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type {
@@ -86,6 +87,7 @@ export function useChecklistTemplate(templateId: number | null) {
 
 /** 创建模板(可含子项)。body 根键小写 checklistTemplate;返回 res.checklistTemplate。 */
 export function useCreateChecklistTemplate() {
+  const { t } = useTranslation();
   return useApiMutation<ChecklistTemplateDto | undefined, ChecklistTemplateDto>({
     mutationFn: async (checklistTemplate) => {
       const body: ChecklistTemplateWrapperDto = { checklistTemplate };
@@ -96,13 +98,14 @@ export function useCreateChecklistTemplate() {
       return res?.checklistTemplate;
     },
     invalidateKeys: [checklistTemplateKeys.list()],
-    successMessage: 'Sjekkliste opprettet',
-    errorMessage: 'Kunne ikke opprette sjekkliste',
+    successMessage: t('checklists.toast.created'),
+    errorMessage: t('checklists.toast.createError'),
   });
 }
 
 /** 更新模板(仅 title)。body 根键小写 checklistTemplate;返回 res.checklistTemplate。 */
 export function useUpdateChecklistTemplate() {
+  const { t } = useTranslation();
   return useApiMutation<ChecklistTemplateDto | undefined, ChecklistTemplateDto>({
     mutationFn: async (checklistTemplate) => {
       const body: ChecklistTemplateWrapperDto = { checklistTemplate };
@@ -113,8 +116,8 @@ export function useUpdateChecklistTemplate() {
       return res?.checklistTemplate;
     },
     invalidateKeys: [checklistTemplateKeys.list()],
-    successMessage: 'Sjekkliste oppdatert',
-    errorMessage: 'Kunne ikke oppdatere sjekkliste',
+    successMessage: t('checklists.toast.updated'),
+    errorMessage: t('checklists.toast.updateError'),
   });
 }
 
@@ -123,6 +126,7 @@ export function useUpdateChecklistTemplate() {
  * 后端软失败(success:false / HTTP 400)时抛错,由 onError 用后端 message 统一 toast。
  */
 export function useDeleteChecklistTemplate() {
+  const { t } = useTranslation();
   return useApiMutation<MessageSuccessResponse, number>({
     mutationFn: async (templateId) => {
       const res = await getApiClient().delete<MessageSuccessResponse>(
@@ -130,7 +134,7 @@ export function useDeleteChecklistTemplate() {
         { params: { ChecklistTemplateID: templateId } },
       );
       if (res?.success === false) {
-        throw new Error(res.message || 'Sjekklisten kan ikke slettes');
+        throw new Error(res.message || t('checklists.toast.deleteBlocked'));
       }
       return res;
     },
@@ -138,7 +142,7 @@ export function useDeleteChecklistTemplate() {
     successMessage: false, // 用后端返回的 message 提示
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || 'Sjekkliste slettet');
+      toast.success(data?.message || t('checklists.toast.deleted'));
     },
   });
 }
@@ -147,6 +151,7 @@ export function useDeleteChecklistTemplate() {
 
 /** 创建子项。body 根键小写 checklistItemTemplate;checklistId 关联模板。失效模板详情 + 列表。 */
 export function useCreateChecklistItem(templateId: number) {
+  const { t } = useTranslation();
   return useApiMutation<ChecklistItemTemplateDto | undefined, ChecklistItemTemplateDto>({
     mutationFn: async (checklistItemTemplate) => {
       const body: ChecklistItemTemplateWrapperDto = { checklistItemTemplate };
@@ -157,13 +162,14 @@ export function useCreateChecklistItem(templateId: number) {
       return res?.checklistItemTemplate;
     },
     invalidateKeys: [checklistTemplateKeys.detail(templateId), checklistTemplateKeys.list()],
-    successMessage: 'Sjekkpunkt opprettet',
-    errorMessage: 'Kunne ikke opprette sjekkpunkt',
+    successMessage: t('checklists.items.toast.created'),
+    errorMessage: t('checklists.items.toast.createError'),
   });
 }
 
 /** 更新子项。body 根键小写 checklistItemTemplate。 */
 export function useUpdateChecklistItem(templateId: number) {
+  const { t } = useTranslation();
   return useApiMutation<ChecklistItemTemplateDto | undefined, ChecklistItemTemplateDto>({
     mutationFn: async (checklistItemTemplate) => {
       const body: ChecklistItemTemplateWrapperDto = { checklistItemTemplate };
@@ -174,13 +180,14 @@ export function useUpdateChecklistItem(templateId: number) {
       return res?.checklistItemTemplate;
     },
     invalidateKeys: [checklistTemplateKeys.detail(templateId), checklistTemplateKeys.list()],
-    successMessage: 'Sjekkpunkt oppdatert',
-    errorMessage: 'Kunne ikke oppdatere sjekkpunkt',
+    successMessage: t('checklists.items.toast.updated'),
+    errorMessage: t('checklists.items.toast.updateError'),
   });
 }
 
 /** 删除子项。query 参数 ChecklistItemId。软失败同模板删除处理。 */
 export function useDeleteChecklistItem(templateId: number) {
+  const { t } = useTranslation();
   return useApiMutation<MessageSuccessResponse, number>({
     mutationFn: async (itemId) => {
       const res = await getApiClient().delete<MessageSuccessResponse>(
@@ -188,7 +195,7 @@ export function useDeleteChecklistItem(templateId: number) {
         { params: { ChecklistItemId: itemId } },
       );
       if (res?.success === false) {
-        throw new Error(res.message || 'Sjekkpunktet kan ikke slettes');
+        throw new Error(res.message || t('checklists.items.toast.deleteBlocked'));
       }
       return res;
     },
@@ -196,7 +203,7 @@ export function useDeleteChecklistItem(templateId: number) {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || 'Sjekkpunkt slettet');
+      toast.success(data?.message || t('checklists.items.toast.deleted'));
     },
   });
 }

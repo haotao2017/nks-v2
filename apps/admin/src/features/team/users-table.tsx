@@ -5,6 +5,7 @@
  * 照抄 features/contacts/contacts-table.tsx;新建时的 companyId 取自当前登录用户(useAuth)。
  */
 import * as React from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 import type { UserProfileDto } from '@nks/api-types';
 
@@ -32,6 +33,7 @@ export interface UsersTableProps {
 }
 
 export function UsersTable({ createOpen, onCreateOpenChange }: UsersTableProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { data = [], isLoading } = useUsers();
   const deleteMutation = useDeleteUser();
@@ -44,8 +46,9 @@ export function UsersTable({ createOpen, onCreateOpenChange }: UsersTableProps) 
       getUserColumns({
         onEdit: (u) => setEditTarget(u),
         onDelete: (u) => setDeleteTarget(u),
+        t,
       }),
-    [],
+    [t],
   );
 
   const confirmDelete = () => {
@@ -62,8 +65,8 @@ export function UsersTable({ createOpen, onCreateOpenChange }: UsersTableProps) 
         data={data}
         isLoading={isLoading}
         searchColumn="fullName"
-        searchPlaceholder="Søk etter navn…"
-        emptyMessage="Ingen brukere enda."
+        searchPlaceholder={t('team.users.searchPlaceholder')}
+        emptyMessage={t('team.users.empty')}
       />
 
       {/* 新建(附带当前用户公司 id) */}
@@ -87,15 +90,19 @@ export function UsersTable({ createOpen, onCreateOpenChange }: UsersTableProps) 
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette bruker?</AlertDialogTitle>
+            <AlertDialogTitle>{t('team.users.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.fullName}</span>? Denne handlingen kan
-              ikke angres.
+              <Trans
+                i18nKey="team.users.deleteConfirm"
+                values={{ name: deleteTarget?.fullName ?? '' }}
+                components={[<span className="font-medium" key="0" />]}
+              />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -104,7 +111,7 @@ export function UsersTable({ createOpen, onCreateOpenChange }: UsersTableProps) 
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

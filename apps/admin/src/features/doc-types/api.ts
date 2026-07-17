@@ -18,6 +18,7 @@
  *  - query 参数名为 PascalCase `DocTypeID`(对齐后端 @RequestParam)。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type {
@@ -52,6 +53,7 @@ export function useDocTypes() {
 
 /** 创建文档类型。body 根键小写 docType;返回 res.docType。 */
 export function useCreateDocType() {
+  const { t } = useTranslation();
   return useApiMutation<DocType | undefined, DocType>({
     mutationFn: async (docType) => {
       const body: WrapperDocType = { docType };
@@ -62,13 +64,14 @@ export function useCreateDocType() {
       return res?.docType;
     },
     invalidateKeys: [docTypeKeys.list()],
-    successMessage: 'Dokumenttype opprettet',
-    errorMessage: 'Kunne ikke opprette dokumenttype',
+    successMessage: t('docTypes.toast.created'),
+    errorMessage: t('docTypes.toast.createError'),
   });
 }
 
 /** 更新文档类型。body 根键小写 docType;返回 res.docType。 */
 export function useUpdateDocType() {
+  const { t } = useTranslation();
   return useApiMutation<DocType | undefined, DocType>({
     mutationFn: async (docType) => {
       const body: WrapperDocType = { docType };
@@ -79,8 +82,8 @@ export function useUpdateDocType() {
       return res?.docType;
     },
     invalidateKeys: [docTypeKeys.list()],
-    successMessage: 'Dokumenttype oppdatert',
-    errorMessage: 'Kunne ikke oppdatere dokumenttype',
+    successMessage: t('docTypes.toast.updated'),
+    errorMessage: t('docTypes.toast.updateError'),
   });
 }
 
@@ -90,6 +93,7 @@ export function useUpdateDocType() {
  * 失败由 api-client 抛 NksApiError(带后端 message),onError 统一提示(errorMessage 不关闭)。
  */
 export function useDeleteDocType() {
+  const { t } = useTranslation();
   return useApiMutation<RequestResponse, number>({
     mutationFn: async (docTypeId) => {
       return getApiClient().delete<RequestResponse>(
@@ -100,7 +104,7 @@ export function useDeleteDocType() {
     invalidateKeys: [docTypeKeys.list()],
     successMessage: false, // 用后端返回的 message 提示
     onSuccess: (data) => {
-      toast.success(data?.message || 'Dokumenttype slettet');
+      toast.success(data?.message || t('docTypes.toast.deleted'));
     },
   });
 }

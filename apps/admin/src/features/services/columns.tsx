@@ -5,6 +5,7 @@
  * 列:name / description / rate + 行操作。
  */
 import type { ColumnDef } from '@tanstack/react-table';
+import type { TFunction } from 'i18next';
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 import type { ServiceDto } from '@nks/api-types';
@@ -20,11 +21,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export interface ServiceColumnActions {
+  /** i18n 翻译函数,由表格层传入以本地化表头/行操作。 */
+  t: TFunction;
   onEdit: (service: ServiceDto) => void;
   onDelete: (service: ServiceDto) => void;
 }
 
 export function getServiceColumns({
+  t,
   onEdit,
   onDelete,
 }: ServiceColumnActions): ColumnDef<ServiceDto>[] {
@@ -37,7 +41,7 @@ export function getServiceColumns({
           className="-ml-3 h-8"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Navn
+          {t('services.columns.name')}
           <ArrowUpDown className="size-3.5" />
         </Button>
       ),
@@ -45,7 +49,7 @@ export function getServiceColumns({
     },
     {
       accessorKey: 'description',
-      header: 'Beskrivelse',
+      header: t('services.columns.description'),
       cell: ({ row }) => (
         <span className="text-muted-foreground line-clamp-1 max-w-md">
           {row.original.description || '—'}
@@ -54,12 +58,12 @@ export function getServiceColumns({
     },
     {
       accessorKey: 'rate',
-      header: 'Sats',
+      header: t('services.columns.rate'),
       cell: ({ row }) => row.original.rate || '—',
     },
     {
       id: 'actions',
-      header: () => <span className="sr-only">Handlinger</span>,
+      header: () => <span className="sr-only">{t('common.actions')}</span>,
       enableSorting: false,
       cell: ({ row }) => {
         const service = row.original;
@@ -69,14 +73,14 @@ export function getServiceColumns({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="size-8">
                   <MoreHorizontal className="size-4" />
-                  <span className="sr-only">Åpne meny</span>
+                  <span className="sr-only">{t('common.openMenu')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onEdit(service)}>
                   <Pencil className="size-4" />
-                  Rediger
+                  {t('common.edit')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -84,7 +88,7 @@ export function getServiceColumns({
                   onClick={() => onDelete(service)}
                 >
                   <Trash2 className="size-4" />
-                  Slett
+                  {t('common.delete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

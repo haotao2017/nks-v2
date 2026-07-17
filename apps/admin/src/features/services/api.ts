@@ -17,6 +17,7 @@
  *    (message 取自响应体),交由 useApiMutation.onError 统一 toast。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type { ServiceDto, WrapperService, RequestResponse } from '@nks/api-types';
@@ -52,6 +53,7 @@ export function useServices() {
 
 /** 创建服务。body 根键小写 service;返回 res.service。 */
 export function useCreateService() {
+  const { t } = useTranslation();
   return useApiMutation<ServiceDto | undefined, ServiceDto>({
     mutationFn: async (service) => {
       const body: WrapperService = { service };
@@ -62,13 +64,14 @@ export function useCreateService() {
       return res?.service;
     },
     invalidateKeys: [serviceKeys.list()],
-    successMessage: 'Tjeneste opprettet',
-    errorMessage: 'Kunne ikke opprette tjeneste',
+    successMessage: t('services.toast.created'),
+    errorMessage: t('services.toast.createError'),
   });
 }
 
 /** 更新服务。body 根键小写 service;返回 res.service。 */
 export function useUpdateService() {
+  const { t } = useTranslation();
   return useApiMutation<ServiceDto | undefined, ServiceDto>({
     mutationFn: async (service) => {
       const body: WrapperService = { service };
@@ -79,8 +82,8 @@ export function useUpdateService() {
       return res?.service;
     },
     invalidateKeys: [serviceKeys.list()],
-    successMessage: 'Tjeneste oppdatert',
-    errorMessage: 'Kunne ikke oppdatere tjeneste',
+    successMessage: t('services.toast.updated'),
+    errorMessage: t('services.toast.updateError'),
   });
 }
 
@@ -90,6 +93,7 @@ export function useUpdateService() {
  * 防御性地再判断 isSuccess===false。成功用后端 message 提示。
  */
 export function useDeleteService() {
+  const { t } = useTranslation();
   return useApiMutation<RequestResponse, number>({
     mutationFn: async (serviceId) => {
       const res = await getApiClient().delete<RequestResponse>(
@@ -97,7 +101,7 @@ export function useDeleteService() {
         { params: { ServiceID: serviceId } },
       );
       if (res?.isSuccess === false) {
-        throw new Error(res.message || 'Tjenesten kan ikke slettes');
+        throw new Error(res.message || t('services.toast.deleteBlocked'));
       }
       return res;
     },
@@ -105,7 +109,7 @@ export function useDeleteService() {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || 'Tjeneste slettet');
+      toast.success(data?.message || t('services.toast.deleted'));
     },
   });
 }

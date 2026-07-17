@@ -13,6 +13,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -51,13 +52,12 @@ import { useCreatePartyType, useUpdatePartyType, useWorkflowCategoryOptions } fr
 /** 「不关联」哨兵值(radix Select 不允许空字符串 item)。 */
 const NONE = 'none';
 
-const partyTypeSchema = z.object({
-  name: z.string().trim().min(1, 'Navn er påkrevd'),
-  isDefault: z.boolean(),
-  workflowCategoryID: z.string(),
-});
-
-type PartyTypeFormValues = z.infer<typeof partyTypeSchema>;
+/** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
+type PartyTypeFormValues = {
+  name: string;
+  isDefault: boolean;
+  workflowCategoryID: string;
+};
 
 export interface PartyTypeFormDialogProps {
   open: boolean;
@@ -71,11 +71,22 @@ export function PartyTypeFormDialog({
   onOpenChange,
   partyType,
 }: PartyTypeFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(partyType?.id);
   const createMutation = useCreatePartyType();
   const updateMutation = useUpdatePartyType();
   const { data: categories = [] } = useWorkflowCategoryOptions();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const partyTypeSchema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().trim().min(1, t('partyTypes.validation.nameRequired')),
+        isDefault: z.boolean(),
+        workflowCategoryID: z.string(),
+      }),
+    [t],
+  );
 
   const form = useForm<PartyTypeFormValues>({
     resolver: zodResolver(partyTypeSchema),
@@ -115,11 +126,13 @@ export function PartyTypeFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger parttype' : 'Ny parttype'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('partyTypes.form.editTitle') : t('partyTypes.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Oppdater parttypen nedenfor.'
-              : 'Fyll ut informasjonen for å opprette en ny parttype.'}
+              ? t('partyTypes.form.editDescription')
+              : t('partyTypes.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -130,9 +143,9 @@ export function PartyTypeFormDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navn</FormLabel>
+                  <FormLabel>{t('partyTypes.form.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Parttypenavn" {...field} />
+                    <Input placeholder={t('partyTypes.form.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,15 +157,15 @@ export function PartyTypeFormDialog({
               name="workflowCategoryID"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Arbeidsflytkategori</FormLabel>
+                  <FormLabel>{t('partyTypes.form.workflowCategory')}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Velg kategori" />
+                        <SelectValue placeholder={t('partyTypes.form.workflowCategoryPlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value={NONE}>Ingen</SelectItem>
+                      <SelectItem value={NONE}>{t('partyTypes.form.workflowCategoryNone')}</SelectItem>
                       {categories.map((c) => (
                         <SelectItem key={c.id} value={String(c.id)}>
                           {c.name ?? `#${c.id}`}
@@ -171,8 +184,8 @@ export function PartyTypeFormDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-md border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Standard</FormLabel>
-                    <FormDescription>Bruk som standard parttype.</FormDescription>
+                    <FormLabel>{t('partyTypes.form.default')}</FormLabel>
+                    <FormDescription>{t('partyTypes.form.defaultDescription')}</FormDescription>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -188,11 +201,11 @@ export function PartyTypeFormDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

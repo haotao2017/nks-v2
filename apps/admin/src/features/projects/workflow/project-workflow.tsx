@@ -8,6 +8,7 @@
  * 数据驱动:步骤配置见 workflow-steps.ts,hooks 见 workflow-api.ts,面板见 *-step-panel.tsx。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Workflow, CheckCircle2, FastForward, Circle, Loader2, AlertCircle } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +54,7 @@ function StatusIcon({ status }: { status: StepStatus }) {
 }
 
 export function ProjectWorkflow({ projectId }: { projectId: number }) {
+  const { t } = useTranslation();
   const progress = useWorkflowProgress(projectId, WORKFLOW_ID);
 
   // stepId → isTransfer(存在即已处理)。
@@ -89,27 +91,31 @@ export function ProjectWorkflow({ projectId }: { projectId: number }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Workflow className="text-muted-foreground size-5" />
-          Arbeidsflyt
+          {t('workflow.card.title')}
         </CardTitle>
         <CardDescription>
           {progress.isPending
-            ? 'Laster arbeidsflyt…'
-            : `${doneCount} av ${WORKFLOW_STEPS.length} steg fullført for prosjekt #${projectId}.`}
+            ? t('workflow.card.loading')
+            : t('workflow.card.progress', {
+                done: doneCount,
+                total: WORKFLOW_STEPS.length,
+                projectId,
+              })}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {progress.isError && (
           <p className="text-destructive mb-4 flex items-center gap-2 text-sm">
-            <AlertCircle className="size-4" /> Kunne ikke hente arbeidsflytstatus.
+            <AlertCircle className="size-4" /> {t('workflow.card.loadError')}
           </p>
         )}
 
         <div className="grid gap-6 lg:grid-cols-[minmax(220px,280px)_1fr]">
           {/* 竖向 stepper */}
-          <nav aria-label="Arbeidsflyt-steg" className="relative">
+          <nav aria-label={t('workflow.card.stepperAria')} className="relative">
             {progress.isPending ? (
               <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                <Loader2 className="size-4 animate-spin" /> Laster…
+                <Loader2 className="size-4 animate-spin" /> {t('workflow.card.loadingShort')}
               </div>
             ) : (
               <ol className="space-y-1">
@@ -134,10 +140,12 @@ export function ProjectWorkflow({ projectId }: { projectId: number }) {
                         <span className="min-w-0">
                           <span className="flex items-center gap-1.5 text-sm font-medium">
                             <span className="text-muted-foreground tabular-nums">{step.seq}.</span>
-                            <span className="truncate">{step.title}</span>
+                            <span className="truncate">{t(step.titleKey)}</span>
                           </span>
                           {status === 'transferred' && (
-                            <span className="text-muted-foreground text-xs">Overført</span>
+                            <span className="text-muted-foreground text-xs">
+                              {t('workflow.status.transferred')}
+                            </span>
                           )}
                         </span>
                       </button>
@@ -154,14 +162,20 @@ export function ProjectWorkflow({ projectId }: { projectId: number }) {
               <div>
                 <h3 className="flex items-center gap-2 text-base font-semibold">
                   <span className="text-muted-foreground tabular-nums">{activeStep.seq}.</span>
-                  {activeStep.title}
+                  {t(activeStep.titleKey)}
                 </h3>
-                {activeStep.description && (
-                  <p className="text-muted-foreground mt-0.5 text-sm">{activeStep.description}</p>
+                {activeStep.descriptionKey && (
+                  <p className="text-muted-foreground mt-0.5 text-sm">
+                    {t(activeStep.descriptionKey)}
+                  </p>
                 )}
               </div>
-              {activeStatus === 'done' && <Badge className="bg-emerald-600">Fullført</Badge>}
-              {activeStatus === 'transferred' && <Badge variant="secondary">Overført</Badge>}
+              {activeStatus === 'done' && (
+                <Badge className="bg-emerald-600">{t('workflow.status.done')}</Badge>
+              )}
+              {activeStatus === 'transferred' && (
+                <Badge variant="secondary">{t('workflow.status.transferred')}</Badge>
+              )}
             </div>
 
             {/* key 强制切步骤时重挂载,重置本地状态 + 重新预览。 */}

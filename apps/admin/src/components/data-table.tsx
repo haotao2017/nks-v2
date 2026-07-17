@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   flexRender,
   getCoreRowModel,
@@ -45,9 +46,10 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   searchColumn,
   searchPlaceholder,
-  emptyMessage = 'Ingen data.',
+  emptyMessage,
   pageSize = 10,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
 
@@ -85,7 +87,7 @@ export function DataTable<TData, TValue>({
           <Input
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder={searchPlaceholder ?? 'Søk…'}
+            placeholder={searchPlaceholder ?? t('dataTable.searchPlaceholder')}
             className="pl-8"
           />
         </div>
@@ -130,7 +132,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell colSpan={colCount} className="text-muted-foreground h-24 text-center">
-                  {emptyMessage}
+                  {emptyMessage ?? t('common.noData')}
                 </TableCell>
               </TableRow>
             )}
@@ -141,14 +143,15 @@ export function DataTable<TData, TValue>({
       {paginated && table.getPageCount() > 1 && (
         <div className="flex items-center justify-end gap-2">
           <span className="text-muted-foreground text-sm">
-            Side {table.getState().pagination.pageIndex + 1} av {table.getPageCount()}
+            {t('common.page')} {table.getState().pagination.pageIndex + 1} {t('common.of')}{' '}
+            {table.getPageCount()}
           </span>
           <Button
             variant="outline"
             size="icon"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            aria-label="Forrige side"
+            aria-label={t('dataTable.prevPage')}
           >
             <ChevronLeft className="size-4" />
           </Button>
@@ -157,7 +160,7 @@ export function DataTable<TData, TValue>({
             size="icon"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            aria-label="Neste side"
+            aria-label={t('dataTable.nextPage')}
           >
             <ChevronRight className="size-4" />
           </Button>

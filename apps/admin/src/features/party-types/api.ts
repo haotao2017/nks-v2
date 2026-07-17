@@ -17,6 +17,7 @@
  *  - 删除失败为 HTTP 400 + {message},api-client 抛 NksApiError(message 取自响应体)。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type {
@@ -75,6 +76,7 @@ export function useWorkflowCategoryOptions() {
 
 /** 创建参与方类型。body 根键小写 partyType;返回 res.partyType。 */
 export function useCreatePartyType() {
+  const { t } = useTranslation();
   return useApiMutation<PartyTypeDto | undefined, PartyTypeDto>({
     mutationFn: async (partyType) => {
       const body: PartyTypeRequestDto = { partyType };
@@ -85,13 +87,14 @@ export function useCreatePartyType() {
       return res?.partyType;
     },
     invalidateKeys: [partyTypeKeys.list()],
-    successMessage: 'Parttype opprettet',
-    errorMessage: 'Kunne ikke opprette parttype',
+    successMessage: t('partyTypes.toast.created'),
+    errorMessage: t('partyTypes.toast.createError'),
   });
 }
 
 /** 更新参与方类型。body 根键小写 partyType;返回 res.partyType。 */
 export function useUpdatePartyType() {
+  const { t } = useTranslation();
   return useApiMutation<PartyTypeDto | undefined, PartyTypeDto>({
     mutationFn: async (partyType) => {
       const body: PartyTypeRequestDto = { partyType };
@@ -102,8 +105,8 @@ export function useUpdatePartyType() {
       return res?.partyType;
     },
     invalidateKeys: [partyTypeKeys.list()],
-    successMessage: 'Parttype oppdatert',
-    errorMessage: 'Kunne ikke oppdatere parttype',
+    successMessage: t('partyTypes.toast.updated'),
+    errorMessage: t('partyTypes.toast.updateError'),
   });
 }
 
@@ -113,6 +116,7 @@ export function useUpdatePartyType() {
  * 防御性地再判断 success===false。成功用后端 message 提示。
  */
 export function useDeletePartyType() {
+  const { t } = useTranslation();
   return useApiMutation<MessageSuccessResponse, number>({
     mutationFn: async (partyTypeId) => {
       const res = await getApiClient().delete<MessageSuccessResponse>(
@@ -120,7 +124,7 @@ export function useDeletePartyType() {
         { params: { PartyTypeID: partyTypeId } },
       );
       if (res?.success === false) {
-        throw new Error(res.message || 'Parttypen kan ikke slettes');
+        throw new Error(res.message || t('partyTypes.toast.deleteBlocked'));
       }
       return res;
     },
@@ -128,7 +132,7 @@ export function useDeletePartyType() {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || 'Parttype slettet');
+      toast.success(data?.message || t('partyTypes.toast.deleted'));
     },
   });
 }

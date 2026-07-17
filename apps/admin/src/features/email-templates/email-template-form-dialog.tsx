@@ -11,6 +11,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -39,11 +40,10 @@ import { Label } from '@/components/ui/label';
 import { useCreateEmailTemplate, useUpdateEmailTemplate, useEmailHashtags } from './api';
 import { RichTextEditor } from './rich-text-editor';
 
-const templateSchema = z.object({
-  title: z.string().trim().min(1, 'Tittel er påkrevd'),
-});
-
-type TemplateFormValues = z.infer<typeof templateSchema>;
+/** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
+type TemplateFormValues = {
+  title: string;
+};
 
 export interface EmailTemplateFormDialogProps {
   open: boolean;
@@ -57,6 +57,7 @@ export function EmailTemplateFormDialog({
   onOpenChange,
   emailTemplate,
 }: EmailTemplateFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(emailTemplate?.id);
   const createMutation = useCreateEmailTemplate();
   const updateMutation = useUpdateEmailTemplate();
@@ -65,6 +66,14 @@ export function EmailTemplateFormDialog({
   const { data: hashtags = [], isLoading: hashtagsLoading } = useEmailHashtags();
 
   const [templateHtml, setTemplateHtml] = React.useState('');
+
+  const templateSchema = React.useMemo(
+    () =>
+      z.object({
+        title: z.string().trim().min(1, t('emailTemplates.validation.titleRequired')),
+      }),
+    [t],
+  );
 
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(templateSchema),
@@ -96,11 +105,13 @@ export function EmailTemplateFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger e-postmal' : 'Ny e-postmal'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('emailTemplates.form.editTitle') : t('emailTemplates.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Oppdater malen nedenfor. Bruk variabler for å sette inn dynamiske felter.'
-              : 'Fyll ut malen. Bruk variabler for å sette inn dynamiske felter.'}
+              ? t('emailTemplates.form.editDescription')
+              : t('emailTemplates.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -111,9 +122,9 @@ export function EmailTemplateFormDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tittel</FormLabel>
+                  <FormLabel>{t('emailTemplates.form.title')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="F.eks. Velkomst-e-post" {...field} />
+                    <Input placeholder={t('emailTemplates.form.titlePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -121,7 +132,7 @@ export function EmailTemplateFormDialog({
             />
 
             <div className="space-y-2">
-              <Label>Innhold</Label>
+              <Label>{t('emailTemplates.form.content')}</Label>
               <RichTextEditor
                 value={templateHtml}
                 onChange={setTemplateHtml}
@@ -138,11 +149,11 @@ export function EmailTemplateFormDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

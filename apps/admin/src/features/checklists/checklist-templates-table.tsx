@@ -5,6 +5,7 @@
  * DataTable + 模板表单弹窗 + 子项管理弹窗 + 删除确认。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { ChecklistTemplateDto } from '@nks/api-types';
 
@@ -35,6 +36,7 @@ export function ChecklistTemplatesTable({
   createOpen,
   onCreateOpenChange,
 }: ChecklistTemplatesTableProps) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useChecklistTemplates();
   const deleteMutation = useDeleteChecklistTemplate();
 
@@ -45,11 +47,12 @@ export function ChecklistTemplatesTable({
   const columns = React.useMemo(
     () =>
       getChecklistTemplateColumns({
-        onManageItems: (t) => setItemsTarget(t),
-        onEdit: (t) => setEditTarget(t),
-        onDelete: (t) => setDeleteTarget(t),
+        t,
+        onManageItems: (template) => setItemsTarget(template),
+        onEdit: (template) => setEditTarget(template),
+        onDelete: (template) => setDeleteTarget(template),
       }),
-    [],
+    [t],
   );
 
   const confirmDelete = () => {
@@ -66,8 +69,8 @@ export function ChecklistTemplatesTable({
         data={data}
         isLoading={isLoading}
         searchColumn="title"
-        searchPlaceholder="Søk etter tittel…"
-        emptyMessage="Ingen sjekklister enda."
+        searchPlaceholder={t('checklists.searchPlaceholder')}
+        emptyMessage={t('checklists.empty')}
       />
 
       {/* 新建 */}
@@ -94,15 +97,17 @@ export function ChecklistTemplatesTable({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette sjekkliste?</AlertDialogTitle>
+            <AlertDialogTitle>{t('checklists.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.title}</span>? Denne handlingen kan ikke
-              angres.
+              {t('checklists.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.title}</span>
+              {t('checklists.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -111,7 +116,7 @@ export function ChecklistTemplatesTable({
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

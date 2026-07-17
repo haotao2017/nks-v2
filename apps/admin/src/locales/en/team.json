@@ -1,0 +1,215 @@
+{
+  "team": {
+    "title": "Team",
+    "subtitle": "Manage users, your own profile and company.",
+    "tabs": {
+      "users": "Users",
+      "profile": "My profile",
+      "company": "Company"
+    },
+    "userTypes": {
+      "1": "Mobile control app",
+      "2": "Desktop control system",
+      "3": "Both",
+      "unknown": "—"
+    },
+    "users": {
+      "newUser": "New user",
+      "searchPlaceholder": "Search by name…",
+      "empty": "No users yet.",
+      "deleteTitle": "Delete user?",
+      "deleteConfirm": "Are you sure you want to delete <0>{{name}}</0>? This action cannot be undone.",
+      "columns": {
+        "name": "Name",
+        "userName": "Username",
+        "designation": "Title",
+        "userType": "User type",
+        "admin": "Admin",
+        "status": "Status"
+      },
+      "badges": {
+        "admin": "Admin",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "dialog": {
+        "createTitle": "New user",
+        "editTitle": "Edit user",
+        "createDesc": "Fill in the information to create a new user.",
+        "editDesc": "Update the user information below.",
+        "name": "Name",
+        "namePlaceholder": "Ola Nordmann",
+        "userName": "Username",
+        "userNamePlaceholder": "ola",
+        "designation": "Title",
+        "designationPlaceholder": "Inspector",
+        "password": "Password",
+        "passwordPlaceholderCreate": "••••••••",
+        "passwordPlaceholderEdit": "Leave empty to keep",
+        "passwordEditHint": "Leave empty to keep the current password.",
+        "userType": "User type",
+        "userTypePlaceholder": "Select user type",
+        "admin": "Admin",
+        "adminHint": "Give the user administrator rights.",
+        "active": "Active",
+        "activeHint": "Inactive users cannot log in."
+      },
+      "validation": {
+        "nameRequired": "Name is required",
+        "userNameRequired": "Username is required",
+        "userTypeRequired": "User type is required",
+        "passwordRequired": "Password is required"
+      }
+    },
+    "profile": {
+      "title": "My profile",
+      "administrator": "Administrator",
+      "name": "Name",
+      "userName": "Username",
+      "designation": "Title",
+      "newPassword": "New password",
+      "passwordPlaceholder": "Leave empty to keep",
+      "passwordHint": "Leave empty to keep the current password.",
+      "validation": {
+        "nameRequired": "Name is required",
+        "userNameRequired": "Username is required"
+      }
+    },
+    "toast": {
+      "userCreated": "User created",
+      "userCreateError": "Could not create user",
+      "userUpdated": "User updated",
+      "userUpdateError": "Could not update user",
+      "userDeleted": "User deleted",
+      "userDeleteBlocked": "The user cannot be deleted",
+      "profileUpdated": "Profile updated",
+      "profileUpdateError": "Could not update profile",
+      "companyProfileUpdated": "Company information updated",
+      "companyProfileUpdateError": "Could not update company information",
+      "folderUpdated": "Folder updated",
+      "folderUpdateError": "Could not update folder"
+    },
+    "company": {
+      "infoTitle": "Company information",
+      "infoDesc": "General details about the company.",
+      "fields": {
+        "companyName": "Company name",
+        "orgNumber": "Organization number",
+        "owner": "Owner",
+        "postCode": "Postal code",
+        "address": "Address",
+        "telephone": "Telephone",
+        "mobile": "Mobile"
+      },
+      "emailTitle": "Email and sender",
+      "emailDesc": "Sender address and SMTP settings per company.",
+      "emailFields": {
+        "emailAddress": "Email address",
+        "senderName": "Sender name",
+        "senderEmail": "Sender email",
+        "smtpDisplayName": "Display name (SMTP)",
+        "smtpHost": "SMTP host",
+        "smtpPort": "SMTP port",
+        "smtpUserName": "SMTP username",
+        "smtpPassword": "SMTP password"
+      },
+      "saveInfo": "Save company information",
+      "folderTitle": "Company folder",
+      "folderDesc": "Document folder for the company.",
+      "folderName": "Folder name",
+      "folderPath": "Folder path",
+      "saveFolder": "Save folder",
+      "folderNoAccess": "Folder settings require system owner access.",
+      "validation": {
+        "companyNameRequired": "Company name is required"
+      }
+    }
+  },
+  "companies": {
+    "title": "Companies",
+    "subtitle": "Manage all companies in the system.",
+    "newCompany": "New company",
+    "searchPlaceholder": "Search by company…",
+    "empty": "No companies yet.",
+    "noAccessTitle": "No access",
+    "noAccessDesc": "This page is only available to system owners.",
+    "columns": {
+      "company": "Company",
+      "orgNumber": "Org. no.",
+      "owner": "Owner",
+      "email": "Email",
+      "systemOwner": "System owner",
+      "status": "Status"
+    },
+    "badges": {
+      "systemOwner": "System owner",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "bucket": {
+      "title": "S3 storage",
+      "desc": "Global bucket configuration for document storage.",
+      "name": "Bucket name",
+      "urlStatic": "URL (static part)",
+      "loadError": "Could not load bucket settings."
+    },
+    "dialog": {
+      "title": "New company",
+      "desc": "Create a new company in the system.",
+      "companyName": "Company name",
+      "orgNumber": "Organization number",
+      "owner": "Owner",
+      "address": "Address",
+      "email": "Email address"
+    },
+    "validation": {
+      "companyNameRequired": "Company name is required"
+    },
+    "toast": {
+      "created": "Company created",
+      "createError": "Could not create company",
+      "bucketUpdated": "S3 bucket updated",
+      "bucketUpdateError": "Could not update S3 bucket"
+    }
+  },
+  "external": {
+    "invalidLinkTitle": "Invalid link",
+    "invalidLinkDesc": "The link is missing required information or has expired. Open the link from the email again, or contact the inspector if the problem persists.",
+    "loading": "Loading …",
+    "loadErrorTitle": "Could not load data",
+    "loadErrorDesc": "Something went wrong. Please try again later.",
+    "retry": "Try again",
+    "upload": {
+      "title": "Upload documents",
+      "subtitle": "Upload the documents required for the project. You can upload multiple files per document type.",
+      "loading": "Loading documents …",
+      "noDocs": "No documents have been requested.",
+      "defaultDocName": "Document",
+      "required": "Required",
+      "uploadedCount": "{{count}} uploaded",
+      "chooseFiles": "Choose files",
+      "removeFile": "Remove {{name}}",
+      "uploadButton": "Upload the document",
+      "uploading": "Uploading …",
+      "uploadSuccess": "«{{name}}» uploaded",
+      "uploadError": "Upload failed"
+    },
+    "deviation": {
+      "title": "Update deviation",
+      "subtitle": "Upload images that document the correction of the deviations below. You can upload multiple images per item.",
+      "loading": "Loading deviations …",
+      "noItems": "No deviations to show.",
+      "defaultTitle": "Control point",
+      "deviation": "Deviation",
+      "imagesReceived": "Images received",
+      "uploadedImages": "Uploaded images",
+      "defaultImageAlt": "Image",
+      "chooseImages": "Choose images",
+      "removeFile": "Remove {{name}}",
+      "uploadButton": "Upload images",
+      "uploading": "Uploading …",
+      "uploadSuccess": "Images uploaded",
+      "uploadError": "Upload failed"
+    }
+  }
+}

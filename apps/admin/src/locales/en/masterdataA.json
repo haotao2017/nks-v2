@@ -1,0 +1,177 @@
+{
+  "contacts": {
+    "title": "Contacts",
+    "subtitle": "Manage contacts.",
+    "newButton": "New contact",
+    "searchPlaceholder": "Search by name…",
+    "empty": "No contacts yet.",
+    "columns": {
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "company": "Company"
+    },
+    "form": {
+      "createTitle": "New contact",
+      "editTitle": "Edit contact",
+      "createDescription": "Fill in the information to create a new contact.",
+      "editDescription": "Update the contact information below.",
+      "name": "Name",
+      "namePlaceholder": "Ola Nordmann",
+      "email": "Email",
+      "emailPlaceholder": "ola@example.no",
+      "phone": "Phone",
+      "phonePlaceholder": "+47 000 00 000",
+      "company": "Company",
+      "companyPlaceholder": "Company name Ltd"
+    },
+    "delete": {
+      "title": "Delete contact?",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Contact created",
+      "createError": "Could not create contact",
+      "updated": "Contact updated",
+      "updateError": "Could not update contact",
+      "deleted": "Contact deleted",
+      "deleteBlocked": "The contact cannot be deleted"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "emailInvalid": "Invalid email address"
+    }
+  },
+  "services": {
+    "title": "Services",
+    "subtitle": "Manage services.",
+    "newButton": "New service",
+    "searchPlaceholder": "Search by name…",
+    "empty": "No services yet.",
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "rate": "Rate"
+    },
+    "form": {
+      "createTitle": "New service",
+      "editTitle": "Edit service",
+      "createDescription": "Fill in the information to create a new service.",
+      "editDescription": "Update the service information below.",
+      "name": "Name",
+      "namePlaceholder": "Service name",
+      "description": "Description",
+      "descriptionPlaceholder": "Description of the service",
+      "rate": "Rate",
+      "ratePlaceholder": "e.g. 1200",
+      "chargedAs": "Charged as (code)",
+      "slabsLabel": "Price intervals",
+      "slabsEmpty": "No price intervals.",
+      "slabFrom": "From",
+      "slabTo": "To",
+      "slabRate": "Rate",
+      "slabRemove": "Remove interval",
+      "categoriesLabel": "Workflow categories",
+      "categoriesEmpty": "No linked categories.",
+      "categoryIdPlaceholder": "Category ID",
+      "categoryRemove": "Remove category"
+    },
+    "delete": {
+      "title": "Delete service?",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Service created",
+      "createError": "Could not create service",
+      "updated": "Service updated",
+      "updateError": "Could not update service",
+      "deleted": "Service deleted",
+      "deleteBlocked": "The service cannot be deleted"
+    },
+    "validation": {
+      "nameRequired": "Name is required"
+    }
+  },
+  "partyTypes": {
+    "title": "Party types",
+    "subtitle": "Manage party types.",
+    "newButton": "New party type",
+    "searchPlaceholder": "Search by name…",
+    "empty": "No party types yet.",
+    "columns": {
+      "name": "Name",
+      "default": "Default"
+    },
+    "form": {
+      "createTitle": "New party type",
+      "editTitle": "Edit party type",
+      "createDescription": "Fill in the information to create a new party type.",
+      "editDescription": "Update the party type below.",
+      "name": "Name",
+      "namePlaceholder": "Party type name",
+      "workflowCategory": "Workflow category",
+      "workflowCategoryPlaceholder": "Select category",
+      "workflowCategoryNone": "None",
+      "default": "Default",
+      "defaultDescription": "Use as the default party type."
+    },
+    "delete": {
+      "title": "Delete party type?",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Party type created",
+      "createError": "Could not create party type",
+      "updated": "Party type updated",
+      "updateError": "Could not update party type",
+      "deleted": "Party type deleted",
+      "deleteBlocked": "The party type cannot be deleted"
+    },
+    "validation": {
+      "nameRequired": "Name is required"
+    }
+  },
+  "docTypes": {
+    "title": "Document types",
+    "subtitle": "Manage document types.",
+    "newButton": "New document type",
+    "searchPlaceholder": "Search by name…",
+    "empty": "No document types yet.",
+    "columns": {
+      "name": "Name",
+      "required": "Required"
+    },
+    "form": {
+      "createTitle": "New document type",
+      "editTitle": "Edit document type",
+      "createDescription": "Fill in the information to create a new document type.",
+      "editDescription": "Update the document type below.",
+      "name": "Name",
+      "namePlaceholder": "E.g. Completion certificate",
+      "required": "Required",
+      "requiredDescription": "Must the document be submitted?",
+      "partyTypeId": "Party type ID",
+      "partyTypeIdPlaceholder": "E.g. 1",
+      "partyTypeIdDescription": "ID of the linked party type (optional)."
+    },
+    "delete": {
+      "title": "Delete document type?",
+      "confirmPrefix": "Are you sure you want to delete",
+      "confirmSuffix": "? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Document type created",
+      "createError": "Could not create document type",
+      "updated": "Document type updated",
+      "updateError": "Could not update document type",
+      "deleted": "Document type deleted"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "partyTypeIdNumber": "Must be a number"
+    }
+  }
+}

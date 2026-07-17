@@ -2,6 +2,7 @@
 
 import { LogOut, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -27,6 +28,7 @@ function initials(name?: string): string {
 export function UserMenu() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <DropdownMenu>
@@ -36,7 +38,7 @@ export function UserMenu() {
             <AvatarFallback>{initials(user?.fullName ?? user?.userName)}</AvatarFallback>
           </Avatar>
           <span className="hidden max-w-[10rem] truncate text-sm font-medium sm:inline">
-            {user?.fullName ?? user?.userName ?? 'Bruker'}
+            {user?.fullName ?? user?.userName ?? t('common.user')}
           </span>
         </Button>
       </DropdownMenuTrigger>
@@ -44,7 +46,7 @@ export function UserMenu() {
         <DropdownMenuLabel>
           <div className="flex flex-col">
             <span className="truncate text-sm font-medium">
-              {user?.fullName ?? user?.userName ?? 'Bruker'}
+              {user?.fullName ?? user?.userName ?? t('common.user')}
             </span>
             {user?.userName && (
               <span className="text-muted-foreground truncate text-xs font-normal">
@@ -56,12 +58,12 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           {theme === 'dark' ? <Sun /> : <Moon />}
-          Bytt tema
+          {t('common.toggleTheme')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={logout}>
           <LogOut />
-          Logg ut
+          {t('common.logout')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

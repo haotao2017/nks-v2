@@ -7,6 +7,7 @@
  * 执行 ProjectWFFifteen 触发发票。执行成功后展示后端返回的 message。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Receipt, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -21,9 +22,10 @@ interface InvoiceStepPanelProps {
 }
 
 export function InvoiceStepPanel({ projectId, step, disabled }: InvoiceStepPanelProps) {
+  const { t } = useTranslation();
   const details = useInvoiceDetails(projectId, step);
   const execMut = useExecuteStepJson(projectId, step, step.execute, {
-    successMessage: 'Faktura sendt til Tripletex',
+    successMessage: t('workflow.toast.invoiceSent'),
   });
 
   const data = details.data;
@@ -32,18 +34,18 @@ export function InvoiceStepPanel({ projectId, step, disabled }: InvoiceStepPanel
     <div className="space-y-4">
       {details.isPending ? (
         <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
-          <Loader2 className="size-4 animate-spin" /> Henter fakturadetaljer…
+          <Loader2 className="size-4 animate-spin" /> {t('workflow.panel.invoiceLoading')}
         </div>
       ) : details.isError ? (
-        <p className="text-destructive text-sm">Kunne ikke hente fakturadetaljer.</p>
+        <p className="text-destructive text-sm">{t('workflow.panel.invoiceError')}</p>
       ) : (
         <dl className="divide-y rounded-md border text-sm">
           <div className="flex justify-between p-3">
-            <dt className="text-muted-foreground">Detaljer</dt>
+            <dt className="text-muted-foreground">{t('workflow.panel.invoiceDetails')}</dt>
             <dd className="text-right font-medium">{data?.invoiceDetails || '—'}</dd>
           </div>
           <div className="flex justify-between p-3">
-            <dt className="text-muted-foreground">Beløp</dt>
+            <dt className="text-muted-foreground">{t('workflow.panel.invoiceAmount')}</dt>
             <dd className="text-right font-medium">
               {data?.amount != null ? `${data.amount} kr` : '—'}
             </dd>
@@ -53,7 +55,7 @@ export function InvoiceStepPanel({ projectId, step, disabled }: InvoiceStepPanel
 
       <Button type="button" disabled={disabled || execMut.isPending} onClick={() => execMut.mutate({})}>
         {execMut.isPending ? <Loader2 className="size-4 animate-spin" /> : <Receipt className="size-4" />}
-        Send faktura
+        {t('workflow.actions.sendInvoice')}
       </Button>
     </div>
   );

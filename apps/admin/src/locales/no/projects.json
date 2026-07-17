@@ -1,0 +1,150 @@
+{
+  "projects": {
+    "title": "Prosjekter",
+    "newProject": "Nytt prosjekt",
+    "createDescription": "Fyll ut informasjonen for å opprette et nytt prosjekt.",
+    "searchPlaceholder": "Søk etter tittel…",
+    "backToProjects": "Tilbake til prosjekter",
+    "notFound": "Fant ikke prosjektet",
+    "notFoundDescription": "Prosjekt #{{id}} kunne ikke lastes.",
+    "fallbackTitle": "Prosjekt #{{id}}",
+    "subnav": {
+      "active": "Aktive",
+      "archived": "Arkiverte",
+      "deleted": "Slettede"
+    },
+    "empty": {
+      "active": "Ingen aktive prosjekter enda.",
+      "archived": "Ingen arkiverte prosjekter.",
+      "deleted": "Ingen slettede prosjekter."
+    },
+    "columns": {
+      "title": "Tittel",
+      "address": "Adresse",
+      "status": "Status",
+      "date": "Dato"
+    },
+    "actions": {
+      "open": "Åpne arbeidsbenk",
+      "archive": "Arkiver",
+      "unarchive": "Gjenopprett fra arkiv",
+      "restore": "Gjenopprett"
+    },
+    "archiveDialog": {
+      "title": "Arkivere prosjekt?",
+      "description": "Vil du arkivere <strong>{{title}}</strong>? Du kan gjenopprette det fra arkivet senere."
+    },
+    "deleteDialog": {
+      "title": "Slette prosjekt?",
+      "description": "Vil du slette <strong>{{title}}</strong>? Prosjektet flyttes til slettede og kan gjenopprettes."
+    },
+    "tabs": {
+      "steps": "Steg",
+      "checklists": "Sjekklister",
+      "parties": "Deltakere",
+      "documents": "Dokumenter",
+      "workflow": "Arbeidsflyt"
+    },
+    "steps": {
+      "title": "Steg",
+      "progress": "{{done}} av {{total}} steg fullført.",
+      "done": "Done",
+      "todo": "To do",
+      "defs": {
+        "takkBestillingen": "Takk for bestillingen",
+        "soknadOmAnsvarsrett": "Søknad om ansvarsrett",
+        "ansvarligSoker": "Ansvarlig søker",
+        "gratulererGodkjent": "Gratulerer – godkjent",
+        "createChecklist": "Opprett sjekkliste",
+        "addParties": "Legg til parter",
+        "setProLeaderContactCustomer": "Prosjektleder / kontakt kunde",
+        "emailCustomerUpInspection": "E-post kunde om inspeksjon",
+        "partiesData": "Parter data",
+        "assignInspector": "Tildel inspektør",
+        "approveInspReport": "Godkjenn inspeksjonsrapport"
+      }
+    },
+    "checklists": {
+      "title": "Sjekklister",
+      "description": "Sjekklister knyttet til prosjektet.",
+      "empty": "Ingen sjekklister enda.",
+      "fallbackName": "Sjekkliste #{{id}}"
+    },
+    "parties": {
+      "title": "Deltakere",
+      "description": "Parter knyttet til prosjektet.",
+      "empty": "Ingen deltakere enda.",
+      "fallbackName": "Part #{{id}}"
+    },
+    "documents": {
+      "title": "Dokumenter",
+      "comingSoon": "Dokumenthåndtering kommer — under utvikling."
+    },
+    "toast": {
+      "created": "Prosjekt opprettet",
+      "createError": "Kunne ikke opprette prosjekt",
+      "updated": "Prosjekt oppdatert",
+      "updateError": "Kunne ikke oppdatere prosjekt",
+      "archived": "Prosjekt arkivert",
+      "unarchived": "Prosjekt gjenopprettet fra arkiv",
+      "deleted": "Prosjekt slettet",
+      "restored": "Prosjekt gjenopprettet",
+      "actionFailed": "Handlingen mislyktes"
+    }
+  },
+  "contactSelect": {
+    "placeholder": "Velg kontakt",
+    "search": "Søk kontakt...",
+    "empty": "Ingen kontakt funnet.",
+    "editAria": "Rediger kontakt",
+    "addAria": "Ny kontakt",
+    "name": "Navn",
+    "companyName": "Selskapsnavn",
+    "contactNo": "Kontaktnr",
+    "email": "E-post",
+    "update": "Oppdater kontakt",
+    "create": "Legg til",
+    "cancel": "Avbryt",
+    "duplicate": "Kontakten finnes allerede"
+  },
+  "projectWizard": {
+    "steps": {
+      "contactInfo": "Kontaktinfo",
+      "projectInfo": "Prosjektinfo",
+      "customer": "Kunde",
+      "pricing": "Priser"
+    },
+    "fields": {
+      "responsibleApplicant": "Ansvarlig søker",
+      "title": "Tittel",
+      "titlePlaceholder": "Prosjekttittel",
+      "address": "Adresse",
+      "addressPlaceholder": "Gateadresse",
+      "gardsNo": "Gårdsnr",
+      "bruksnummer": "Bruksnummer",
+      "postNo": "Postnr",
+      "poststed": "Poststed",
+      "kommune": "Kommune",
+      "latitude": "Breddegrad",
+      "longitude": "Lengdegrad",
+      "description": "Beskrivelse",
+      "comments": "Kommentarer",
+      "customer": "Kunde",
+      "customerPlaceholder": "Velg kunde",
+      "contactPerson": "Kontaktperson",
+      "contactPersonPlaceholder": "Velg kontaktperson",
+      "service": "Tjeneste",
+      "servicePlaceholder": "Velg tjeneste",
+      "quantity": "Antall",
+      "price": "Pris"
+    },
+    "noServices": "Ingen tjenester lagt til enda.",
+    "addService": "Legg til tjeneste",
+    "removeService": "Fjern tjeneste",
+    "cancel": "Avbryt",
+    "back": "Tilbake",
+    "next": "Neste",
+    "save": "Lagre",
+    "create": "Opprett prosjekt"
+  }
+}

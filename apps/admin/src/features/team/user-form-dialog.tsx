@@ -12,7 +12,9 @@
  */
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { TFunction } from 'i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -52,24 +54,25 @@ import {
 
 import { useCreateUser, useUpdateUser, USER_TYPE_OPTIONS } from './api';
 
-const userSchema = z
-  .object({
-    fullName: z.string().trim().min(1, 'Navn er påkrevd'),
-    userName: z.string().trim().min(1, 'Brukernavn er påkrevd'),
-    designation: z.string().optional(),
-    userTypeId: z.string().min(1, 'Brukertype er påkrevd'),
-    isActive: z.boolean(),
-    isAdmin: z.boolean(),
-    password: z.string().optional(),
-    isEdit: z.boolean(),
-  })
-  // 创建模式下密码必填;编辑模式留空表示不改。
-  .refine((v) => v.isEdit || (v.password?.trim().length ?? 0) > 0, {
-    message: 'Passord er påkrevd',
-    path: ['password'],
-  });
+const makeUserSchema = (t: TFunction) =>
+  z
+    .object({
+      fullName: z.string().trim().min(1, t('team.users.validation.nameRequired')),
+      userName: z.string().trim().min(1, t('team.users.validation.userNameRequired')),
+      designation: z.string().optional(),
+      userTypeId: z.string().min(1, t('team.users.validation.userTypeRequired')),
+      isActive: z.boolean(),
+      isAdmin: z.boolean(),
+      password: z.string().optional(),
+      isEdit: z.boolean(),
+    })
+    // 创建模式下密码必填;编辑模式留空表示不改。
+    .refine((v) => v.isEdit || (v.password?.trim().length ?? 0) > 0, {
+      message: t('team.users.validation.passwordRequired'),
+      path: ['password'],
+    });
 
-type UserFormValues = z.infer<typeof userSchema>;
+type UserFormValues = z.infer<ReturnType<typeof makeUserSchema>>;
 
 export interface UserFormDialogProps {
   open: boolean;
@@ -81,10 +84,13 @@ export interface UserFormDialogProps {
 }
 
 export function UserFormDialog({ open, onOpenChange, user, companyId }: UserFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(user?.id);
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const userSchema = React.useMemo(() => makeUserSchema(t), [t]);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -153,11 +159,11 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger bruker' : 'Ny bruker'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('team.users.dialog.editTitle') : t('team.users.dialog.createTitle')}
+          </DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? 'Oppdater brukerinformasjonen nedenfor.'
-              : 'Fyll ut informasjonen for å opprette en ny bruker.'}
+            {isEdit ? t('team.users.dialog.editDesc') : t('team.users.dialog.createDesc')}
           </DialogDescription>
         </DialogHeader>
 
@@ -168,9 +174,9 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navn</FormLabel>
+                  <FormLabel>{t('team.users.dialog.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ola Nordmann" {...field} />
+                    <Input placeholder={t('team.users.dialog.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -181,9 +187,13 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
               name="userName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Brukernavn</FormLabel>
+                  <FormLabel>{t('team.users.dialog.userName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="ola" autoComplete="off" {...field} />
+                    <Input
+                      placeholder={t('team.users.dialog.userNamePlaceholder')}
+                      autoComplete="off"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -194,9 +204,9 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
               name="designation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tittel</FormLabel>
+                  <FormLabel>{t('team.users.dialog.designation')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Inspektør" {...field} />
+                    <Input placeholder={t('team.users.dialog.designationPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -207,17 +217,21 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Passord</FormLabel>
+                  <FormLabel>{t('team.users.dialog.password')}</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       autoComplete="new-password"
-                      placeholder={isEdit ? 'La stå tomt for å beholde' : '••••••••'}
+                      placeholder={
+                        isEdit
+                          ? t('team.users.dialog.passwordPlaceholderEdit')
+                          : t('team.users.dialog.passwordPlaceholderCreate')
+                      }
                       {...field}
                     />
                   </FormControl>
                   {isEdit && (
-                    <FormDescription>La stå tomt for å beholde nåværende passord.</FormDescription>
+                    <FormDescription>{t('team.users.dialog.passwordEditHint')}</FormDescription>
                   )}
                   <FormMessage />
                 </FormItem>
@@ -228,17 +242,17 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
               name="userTypeId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Brukertype</FormLabel>
+                  <FormLabel>{t('team.users.dialog.userType')}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Velg brukertype" />
+                        <SelectValue placeholder={t('team.users.dialog.userTypePlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {USER_TYPE_OPTIONS.map((o) => (
                         <SelectItem key={o.value} value={String(o.value)}>
-                          {o.label}
+                          {t(`team.userTypes.${o.value}`, { defaultValue: o.label })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -253,8 +267,8 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-md border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Admin</FormLabel>
-                    <FormDescription>Gi brukeren administratorrettigheter.</FormDescription>
+                    <FormLabel>{t('team.users.dialog.admin')}</FormLabel>
+                    <FormDescription>{t('team.users.dialog.adminHint')}</FormDescription>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -268,8 +282,8 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-md border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Aktiv</FormLabel>
-                    <FormDescription>Inaktive brukere kan ikke logge inn.</FormDescription>
+                    <FormLabel>{t('team.users.dialog.active')}</FormLabel>
+                    <FormDescription>{t('team.users.dialog.activeHint')}</FormDescription>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -285,11 +299,11 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

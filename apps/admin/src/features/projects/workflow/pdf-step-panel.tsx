@@ -9,6 +9,7 @@
  * request=JSON(含邮件字段 + attachmentURL),file 字段可选(默认不重传,后端按 attachmentURL 附件)。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText, Send, Eye, Loader2 } from 'lucide-react';
 
 import type { ProjectWorkflowDto } from '@nks/api-types';
@@ -28,9 +29,10 @@ interface PdfStepPanelProps {
 }
 
 export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
+  const { t } = useTranslation();
   const preview = useEmailPreview(step.preview);
   const execMut = useExecuteStepMultipart(projectId, step, step.execute, {
-    successMessage: 'Rapport sendt',
+    successMessage: t('workflow.toast.reportSent'),
   });
 
   const [emailFrom, setEmailFrom] = React.useState('');
@@ -69,7 +71,7 @@ export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
   if (preview.isPending) {
     return (
       <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
-        <Loader2 className="size-4 animate-spin" /> Genererer rapport og forhåndsvisning…
+        <Loader2 className="size-4 animate-spin" /> {t('workflow.panel.reportLoading')}
       </div>
     );
   }
@@ -78,43 +80,44 @@ export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
     <div className="space-y-4">
       {attachmentURL ? (
         <div className="space-y-1.5">
-          <Label>Rapport (PDF)</Label>
-          <iframe title="Rapport" src={attachmentURL} className="h-96 w-full rounded-md border" />
+          <Label>{t('workflow.panel.reportPdf')}</Label>
+          <iframe title={t('workflow.panel.reportPdf')} src={attachmentURL} className="h-96 w-full rounded-md border" />
           <a
             href={attachmentURL}
             target="_blank"
             rel="noreferrer"
             className="text-primary inline-flex items-center gap-1.5 text-sm underline"
           >
-            <FileText className="size-4" /> Åpne PDF i ny fane
+            <FileText className="size-4" /> {t('workflow.panel.openPdfNewTab')}
           </a>
         </div>
       ) : (
-        preview.isError && <p className="text-destructive text-sm">Kunne ikke generere rapport.</p>
+        preview.isError && <p className="text-destructive text-sm">{t('workflow.panel.reportError')}</p>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="wf-pdf-from">Fra</Label>
+          <Label htmlFor="wf-pdf-from">{t('workflow.panel.from')}</Label>
           <Input id="wf-pdf-from" value={emailFrom} onChange={(e) => setEmailFrom(e.target.value)} disabled={disabled} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="wf-pdf-to">Til</Label>
+          <Label htmlFor="wf-pdf-to">{t('workflow.panel.to')}</Label>
           <Input id="wf-pdf-to" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} disabled={disabled} />
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="wf-pdf-subject">Emne</Label>
+        <Label htmlFor="wf-pdf-subject">{t('workflow.panel.subject')}</Label>
         <Input id="wf-pdf-subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} disabled={disabled} />
       </div>
       <div className="space-y-1.5">
-        <Label>Innhold</Label>
+        <Label>{t('workflow.panel.content')}</Label>
         <RichTextEditor value={emailContent} onChange={setEmailContent} disabled={disabled} />
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="wf-pdf-file">
-          Erstatt vedlegg <span className="text-muted-foreground font-normal">(valgfritt)</span>
+          {t('workflow.panel.replaceAttachment')}{' '}
+          <span className="text-muted-foreground font-normal">{t('workflow.panel.optional')}</span>
         </Label>
         <Input
           id="wf-pdf-file"
@@ -131,11 +134,11 @@ export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
           disabled={disabled || preview.isPending}
           onClick={() => previewMutate(buildStepBase(projectId, step, { isTransfer: false }), { onSuccess: apply })}
         >
-          <Eye className="size-4" /> Regenerer
+          <Eye className="size-4" /> {t('workflow.actions.regenerate')}
         </Button>
         <Button type="button" disabled={disabled || execMut.isPending} onClick={handleSubmit}>
           {execMut.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-          Send rapport
+          {t('workflow.actions.sendReport')}
         </Button>
       </div>
     </div>

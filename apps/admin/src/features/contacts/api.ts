@@ -15,6 +15,7 @@
  *    这里用本地窄类型 GetAllContactResponse 承接,不改动契约包。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type {
@@ -55,6 +56,7 @@ export function useContacts() {
 
 /** 创建联系人。body 根键大写 Contact;返回 res.contact。 */
 export function useCreateContact() {
+  const { t } = useTranslation();
   return useApiMutation<ContactDto | undefined, ContactDto>({
     mutationFn: async (contact) => {
       const body: CreateContactRequest = { Contact: contact };
@@ -65,21 +67,22 @@ export function useCreateContact() {
       return res?.contact;
     },
     invalidateKeys: [contactKeys.list()],
-    successMessage: 'Kontakt opprettet',
-    errorMessage: 'Kunne ikke opprette kontakt',
+    successMessage: t('contacts.toast.created'),
+    errorMessage: t('contacts.toast.createError'),
   });
 }
 
 /** 更新联系人。body 根键大写 Contact;响应即 ContactDto。 */
 export function useUpdateContact() {
+  const { t } = useTranslation();
   return useApiMutation<ContactDto, ContactDto>({
     mutationFn: async (contact) => {
       const body: UpdateContactRequest = { Contact: contact };
       return getApiClient().put<ContactDto>(endpoints.contact.update.path, body);
     },
     invalidateKeys: [contactKeys.list()],
-    successMessage: 'Kontakt oppdatert',
-    errorMessage: 'Kunne ikke oppdatere kontakt',
+    successMessage: t('contacts.toast.updated'),
+    errorMessage: t('contacts.toast.updateError'),
   });
 }
 
@@ -89,6 +92,7 @@ export function useUpdateContact() {
  * 交由 useApiMutation 的 onError 统一 toast(errorMessage 关闭,直接用后端 message)。
  */
 export function useDeleteContact() {
+  const { t } = useTranslation();
   return useApiMutation<DeleteContactResponseDto, number>({
     mutationFn: async (contactId) => {
       const res = await getApiClient().delete<DeleteContactResponseDto>(
@@ -96,7 +100,7 @@ export function useDeleteContact() {
         { params: { contactId } },
       );
       if (res?.success === false) {
-        throw new Error(res.message || 'Kontakten kan ikke slettes');
+        throw new Error(res.message || t('contacts.toast.deleteBlocked'));
       }
       return res;
     },
@@ -104,7 +108,7 @@ export function useDeleteContact() {
     successMessage: false, // 用后端返回的 message 提示
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || 'Kontakt slettet');
+      toast.success(data?.message || t('contacts.toast.deleted'));
     },
   });
 }

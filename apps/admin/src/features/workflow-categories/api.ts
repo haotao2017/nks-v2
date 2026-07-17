@@ -22,6 +22,7 @@
  *    (400 会被 NksClient 抛成 NksApiError,message 取自响应体。)
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import type {
   WorkflowCategoryDto,
@@ -62,6 +63,7 @@ export function useWorkflowCategories() {
 
 /** 创建分类。body 根键小写 workflowCategory;返回 res.workflowCategory。 */
 export function useCreateWorkflowCategory() {
+  const { t } = useTranslation();
   return useApiMutation<WorkflowCategoryDto | undefined, WorkflowCategoryDto>({
     mutationFn: async (workflowCategory) => {
       const body: WrapperWorkflowCategory = { workflowCategory };
@@ -72,13 +74,14 @@ export function useCreateWorkflowCategory() {
       return res?.workflowCategory;
     },
     invalidateKeys: [workflowCategoryKeys.list()],
-    successMessage: 'Arbeidsflyt opprettet',
-    errorMessage: 'Kunne ikke opprette arbeidsflyt',
+    successMessage: t('workflowCategories.toast.created'),
+    errorMessage: t('workflowCategories.toast.createError'),
   });
 }
 
 /** 更新分类。body 根键小写 workflowCategory;返回 res.workflowCategory。 */
 export function useUpdateWorkflowCategory() {
+  const { t } = useTranslation();
   return useApiMutation<WorkflowCategoryDto | undefined, WorkflowCategoryDto>({
     mutationFn: async (workflowCategory) => {
       const body: WrapperWorkflowCategory = { workflowCategory };
@@ -89,13 +92,14 @@ export function useUpdateWorkflowCategory() {
       return res?.workflowCategory;
     },
     invalidateKeys: [workflowCategoryKeys.list()],
-    successMessage: 'Arbeidsflyt oppdatert',
-    errorMessage: 'Kunne ikke oppdatere arbeidsflyt',
+    successMessage: t('workflowCategories.toast.updated'),
+    errorMessage: t('workflowCategories.toast.updateError'),
   });
 }
 
 /** 删除分类。query 参数 WorkflowCategoryID。非 owner 或占用时后端 400 抛错,统一 toast。 */
 export function useDeleteWorkflowCategory() {
+  const { t } = useTranslation();
   return useApiMutation<RequestResponse, number>({
     mutationFn: async (workflowCategoryId) => {
       return getApiClient().delete<RequestResponse>(
@@ -104,8 +108,8 @@ export function useDeleteWorkflowCategory() {
       );
     },
     invalidateKeys: [workflowCategoryKeys.list()],
-    successMessage: 'Arbeidsflyt slettet',
-    errorMessage: 'Kunne ikke slette arbeidsflyt',
+    successMessage: t('workflowCategories.toast.deleted'),
+    errorMessage: t('workflowCategories.toast.deleteError'),
   });
 }
 
@@ -128,6 +132,7 @@ export function useWorkflowCategorySteps(categoryId: number | null) {
 
 /** 创建步骤。body 根键小写 workflowCategoryStep;失效对应分类的步骤列表。 */
 export function useCreateWorkflowCategoryStep(categoryId: number) {
+  const { t } = useTranslation();
   return useApiMutation<WorkflowCategoryStepDto | undefined, WorkflowCategoryStepDto>({
     mutationFn: async (workflowCategoryStep) => {
       const body: WrapperWorkflowCategoryStep = { workflowCategoryStep };
@@ -138,13 +143,14 @@ export function useCreateWorkflowCategoryStep(categoryId: number) {
       return res?.workflowCategoryStep;
     },
     invalidateKeys: [workflowCategoryKeys.steps(categoryId)],
-    successMessage: 'Steg opprettet',
-    errorMessage: 'Kunne ikke opprette steg',
+    successMessage: t('workflowCategories.steps.toast.created'),
+    errorMessage: t('workflowCategories.steps.toast.createError'),
   });
 }
 
 /** 更新步骤。body 根键小写 workflowCategoryStep。 */
 export function useUpdateWorkflowCategoryStep(categoryId: number) {
+  const { t } = useTranslation();
   return useApiMutation<WorkflowCategoryStepDto | undefined, WorkflowCategoryStepDto>({
     mutationFn: async (workflowCategoryStep) => {
       const body: WrapperWorkflowCategoryStep = { workflowCategoryStep };
@@ -155,13 +161,14 @@ export function useUpdateWorkflowCategoryStep(categoryId: number) {
       return res?.workflowCategoryStep;
     },
     invalidateKeys: [workflowCategoryKeys.steps(categoryId)],
-    successMessage: 'Steg oppdatert',
-    errorMessage: 'Kunne ikke oppdatere steg',
+    successMessage: t('workflowCategories.steps.toast.updated'),
+    errorMessage: t('workflowCategories.steps.toast.updateError'),
   });
 }
 
 /** 删除步骤。query 参数 WorkflowCategoryStepID。 */
 export function useDeleteWorkflowCategoryStep(categoryId: number) {
+  const { t } = useTranslation();
   return useApiMutation<RequestResponse, number>({
     mutationFn: async (stepId) => {
       return getApiClient().delete<RequestResponse>(
@@ -170,7 +177,7 @@ export function useDeleteWorkflowCategoryStep(categoryId: number) {
       );
     },
     invalidateKeys: [workflowCategoryKeys.steps(categoryId)],
-    successMessage: 'Steg slettet',
-    errorMessage: 'Kunne ikke slette steg',
+    successMessage: t('workflowCategories.steps.toast.deleted'),
+    errorMessage: t('workflowCategories.steps.toast.deleteError'),
   });
 }

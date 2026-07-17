@@ -5,6 +5,7 @@
  * 组合 DataTable + 表单弹窗 + 删除确认。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { ServiceDto } from '@nks/api-types';
 
@@ -30,6 +31,7 @@ export interface ServicesTableProps {
 }
 
 export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableProps) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useServices();
   const deleteMutation = useDeleteService();
 
@@ -39,10 +41,11 @@ export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableP
   const columns = React.useMemo(
     () =>
       getServiceColumns({
+        t,
         onEdit: (service) => setEditTarget(service),
         onDelete: (service) => setDeleteTarget(service),
       }),
-    [],
+    [t],
   );
 
   const confirmDelete = () => {
@@ -59,8 +62,8 @@ export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableP
         data={data}
         isLoading={isLoading}
         searchColumn="name"
-        searchPlaceholder="Søk etter navn…"
-        emptyMessage="Ingen tjenester enda."
+        searchPlaceholder={t('services.searchPlaceholder')}
+        emptyMessage={t('services.empty')}
       />
 
       {/* 新建 */}
@@ -80,15 +83,17 @@ export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableP
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette tjeneste?</AlertDialogTitle>
+            <AlertDialogTitle>{t('services.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.name}</span>? Denne handlingen kan ikke
-              angres.
+              {t('services.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.name}</span>
+              {t('services.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -97,7 +102,7 @@ export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableP
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

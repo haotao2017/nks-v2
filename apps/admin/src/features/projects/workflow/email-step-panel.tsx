@@ -10,6 +10,7 @@
  * 逐个参与方编辑正文/收件人后一并发送。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, Eye, Send, FastForward, Loader2 } from 'lucide-react';
 
 import type { EmailProjectPartiesWorkflowEntDto, ProjectWorkflowDto } from '@nks/api-types';
@@ -38,6 +39,7 @@ interface EmailStepPanelProps {
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? '';
 
 export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProps) {
+  const { t } = useTranslation();
   const preview = useEmailPreview(step.preview);
   // 发信端点:优先 sendEmail(WF8/9),否则普通 execute(WF1/4/12)。
   const sendMut = useSendEmail(projectId, step, step.sendEmail);
@@ -119,7 +121,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
         <>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="wf-email-from">Fra</Label>
+              <Label htmlFor="wf-email-from">{t('workflow.panel.from')}</Label>
               <Input
                 id="wf-email-from"
                 value={emailFrom}
@@ -128,7 +130,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="wf-email-to">Til</Label>
+              <Label htmlFor="wf-email-to">{t('workflow.panel.to')}</Label>
               <Input
                 id="wf-email-to"
                 value={emailTo}
@@ -138,7 +140,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="wf-email-subject">Emne</Label>
+            <Label htmlFor="wf-email-subject">{t('workflow.panel.subject')}</Label>
             <Input
               id="wf-email-subject"
               value={emailSubject}
@@ -147,23 +149,21 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Innhold</Label>
+            <Label>{t('workflow.panel.content')}</Label>
             <RichTextEditor value={emailContent} onChange={setEmailContent} disabled={disabled} />
           </div>
         </>
       ) : (
         <div className="space-y-4">
-          <p className="text-muted-foreground text-sm">
-            Rediger e-post per part. Alle valgte parter mottar sin egen e-post.
-          </p>
+          <p className="text-muted-foreground text-sm">{t('workflow.panel.multiHint')}</p>
           {parties.map((p, idx) => (
             <div key={`${p.partyTypeID ?? idx}`} className="rounded-md border p-3">
               <p className="mb-2 flex items-center gap-2 text-sm font-medium">
                 <Mail className="text-muted-foreground size-4" />
-                {p.partyTypeName || p.partyName || `Part ${idx + 1}`}
+                {p.partyTypeName || p.partyName || t('workflow.panel.partFallback', { n: idx + 1 })}
               </p>
               <div className="space-y-1.5">
-                <Label htmlFor={`wf-party-to-${idx}`}>Til</Label>
+                <Label htmlFor={`wf-party-to-${idx}`}>{t('workflow.panel.to')}</Label>
                 <Input
                   id={`wf-party-to-${idx}`}
                   value={p.emailTo ?? ''}
@@ -172,7 +172,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
                 />
               </div>
               <div className="mt-2 space-y-1.5">
-                <Label htmlFor={`wf-party-title-${idx}`}>Emne</Label>
+                <Label htmlFor={`wf-party-title-${idx}`}>{t('workflow.panel.subject')}</Label>
                 <Input
                   id={`wf-party-title-${idx}`}
                   value={p.title ?? ''}
@@ -181,7 +181,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
                 />
               </div>
               <div className="mt-2 space-y-1.5">
-                <Label>Innhold</Label>
+                <Label>{t('workflow.panel.content')}</Label>
                 <RichTextEditor
                   value={p.content ?? ''}
                   onChange={(html) => updateParty(idx, { content: html })}
@@ -194,9 +194,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
       )}
 
       {preview.isError && (
-        <p className="text-destructive text-sm">
-          Kunne ikke hente forhåndsvisning. Du kan fortsatt fylle ut og sende manuelt.
-        </p>
+        <p className="text-destructive text-sm">{t('workflow.panel.previewError')}</p>
       )}
 
       <div className="flex flex-wrap items-center gap-2">
@@ -218,12 +216,12 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
             }
           >
             {preview.isPending ? <Loader2 className="size-4 animate-spin" /> : <Eye className="size-4" />}
-            Oppdater forhåndsvisning
+            {t('workflow.actions.updatePreview')}
           </Button>
         )}
         <Button type="button" disabled={disabled || busy} onClick={handleSend}>
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-          {step.sendEmail ? 'Send e-post' : 'Fullfør steg'}
+          {step.sendEmail ? t('workflow.actions.sendEmail') : t('workflow.actions.completeStep')}
         </Button>
         {step.transfer && (
           <Button
@@ -233,7 +231,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
             onClick={() => transferMut.mutate()}
           >
             <FastForward className="size-4" />
-            Overfør uten å sende
+            {t('workflow.actions.transferWithoutSending')}
           </Button>
         )}
       </div>
@@ -242,10 +240,11 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
 }
 
 function LoadingPreview() {
+  const { t } = useTranslation();
   return (
     <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
       <Loader2 className="size-4 animate-spin" />
-      Henter e-postforhåndsvisning…
+      {t('workflow.panel.emailPreviewLoading')}
     </div>
   );
 }

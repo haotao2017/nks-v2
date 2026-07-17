@@ -6,7 +6,9 @@
  */
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { TFunction } from 'i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -33,15 +35,16 @@ import { Input } from '@/components/ui/input';
 
 import { useAddCompany } from './api';
 
-const companySchema = z.object({
-  companyName: z.string().trim().min(1, 'Selskapsnavn er påkrevd'),
-  organizationalNumber: z.string().optional(),
-  ownerName: z.string().optional(),
-  address: z.string().optional(),
-  emailAddress: z.string().optional(),
-});
+const makeCompanySchema = (t: TFunction) =>
+  z.object({
+    companyName: z.string().trim().min(1, t('companies.validation.companyNameRequired')),
+    organizationalNumber: z.string().optional(),
+    ownerName: z.string().optional(),
+    address: z.string().optional(),
+    emailAddress: z.string().optional(),
+  });
 
-type CompanyFormValues = z.infer<typeof companySchema>;
+type CompanyFormValues = z.infer<ReturnType<typeof makeCompanySchema>>;
 
 export interface CompanyFormDialogProps {
   open: boolean;
@@ -49,7 +52,10 @@ export interface CompanyFormDialogProps {
 }
 
 export function CompanyFormDialog({ open, onOpenChange }: CompanyFormDialogProps) {
+  const { t } = useTranslation();
   const addMutation = useAddCompany();
+
+  const companySchema = React.useMemo(() => makeCompanySchema(t), [t]);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
@@ -90,8 +96,8 @@ export function CompanyFormDialog({ open, onOpenChange }: CompanyFormDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nytt selskap</DialogTitle>
-          <DialogDescription>Opprett et nytt selskap i systemet.</DialogDescription>
+          <DialogTitle>{t('companies.dialog.title')}</DialogTitle>
+          <DialogDescription>{t('companies.dialog.desc')}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -101,7 +107,7 @@ export function CompanyFormDialog({ open, onOpenChange }: CompanyFormDialogProps
               name="companyName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Selskapsnavn</FormLabel>
+                  <FormLabel>{t('companies.dialog.companyName')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -114,7 +120,7 @@ export function CompanyFormDialog({ open, onOpenChange }: CompanyFormDialogProps
               name="organizationalNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Organisasjonsnummer</FormLabel>
+                  <FormLabel>{t('companies.dialog.orgNumber')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -127,7 +133,7 @@ export function CompanyFormDialog({ open, onOpenChange }: CompanyFormDialogProps
               name="ownerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Eier</FormLabel>
+                  <FormLabel>{t('companies.dialog.owner')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -140,7 +146,7 @@ export function CompanyFormDialog({ open, onOpenChange }: CompanyFormDialogProps
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Adresse</FormLabel>
+                  <FormLabel>{t('companies.dialog.address')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -153,7 +159,7 @@ export function CompanyFormDialog({ open, onOpenChange }: CompanyFormDialogProps
               name="emailAddress"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>E-postadresse</FormLabel>
+                  <FormLabel>{t('companies.dialog.email')}</FormLabel>
                   <FormControl>
                     <Input type="email" {...field} />
                   </FormControl>
@@ -169,11 +175,11 @@ export function CompanyFormDialog({ open, onOpenChange }: CompanyFormDialogProps
                 onClick={() => onOpenChange(false)}
                 disabled={addMutation.isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={addMutation.isPending}>
                 {addMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-                Opprett
+                {t('common.create')}
               </Button>
             </DialogFooter>
           </form>

@@ -11,6 +11,7 @@
  */
 import * as React from 'react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Check, Circle, MapPin } from 'lucide-react';
 
 import type { ProjectDto } from '@nks/api-types';
@@ -27,19 +28,19 @@ import {
 } from '@/features/projects/api';
 import { ProjectWorkflow } from '@/features/projects/workflow/project-workflow';
 
-/** 工作流各步:标签 + 完成标志字段 + 对应时间戳字段(用于概览)。 */
-const STEP_DEFS: { label: string; done: keyof ProjectDto; date?: keyof ProjectDto }[] = [
-  { label: 'Takk for bestillingen', done: 'takkBestillingenIsCompleted', date: 'takkBestillingenCdate' },
-  { label: 'Søknad om ansvarsrett', done: 'soknadOmAnsvarsrettIsCompleted', date: 'soknadOmAnsvarsrettCdate' },
-  { label: 'Ansvarlig søker', done: 'ansvarligSokerIsCompleted', date: 'ansvarligSokerCdate' },
-  { label: 'Gratulerer – godkjent', done: 'gratulererGodkjentIsCompleted', date: 'gratulererGodkjentCdate' },
-  { label: 'Opprett sjekkliste', done: 'createChecklistIsCompleted', date: 'createChecklistCdate' },
-  { label: 'Legg til parter', done: 'addPartiesIsCompleted', date: 'addPartiesCdate' },
-  { label: 'Prosjektleder / kontakt kunde', done: 'setProLeaderContactCustomerIsCompleted', date: 'setProLeaderContactCustomerCdate' },
-  { label: 'E-post kunde om inspeksjon', done: 'emailCustomerUpInspectionIsCompleted', date: 'emailCustomerUpInspectionCd' },
-  { label: 'Parter data', done: 'partiesDataIsCompleted', date: 'partiesDataCdate' },
-  { label: 'Tildel inspektør', done: 'assignInspectorIsCompleted', date: 'assignInspectorCdate' },
-  { label: 'Godkjenn inspeksjonsrapport', done: 'isApprovedInspReportIsCompleted', date: 'reviewInspReportCd' },
+/** 工作流各步:i18n 标签 key + 完成标志字段 + 对应时间戳字段(用于概览)。 */
+const STEP_DEFS: { labelKey: string; done: keyof ProjectDto; date?: keyof ProjectDto }[] = [
+  { labelKey: 'projects.steps.defs.takkBestillingen', done: 'takkBestillingenIsCompleted', date: 'takkBestillingenCdate' },
+  { labelKey: 'projects.steps.defs.soknadOmAnsvarsrett', done: 'soknadOmAnsvarsrettIsCompleted', date: 'soknadOmAnsvarsrettCdate' },
+  { labelKey: 'projects.steps.defs.ansvarligSoker', done: 'ansvarligSokerIsCompleted', date: 'ansvarligSokerCdate' },
+  { labelKey: 'projects.steps.defs.gratulererGodkjent', done: 'gratulererGodkjentIsCompleted', date: 'gratulererGodkjentCdate' },
+  { labelKey: 'projects.steps.defs.createChecklist', done: 'createChecklistIsCompleted', date: 'createChecklistCdate' },
+  { labelKey: 'projects.steps.defs.addParties', done: 'addPartiesIsCompleted', date: 'addPartiesCdate' },
+  { labelKey: 'projects.steps.defs.setProLeaderContactCustomer', done: 'setProLeaderContactCustomerIsCompleted', date: 'setProLeaderContactCustomerCdate' },
+  { labelKey: 'projects.steps.defs.emailCustomerUpInspection', done: 'emailCustomerUpInspectionIsCompleted', date: 'emailCustomerUpInspectionCd' },
+  { labelKey: 'projects.steps.defs.partiesData', done: 'partiesDataIsCompleted', date: 'partiesDataCdate' },
+  { labelKey: 'projects.steps.defs.assignInspector', done: 'assignInspectorIsCompleted', date: 'assignInspectorCdate' },
+  { labelKey: 'projects.steps.defs.approveInspReport', done: 'isApprovedInspReportIsCompleted', date: 'reviewInspReportCd' },
 ];
 
 function formatDate(value?: string): string {
@@ -54,6 +55,7 @@ export default function ProjectWorkbenchPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { t } = useTranslation();
   const { id } = React.use(params);
   const projectId = Number(id);
 
@@ -74,13 +76,13 @@ export default function ProjectWorkbenchPage({
         <Button variant="ghost" size="sm" asChild>
           <Link href="/projects">
             <ArrowLeft className="size-4" />
-            Tilbake til prosjekter
+            {t('projects.backToProjects')}
           </Link>
         </Button>
         <Card className="mx-auto max-w-xl">
           <CardHeader>
-            <CardTitle>Fant ikke prosjektet</CardTitle>
-            <CardDescription>Prosjekt #{id} kunne ikke lastes.</CardDescription>
+            <CardTitle>{t('projects.notFound')}</CardTitle>
+            <CardDescription>{t('projects.notFoundDescription', { id })}</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -93,12 +95,12 @@ export default function ProjectWorkbenchPage({
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link href="/projects">
             <ArrowLeft className="size-4" />
-            Tilbake til prosjekter
+            {t('projects.backToProjects')}
           </Link>
         </Button>
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-2xl font-semibold tracking-tight">
-            {project.title || `Prosjekt #${projectId}`}
+            {project.title || t('projects.fallbackTitle', { id: projectId })}
           </h2>
           {project.projectStatus && <Badge variant="secondary">{project.projectStatus}</Badge>}
         </div>
@@ -114,11 +116,11 @@ export default function ProjectWorkbenchPage({
 
       <Tabs defaultValue="steg">
         <TabsList>
-          <TabsTrigger value="steg">Steg</TabsTrigger>
-          <TabsTrigger value="sjekklister">Sjekklister</TabsTrigger>
-          <TabsTrigger value="deltakere">Deltakere</TabsTrigger>
-          <TabsTrigger value="dokumenter">Dokumenter</TabsTrigger>
-          <TabsTrigger value="arbeidsflyt">Arbeidsflyt</TabsTrigger>
+          <TabsTrigger value="steg">{t('projects.tabs.steps')}</TabsTrigger>
+          <TabsTrigger value="sjekklister">{t('projects.tabs.checklists')}</TabsTrigger>
+          <TabsTrigger value="deltakere">{t('projects.tabs.parties')}</TabsTrigger>
+          <TabsTrigger value="dokumenter">{t('projects.tabs.documents')}</TabsTrigger>
+          <TabsTrigger value="arbeidsflyt">{t('projects.tabs.workflow')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="steg">
@@ -133,8 +135,8 @@ export default function ProjectWorkbenchPage({
         <TabsContent value="dokumenter">
           <Card>
             <CardHeader>
-              <CardTitle>Dokumenter</CardTitle>
-              <CardDescription>Dokumenthåndtering kommer — under utvikling.</CardDescription>
+              <CardTitle>{t('projects.documents.title')}</CardTitle>
+              <CardDescription>{t('projects.documents.comingSoon')}</CardDescription>
             </CardHeader>
           </Card>
         </TabsContent>
@@ -147,13 +149,14 @@ export default function ProjectWorkbenchPage({
 }
 
 function StegOverview({ project }: { project: ProjectDto }) {
+  const { t } = useTranslation();
   const done = STEP_DEFS.filter((s) => project[s.done] === true).length;
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Steg</CardTitle>
+        <CardTitle>{t('projects.steps.title')}</CardTitle>
         <CardDescription>
-          {done} av {STEP_DEFS.length} steg fullført.
+          {t('projects.steps.progress', { done, total: STEP_DEFS.length })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -169,12 +172,12 @@ function StegOverview({ project }: { project: ProjectDto }) {
                   <Circle className="text-muted-foreground size-4 shrink-0" />
                 )}
                 <span className={isDone ? 'text-foreground text-sm' : 'text-muted-foreground text-sm'}>
-                  {step.label}
+                  {t(step.labelKey)}
                 </span>
                 <span className="ml-auto flex items-center gap-2">
                   {date && <span className="text-muted-foreground text-xs">{date}</span>}
                   <Badge variant={isDone ? 'default' : 'outline'}>
-                    {isDone ? 'Done' : 'To do'}
+                    {isDone ? t('projects.steps.done') : t('projects.steps.todo')}
                   </Badge>
                 </span>
               </li>
@@ -187,12 +190,13 @@ function StegOverview({ project }: { project: ProjectDto }) {
 }
 
 function ChecklistsPanel({ projectId }: { projectId: number }) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useProjectChecklists(projectId);
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sjekklister</CardTitle>
-        <CardDescription>Sjekklister knyttet til prosjektet.</CardDescription>
+        <CardTitle>{t('projects.checklists.title')}</CardTitle>
+        <CardDescription>{t('projects.checklists.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -201,12 +205,12 @@ function ChecklistsPanel({ projectId }: { projectId: number }) {
             <Skeleton className="h-9 w-full" />
           </div>
         ) : data.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Ingen sjekklister enda.</p>
+          <p className="text-muted-foreground text-sm">{t('projects.checklists.empty')}</p>
         ) : (
           <ul className="divide-border divide-y">
             {data.map((c) => (
               <li key={c.id} className="py-2.5 text-sm">
-                {c.checklistName || `Sjekkliste #${c.id}`}
+                {c.checklistName || t('projects.checklists.fallbackName', { id: c.id })}
               </li>
             ))}
           </ul>
@@ -217,12 +221,13 @@ function ChecklistsPanel({ projectId }: { projectId: number }) {
 }
 
 function PartiesPanel({ projectId }: { projectId: number }) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useProjectParties(projectId);
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Deltakere</CardTitle>
-        <CardDescription>Parter knyttet til prosjektet.</CardDescription>
+        <CardTitle>{t('projects.parties.title')}</CardTitle>
+        <CardDescription>{t('projects.parties.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -231,13 +236,13 @@ function PartiesPanel({ projectId }: { projectId: number }) {
             <Skeleton className="h-9 w-full" />
           </div>
         ) : data.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Ingen deltakere enda.</p>
+          <p className="text-muted-foreground text-sm">{t('projects.parties.empty')}</p>
         ) : (
           <ul className="divide-border divide-y">
             {data.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div>
-                  <p className="text-sm font-medium">{p.partyName || `Part #${p.id}`}</p>
+                  <p className="text-sm font-medium">{p.partyName || t('projects.parties.fallbackName', { id: p.id })}</p>
                   {p.email && <p className="text-muted-foreground text-xs">{p.email}</p>}
                 </div>
                 {p.partyTypeName && <Badge variant="secondary">{p.partyTypeName}</Badge>}

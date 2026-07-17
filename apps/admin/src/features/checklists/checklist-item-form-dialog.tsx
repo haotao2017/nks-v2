@@ -8,6 +8,8 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -34,11 +36,13 @@ import { Input } from '@/components/ui/input';
 
 import { useCreateChecklistItem, useUpdateChecklistItem } from './api';
 
-const itemSchema = z.object({
-  title: z.string().trim().min(1, 'Tittel er påkrevd'),
-});
+/** 校验消息随语言变化,故 schema 按 t 构建。 */
+const makeItemSchema = (t: TFunction) =>
+  z.object({
+    title: z.string().trim().min(1, t('checklists.items.validation.titleRequired')),
+  });
 
-type ItemFormValues = z.infer<typeof itemSchema>;
+type ItemFormValues = z.infer<ReturnType<typeof makeItemSchema>>;
 
 export interface ChecklistItemFormDialogProps {
   open: boolean;
@@ -54,10 +58,13 @@ export function ChecklistItemFormDialog({
   templateId,
   item,
 }: ChecklistItemFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(item?.id);
   const createMutation = useCreateChecklistItem(templateId);
   const updateMutation = useUpdateChecklistItem(templateId);
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const itemSchema = React.useMemo(() => makeItemSchema(t), [t]);
 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemSchema),
@@ -85,11 +92,15 @@ export function ChecklistItemFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger sjekkpunkt' : 'Nytt sjekkpunkt'}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? t('checklists.items.form.editTitle')
+              : t('checklists.items.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Oppdater sjekkpunktet nedenfor.'
-              : 'Fyll ut tittelen for det nye sjekkpunktet.'}
+              ? t('checklists.items.form.editDescription')
+              : t('checklists.items.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -100,9 +111,9 @@ export function ChecklistItemFormDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tittel</FormLabel>
+                  <FormLabel>{t('checklists.items.form.title')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="F.eks. Kontroller fundament" {...field} />
+                    <Input placeholder={t('checklists.items.form.titlePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,11 +127,11 @@ export function ChecklistItemFormDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

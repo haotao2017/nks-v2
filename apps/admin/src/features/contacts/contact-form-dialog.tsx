@@ -11,6 +11,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -39,17 +40,13 @@ import { useCreateContact, useUpdateContact } from './api';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-const contactSchema = z.object({
-  name: z.string().trim().min(1, 'Navn er påkrevd'),
-  contactNo: z.string().optional(),
-  email: z
-    .string()
-    .optional()
-    .refine((v) => !v || EMAIL_RE.test(v), 'Ugyldig e-postadresse'),
-  companyName: z.string().optional(),
-});
-
-type ContactFormValues = z.infer<typeof contactSchema>;
+/** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
+type ContactFormValues = {
+  name: string;
+  contactNo?: string;
+  email?: string;
+  companyName?: string;
+};
 
 export interface ContactFormDialogProps {
   open: boolean;
@@ -59,10 +56,25 @@ export interface ContactFormDialogProps {
 }
 
 export function ContactFormDialog({ open, onOpenChange, contact }: ContactFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(contact?.id);
   const createMutation = useCreateContact();
   const updateMutation = useUpdateContact();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const contactSchema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().trim().min(1, t('contacts.validation.nameRequired')),
+        contactNo: z.string().optional(),
+        email: z
+          .string()
+          .optional()
+          .refine((v) => !v || EMAIL_RE.test(v), t('contacts.validation.emailInvalid')),
+        companyName: z.string().optional(),
+      }),
+    [t],
+  );
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
@@ -100,11 +112,11 @@ export function ContactFormDialog({ open, onOpenChange, contact }: ContactFormDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger kontakt' : 'Ny kontakt'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('contacts.form.editTitle') : t('contacts.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? 'Oppdater kontaktinformasjonen nedenfor.'
-              : 'Fyll ut informasjonen for å opprette en ny kontakt.'}
+            {isEdit ? t('contacts.form.editDescription') : t('contacts.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -115,9 +127,9 @@ export function ContactFormDialog({ open, onOpenChange, contact }: ContactFormDi
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navn</FormLabel>
+                  <FormLabel>{t('contacts.form.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ola Nordmann" {...field} />
+                    <Input placeholder={t('contacts.form.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -128,9 +140,9 @@ export function ContactFormDialog({ open, onOpenChange, contact }: ContactFormDi
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>E-post</FormLabel>
+                  <FormLabel>{t('contacts.form.email')}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="ola@example.no" {...field} />
+                    <Input type="email" placeholder={t('contacts.form.emailPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -141,9 +153,9 @@ export function ContactFormDialog({ open, onOpenChange, contact }: ContactFormDi
               name="contactNo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefon</FormLabel>
+                  <FormLabel>{t('contacts.form.phone')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="+47 000 00 000" {...field} />
+                    <Input placeholder={t('contacts.form.phonePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -154,9 +166,9 @@ export function ContactFormDialog({ open, onOpenChange, contact }: ContactFormDi
               name="companyName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Firma</FormLabel>
+                  <FormLabel>{t('contacts.form.company')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Firmanavn AS" {...field} />
+                    <Input placeholder={t('contacts.form.companyPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -170,11 +182,11 @@ export function ContactFormDialog({ open, onOpenChange, contact }: ContactFormDi
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

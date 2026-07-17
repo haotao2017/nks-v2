@@ -40,15 +40,15 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-import { useContacts } from '@/features/contacts/api';
 import { useServices } from '@/features/services/api';
 
 import { useCreateProject, useUpdateProject } from '../api';
 import { wizardSchema, stepFields, type WizardValues } from './schema';
+import { ContactSelect } from './contact-select';
 
 const STEP_LABEL_KEYS = [
+  'projectWizard.steps.contactInfo',
   'projectWizard.steps.projectInfo',
-  'projectWizard.steps.customer',
   'projectWizard.steps.pricing',
 ];
 
@@ -75,7 +75,6 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
   const isEdit = Boolean(project?.id);
   const [step, setStep] = React.useState(0);
 
-  const { data: contacts = [] } = useContacts();
   const { data: services = [] } = useServices();
 
   const createMutation = useCreateProject();
@@ -206,8 +205,44 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
           })}
         </ol>
 
-        {/* Steg 1 —— Prosjektinfo */}
+        {/* Steg 1 —— Kontaktinfo (Kunde / Ansvarlig søker) */}
         {step === 0 && (
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <h3 className="mb-3 text-sm font-medium">
+                {t('projectWizard.fields.customer')}
+              </h3>
+              <FormField
+                control={form.control}
+                name="customerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <ContactSelect value={field.value ?? ''} onChange={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div>
+              <h3 className="mb-3 text-sm font-medium">
+                {t('projectWizard.fields.responsibleApplicant')}
+              </h3>
+              <FormField
+                control={form.control}
+                name="contactPersonId"
+                render={({ field }) => (
+                  <FormItem>
+                    <ContactSelect value={field.value ?? ''} onChange={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Steg 2 —— Prosjektinfo */}
+        {step === 1 && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <FormField
@@ -362,60 +397,6 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 )}
               />
             </div>
-          </div>
-        )}
-
-        {/* Steg 2 —— Kunde */}
-        {step === 1 && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="customerId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('projectWizard.fields.customer')}</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('projectWizard.fields.customerPlaceholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {contacts.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.name ?? `Kontakt #${c.id}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="contactPersonId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('projectWizard.fields.contactPerson')}</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('projectWizard.fields.contactPersonPlaceholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {contacts.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.name ?? `Kontakt #${c.id}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
         )}
 

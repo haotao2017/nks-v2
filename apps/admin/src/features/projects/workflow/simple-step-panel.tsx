@@ -10,6 +10,7 @@
  * 那些主数据操作在各自模块另有入口;此处按后端契约提供「触发 + 必要字段 + 结果」。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
 import type { ProjectWorkflowDto } from '@nks/api-types';
@@ -43,6 +44,7 @@ function plusMonths(n: number): string {
 }
 
 export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelProps) {
+  const { t } = useTranslation();
   const execMut = useExecuteStepJson(projectId, step, step.execute);
   const [date, setDate] = React.useState<string>(todayLocal());
 
@@ -55,12 +57,14 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
 
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">{step.description}</p>
+      {step.descriptionKey && (
+        <p className="text-muted-foreground text-sm">{t(step.descriptionKey)}</p>
+      )}
 
       {step.dateField && (
         <div className="space-y-2">
           <div className="space-y-1.5">
-            <Label htmlFor="wf-reminder-date">Påminnelsesdato</Label>
+            <Label htmlFor="wf-reminder-date">{t('workflow.panel.reminderDate')}</Label>
             <Input
               id="wf-reminder-date"
               type="date"
@@ -71,20 +75,20 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
           </div>
           <div className="flex flex-wrap gap-2">
             {[
-              { label: 'I dag', value: todayLocal() },
-              { label: '+3 mnd', value: plusMonths(3) },
-              { label: '+6 mnd', value: plusMonths(6) },
-              { label: '+9 mnd', value: plusMonths(9) },
+              { labelKey: 'workflow.panel.quick.today', value: todayLocal() },
+              { labelKey: 'workflow.panel.quick.plus3', value: plusMonths(3) },
+              { labelKey: 'workflow.panel.quick.plus6', value: plusMonths(6) },
+              { labelKey: 'workflow.panel.quick.plus9', value: plusMonths(9) },
             ].map((q) => (
               <Button
-                key={q.label}
+                key={q.labelKey}
                 type="button"
                 size="sm"
                 variant="outline"
                 disabled={disabled}
                 onClick={() => setDate(q.value)}
               >
-                {q.label}
+                {t(q.labelKey)}
               </Button>
             ))}
           </div>
@@ -93,7 +97,7 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
 
       <Button type="button" disabled={disabled || execMut.isPending} onClick={handleSubmit}>
         {execMut.isPending ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-        {step.approve ? 'Godkjenn og fullfør' : 'Bekreft og fullfør'}
+        {step.approve ? t('workflow.actions.approveAndComplete') : t('workflow.actions.confirmAndComplete')}
       </Button>
     </div>
   );

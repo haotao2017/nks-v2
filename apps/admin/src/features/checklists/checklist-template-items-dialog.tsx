@@ -9,6 +9,7 @@
  * - sortOrder 为后端 @JsonIgnore 不出现,故仅按返回顺序展示,序号用行号。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import type { ChecklistTemplateDto, ChecklistItemTemplateDto } from '@nks/api-types';
@@ -64,6 +65,7 @@ export function ChecklistTemplateItemsDialog({
   onOpenChange,
   template,
 }: ChecklistTemplateItemsDialogProps) {
+  const { t } = useTranslation();
   const templateId = template?.id ?? null;
   const { data: detail, isLoading } = useChecklistTemplate(open ? templateId : null);
   const deleteMutation = useDeleteChecklistItem(templateId ?? 0);
@@ -86,14 +88,16 @@ export function ChecklistTemplateItemsDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Sjekkpunkter — {template?.title}</DialogTitle>
-            <DialogDescription>Administrer sjekkpunktene i denne sjekklisten.</DialogDescription>
+            <DialogTitle>
+              {t('checklists.items.dialogTitle', { name: template?.title ?? '' })}
+            </DialogTitle>
+            <DialogDescription>{t('checklists.items.dialogDescription')}</DialogDescription>
           </DialogHeader>
 
           <div className="flex justify-end">
             <Button size="sm" onClick={() => setCreateOpen(true)} disabled={templateId == null}>
               <Plus className="size-4" />
-              Nytt sjekkpunkt
+              {t('checklists.items.newButton')}
             </Button>
           </div>
 
@@ -101,10 +105,10 @@ export function ChecklistTemplateItemsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">Nr.</TableHead>
-                  <TableHead>Tittel</TableHead>
+                  <TableHead className="w-16">{t('checklists.items.columns.sequence')}</TableHead>
+                  <TableHead>{t('checklists.items.columns.title')}</TableHead>
                   <TableHead>
-                    <span className="sr-only">Handlinger</span>
+                    <span className="sr-only">{t('common.actions')}</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -129,14 +133,14 @@ export function ChecklistTemplateItemsDialog({
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
                               <MoreHorizontal className="size-4" />
-                              <span className="sr-only">Åpne meny</span>
+                              <span className="sr-only">{t('common.openMenu')}</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => setEditTarget(item)}>
                               <Pencil className="size-4" />
-                              Rediger
+                              {t('common.edit')}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -144,7 +148,7 @@ export function ChecklistTemplateItemsDialog({
                               onClick={() => setDeleteTarget(item)}
                             >
                               <Trash2 className="size-4" />
-                              Slett
+                              {t('common.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -154,7 +158,7 @@ export function ChecklistTemplateItemsDialog({
                 ) : (
                   <TableRow>
                     <TableCell colSpan={3} className="text-muted-foreground h-24 text-center">
-                      Ingen sjekkpunkter enda.
+                      {t('checklists.items.empty')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -187,15 +191,17 @@ export function ChecklistTemplateItemsDialog({
       <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette sjekkpunkt?</AlertDialogTitle>
+            <AlertDialogTitle>{t('checklists.items.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.title}</span>? Denne handlingen kan ikke
-              angres.
+              {t('checklists.items.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.title}</span>
+              {t('checklists.items.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -204,7 +210,7 @@ export function ChecklistTemplateItemsDialog({
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

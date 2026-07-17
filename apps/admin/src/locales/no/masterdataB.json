@@ -1,0 +1,255 @@
+{
+  "buildingSuppliers": {
+    "title": "Byggevareleverandører",
+    "subtitle": "Administrer byggevareleverandører.",
+    "newButton": "Ny byggevareleverandør",
+    "searchPlaceholder": "Søk etter navn…",
+    "empty": "Ingen byggevareleverandører enda.",
+    "columns": {
+      "name": "Navn"
+    },
+    "form": {
+      "createTitle": "Ny byggevareleverandør",
+      "editTitle": "Rediger byggevareleverandør",
+      "createDescription": "Fyll ut informasjonen for å opprette en ny byggevareleverandør.",
+      "editDescription": "Oppdater byggevareleverandøren nedenfor.",
+      "name": "Navn",
+      "namePlaceholder": "F.eks. Byggmax",
+      "sortOrder": "Sortering",
+      "sortOrderPlaceholder": "F.eks. 1",
+      "sortOrderDescription": "Rekkefølge i listen (valgfritt)."
+    },
+    "delete": {
+      "title": "Slette byggevareleverandør?",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Denne handlingen kan ikke angres."
+    },
+    "toast": {
+      "created": "Byggevareleverandør opprettet",
+      "createError": "Kunne ikke opprette byggevareleverandør",
+      "updated": "Byggevareleverandør oppdatert",
+      "updateError": "Kunne ikke oppdatere byggevareleverandør",
+      "deleted": "Byggevareleverandør slettet"
+    },
+    "validation": {
+      "nameRequired": "Navn er påkrevd",
+      "sortOrderNumber": "Må være et tall"
+    }
+  },
+  "emailTemplates": {
+    "title": "E-postmaler",
+    "subtitle": "Administrer e-postmaler med variabler.",
+    "newButton": "Ny e-postmal",
+    "searchPlaceholder": "Søk etter tittel…",
+    "empty": "Ingen e-postmaler enda.",
+    "columns": {
+      "title": "Tittel"
+    },
+    "actions": {
+      "preview": "Forhåndsvis"
+    },
+    "form": {
+      "createTitle": "Ny e-postmal",
+      "editTitle": "Rediger e-postmal",
+      "createDescription": "Fyll ut malen. Bruk variabler for å sette inn dynamiske felter.",
+      "editDescription": "Oppdater malen nedenfor. Bruk variabler for å sette inn dynamiske felter.",
+      "title": "Tittel",
+      "titlePlaceholder": "F.eks. Velkomst-e-post",
+      "content": "Innhold"
+    },
+    "editor": {
+      "insertVariable": "Sett inn variabel",
+      "loadingVariables": "Laster variabler…",
+      "noVariables": "Ingen variabler tilgjengelig.",
+      "linkPrompt": "Lenke-URL",
+      "bold": "Fet",
+      "italic": "Kursiv",
+      "heading": "Overskrift",
+      "bulletList": "Punktliste",
+      "orderedList": "Nummerert liste",
+      "link": "Lenke",
+      "undo": "Angre",
+      "redo": "Gjør om"
+    },
+    "preview": {
+      "fallbackTitle": "Forhåndsvisning",
+      "description": "Forhåndsvisning av malen slik den vil se ut.",
+      "empty": "Ingen innhold."
+    },
+    "delete": {
+      "title": "Slette e-postmal?",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Denne handlingen kan ikke angres."
+    },
+    "toast": {
+      "created": "E-postmal opprettet",
+      "createError": "Kunne ikke opprette e-postmal",
+      "updated": "E-postmal oppdatert",
+      "updateError": "Kunne ikke oppdatere e-postmal",
+      "deleted": "E-postmal slettet",
+      "deleteBlocked": "E-postmalen kan ikke slettes"
+    },
+    "validation": {
+      "titleRequired": "Tittel er påkrevd"
+    }
+  },
+  "workflowCategories": {
+    "title": "Arbeidsflyt",
+    "subtitle": "Administrer arbeidsflyter og steg.",
+    "newButton": "Ny arbeidsflyt",
+    "searchPlaceholder": "Søk etter navn…",
+    "empty": "Ingen arbeidsflyter enda.",
+    "manageSteps": "Administrer steg",
+    "defaultBadge": "Standard",
+    "columns": {
+      "name": "Navn",
+      "isDefault": "Standard"
+    },
+    "form": {
+      "createTitle": "Ny arbeidsflyt",
+      "editTitle": "Rediger arbeidsflyt",
+      "createDescription": "Fyll ut informasjonen for å opprette en ny arbeidsflyt.",
+      "editDescription": "Oppdater arbeidsflyten nedenfor.",
+      "name": "Navn",
+      "namePlaceholder": "F.eks. Standard inspeksjon",
+      "isDefault": "Standard",
+      "isDefaultDescription": "Bruk denne arbeidsflyten som standard."
+    },
+    "delete": {
+      "title": "Slette arbeidsflyt?",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Denne handlingen kan ikke angres."
+    },
+    "toast": {
+      "created": "Arbeidsflyt opprettet",
+      "createError": "Kunne ikke opprette arbeidsflyt",
+      "updated": "Arbeidsflyt oppdatert",
+      "updateError": "Kunne ikke oppdatere arbeidsflyt",
+      "deleted": "Arbeidsflyt slettet",
+      "deleteError": "Kunne ikke slette arbeidsflyt"
+    },
+    "validation": {
+      "nameRequired": "Navn er påkrevd"
+    },
+    "steps": {
+      "dialogTitle": "Steg — {{name}}",
+      "dialogDescription": "Administrer stegene i denne arbeidsflyten.",
+      "newButton": "Nytt steg",
+      "empty": "Ingen steg enda.",
+      "activeBadge": "Aktiv",
+      "inactiveBadge": "Inaktiv",
+      "transferableBadge": "Ja",
+      "columns": {
+        "sequence": "Nr.",
+        "name": "Stegnavn",
+        "active": "Aktiv",
+        "transferable": "Overførbar"
+      },
+      "form": {
+        "createTitle": "Nytt steg",
+        "editTitle": "Rediger steg",
+        "createDescription": "Fyll ut informasjonen for det nye steget.",
+        "editDescription": "Oppdater steget nedenfor.",
+        "name": "Stegnavn",
+        "namePlaceholder": "F.eks. Befaring",
+        "sequence": "Rekkefølge",
+        "active": "Aktiv",
+        "activeDescription": "Steget er aktivt i arbeidsflyten.",
+        "transferable": "Overførbar",
+        "transferableDescription": "Steget kan overføres."
+      },
+      "delete": {
+        "title": "Slette steg?",
+        "confirmPrefix": "Er du sikker på at du vil slette",
+        "confirmSuffix": "? Denne handlingen kan ikke angres."
+      },
+      "toast": {
+        "created": "Steg opprettet",
+        "createError": "Kunne ikke opprette steg",
+        "updated": "Steg oppdatert",
+        "updateError": "Kunne ikke oppdatere steg",
+        "deleted": "Steg slettet",
+        "deleteError": "Kunne ikke slette steg"
+      },
+      "validation": {
+        "nameRequired": "Stegnavn er påkrevd",
+        "sequenceInt": "Rekkefølge må være et heltall",
+        "sequenceMin": "Kan ikke være negativt"
+      }
+    }
+  },
+  "checklists": {
+    "title": "Sjekklister",
+    "subtitle": "Administrer sjekklister og sjekkpunkter.",
+    "newButton": "Ny sjekkliste",
+    "searchPlaceholder": "Søk etter tittel…",
+    "empty": "Ingen sjekklister enda.",
+    "manageItems": "Administrer sjekkpunkter",
+    "columns": {
+      "title": "Tittel",
+      "itemCount": "Sjekkpunkter"
+    },
+    "form": {
+      "createTitle": "Ny sjekkliste",
+      "editTitle": "Rediger sjekkliste",
+      "createDescription": "Fyll ut tittel og legg eventuelt til sjekkpunkter.",
+      "editDescription": "Oppdater sjekklisten nedenfor.",
+      "title": "Tittel",
+      "titlePlaceholder": "F.eks. Standard sjekkliste",
+      "itemsLabel": "Sjekkpunkter",
+      "itemsEmpty": "Ingen sjekkpunkter enda. Du kan også legge dem til senere.",
+      "itemPlaceholder": "Sjekkpunkt {{index}}",
+      "itemRemove": "Fjern"
+    },
+    "delete": {
+      "title": "Slette sjekkliste?",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Denne handlingen kan ikke angres."
+    },
+    "toast": {
+      "created": "Sjekkliste opprettet",
+      "createError": "Kunne ikke opprette sjekkliste",
+      "updated": "Sjekkliste oppdatert",
+      "updateError": "Kunne ikke oppdatere sjekkliste",
+      "deleted": "Sjekkliste slettet",
+      "deleteBlocked": "Sjekklisten kan ikke slettes"
+    },
+    "validation": {
+      "titleRequired": "Tittel er påkrevd"
+    },
+    "items": {
+      "dialogTitle": "Sjekkpunkter — {{name}}",
+      "dialogDescription": "Administrer sjekkpunktene i denne sjekklisten.",
+      "newButton": "Nytt sjekkpunkt",
+      "empty": "Ingen sjekkpunkter enda.",
+      "columns": {
+        "sequence": "Nr.",
+        "title": "Tittel"
+      },
+      "form": {
+        "createTitle": "Nytt sjekkpunkt",
+        "editTitle": "Rediger sjekkpunkt",
+        "createDescription": "Fyll ut tittelen for det nye sjekkpunktet.",
+        "editDescription": "Oppdater sjekkpunktet nedenfor.",
+        "title": "Tittel",
+        "titlePlaceholder": "F.eks. Kontroller fundament"
+      },
+      "delete": {
+        "title": "Slette sjekkpunkt?",
+        "confirmPrefix": "Er du sikker på at du vil slette",
+        "confirmSuffix": "? Denne handlingen kan ikke angres."
+      },
+      "toast": {
+        "created": "Sjekkpunkt opprettet",
+        "createError": "Kunne ikke opprette sjekkpunkt",
+        "updated": "Sjekkpunkt oppdatert",
+        "updateError": "Kunne ikke oppdatere sjekkpunkt",
+        "deleted": "Sjekkpunkt slettet",
+        "deleteBlocked": "Sjekkpunktet kan ikke slettes"
+      },
+      "validation": {
+        "titleRequired": "Tittel er påkrevd"
+      }
+    }
+  }
+}

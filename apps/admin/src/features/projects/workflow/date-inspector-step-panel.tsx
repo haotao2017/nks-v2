@@ -11,6 +11,7 @@
  * 「Overfør」走 ProjectWFTenTransfer。ICS 日历邀请由后端在 isInspectorEmail=true 时生成。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CalendarClock, Send, FastForward, Loader2 } from 'lucide-react';
 
 import type { ProjectWorkflowDto } from '@nks/api-types';
@@ -58,10 +59,11 @@ function toLocalInput(iso?: string): string {
 }
 
 export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspectorStepPanelProps) {
+  const { t } = useTranslation();
   const inspectors = useInspectors();
   const saved = useWfTenSavedDetails(projectId);
   const execMut = useExecuteStepJson(projectId, step, step.execute, {
-    successMessage: 'Kontrolldato lagret',
+    successMessage: t('workflow.toast.inspectionDateSaved'),
   });
   const transferMut = useTransferStep(projectId, step, step.transfer);
 
@@ -113,8 +115,8 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
     <div className="space-y-4">
       <div className="flex items-center justify-between rounded-md border p-3">
         <div>
-          <p className="text-sm font-medium">Hopp over kontroll</p>
-          <p className="text-muted-foreground text-xs">Marker steget som fullført uten å planlegge kontroll.</p>
+          <p className="text-sm font-medium">{t('workflow.panel.skipInspection')}</p>
+          <p className="text-muted-foreground text-xs">{t('workflow.panel.skipInspectionHint')}</p>
         </div>
         <Switch checked={skip} onCheckedChange={setSkip} disabled={disabled} />
       </div>
@@ -122,15 +124,21 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
       {!skip && (
         <>
           <div className="space-y-1.5">
-            <Label htmlFor="wf-inspector">Inspektør</Label>
+            <Label htmlFor="wf-inspector">{t('workflow.panel.inspector')}</Label>
             <Select value={inspectorId} onValueChange={setInspectorId} disabled={disabled || inspectors.isPending}>
               <SelectTrigger id="wf-inspector">
-                <SelectValue placeholder={inspectors.isPending ? 'Laster…' : 'Velg inspektør'} />
+                <SelectValue
+                  placeholder={
+                    inspectors.isPending
+                      ? t('workflow.card.loadingShort')
+                      : t('workflow.panel.selectInspector')
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {inspectorOptions.map((u) => (
                   <SelectItem key={u.id} value={String(u.id)}>
-                    {u.fullName || u.designation || `Inspektør ${u.id}`}
+                    {u.fullName || u.designation || t('workflow.panel.inspectorFallback', { id: u.id })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -138,7 +146,7 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="wf-insp-date">Kontrolldato</Label>
+            <Label htmlFor="wf-insp-date">{t('workflow.panel.inspectionDate')}</Label>
             <Input
               id="wf-insp-date"
               type="datetime-local"
@@ -149,7 +157,7 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="wf-insp-comment">Kommentar</Label>
+            <Label htmlFor="wf-insp-comment">{t('workflow.panel.comment')}</Label>
             <Textarea
               id="wf-insp-comment"
               value={comment}
@@ -161,8 +169,8 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
 
           <div className="flex items-center justify-between rounded-md border p-3">
             <div>
-              <p className="text-sm font-medium">Send kalenderinvitasjon (ICS)</p>
-              <p className="text-muted-foreground text-xs">Varsle inspektøren med en kalenderinvitasjon.</p>
+              <p className="text-sm font-medium">{t('workflow.panel.calendarInvite')}</p>
+              <p className="text-muted-foreground text-xs">{t('workflow.panel.calendarInviteHint')}</p>
             </div>
             <Switch checked={notifyInspector} onCheckedChange={setNotifyInspector} disabled={disabled} />
           </div>
@@ -172,11 +180,11 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" disabled={disabled || busy} onClick={handleSubmit}>
           {execMut.isPending ? <Loader2 className="size-4 animate-spin" /> : skip ? <FastForward className="size-4" /> : <CalendarClock className="size-4" />}
-          {skip ? 'Fullfør uten kontroll' : 'Lagre kontrolldato'}
+          {skip ? t('workflow.actions.completeWithoutInspection') : t('workflow.actions.saveInspectionDate')}
         </Button>
         {step.transfer && (
           <Button type="button" variant="secondary" disabled={disabled || busy} onClick={() => transferMut.mutate()}>
-            <Send className="size-4" /> Overfør
+            <Send className="size-4" /> {t('workflow.actions.transfer')}
           </Button>
         )}
       </div>

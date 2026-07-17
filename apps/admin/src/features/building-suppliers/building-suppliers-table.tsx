@@ -5,6 +5,7 @@
  * 组合 DataTable + 表单弹窗 + 删除确认。删除占用软失败的 toast 由 api hook 统一处理。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { BuildingSupplierDto } from '@nks/api-types';
 
@@ -34,6 +35,7 @@ export function BuildingSuppliersTable({
   createOpen,
   onCreateOpenChange,
 }: BuildingSuppliersTableProps) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useBuildingSuppliers();
   const deleteMutation = useDeleteBuildingSupplier();
 
@@ -43,10 +45,11 @@ export function BuildingSuppliersTable({
   const columns = React.useMemo(
     () =>
       getBuildingSupplierColumns({
+        t,
         onEdit: (buildingSupplier) => setEditTarget(buildingSupplier),
         onDelete: (buildingSupplier) => setDeleteTarget(buildingSupplier),
       }),
-    [],
+    [t],
   );
 
   const confirmDelete = () => {
@@ -63,8 +66,8 @@ export function BuildingSuppliersTable({
         data={data}
         isLoading={isLoading}
         searchColumn="title"
-        searchPlaceholder="Søk etter navn…"
-        emptyMessage="Ingen byggevareleverandører enda."
+        searchPlaceholder={t('buildingSuppliers.searchPlaceholder')}
+        emptyMessage={t('buildingSuppliers.empty')}
       />
 
       {/* 新建 */}
@@ -84,15 +87,17 @@ export function BuildingSuppliersTable({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette byggevareleverandør?</AlertDialogTitle>
+            <AlertDialogTitle>{t('buildingSuppliers.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.title}</span>? Denne handlingen kan
-              ikke angres.
+              {t('buildingSuppliers.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.title}</span>
+              {t('buildingSuppliers.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -101,7 +106,7 @@ export function BuildingSuppliersTable({
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

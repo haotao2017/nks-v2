@@ -1,0 +1,177 @@
+{
+  "contacts": {
+    "title": "Kontakter",
+    "subtitle": "Administrer kontaktpersoner.",
+    "newButton": "Ny kontakt",
+    "searchPlaceholder": "Søk etter navn…",
+    "empty": "Ingen kontakter enda.",
+    "columns": {
+      "name": "Navn",
+      "phone": "Telefon",
+      "email": "E-post",
+      "company": "Firma"
+    },
+    "form": {
+      "createTitle": "Ny kontakt",
+      "editTitle": "Rediger kontakt",
+      "createDescription": "Fyll ut informasjonen for å opprette en ny kontakt.",
+      "editDescription": "Oppdater kontaktinformasjonen nedenfor.",
+      "name": "Navn",
+      "namePlaceholder": "Ola Nordmann",
+      "email": "E-post",
+      "emailPlaceholder": "ola@example.no",
+      "phone": "Telefon",
+      "phonePlaceholder": "+47 000 00 000",
+      "company": "Firma",
+      "companyPlaceholder": "Firmanavn AS"
+    },
+    "delete": {
+      "title": "Slette kontakt?",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Denne handlingen kan ikke angres."
+    },
+    "toast": {
+      "created": "Kontakt opprettet",
+      "createError": "Kunne ikke opprette kontakt",
+      "updated": "Kontakt oppdatert",
+      "updateError": "Kunne ikke oppdatere kontakt",
+      "deleted": "Kontakt slettet",
+      "deleteBlocked": "Kontakten kan ikke slettes"
+    },
+    "validation": {
+      "nameRequired": "Navn er påkrevd",
+      "emailInvalid": "Ugyldig e-postadresse"
+    }
+  },
+  "services": {
+    "title": "Tjenester",
+    "subtitle": "Administrer tjenester.",
+    "newButton": "Ny tjeneste",
+    "searchPlaceholder": "Søk etter navn…",
+    "empty": "Ingen tjenester enda.",
+    "columns": {
+      "name": "Navn",
+      "description": "Beskrivelse",
+      "rate": "Sats"
+    },
+    "form": {
+      "createTitle": "Ny tjeneste",
+      "editTitle": "Rediger tjeneste",
+      "createDescription": "Fyll ut informasjonen for å opprette en ny tjeneste.",
+      "editDescription": "Oppdater tjenesteinformasjonen nedenfor.",
+      "name": "Navn",
+      "namePlaceholder": "Tjenestenavn",
+      "description": "Beskrivelse",
+      "descriptionPlaceholder": "Beskrivelse av tjenesten",
+      "rate": "Sats",
+      "ratePlaceholder": "f.eks. 1200",
+      "chargedAs": "Belastes som (kode)",
+      "slabsLabel": "Prisintervaller",
+      "slabsEmpty": "Ingen prisintervaller.",
+      "slabFrom": "Fra",
+      "slabTo": "Til",
+      "slabRate": "Sats",
+      "slabRemove": "Fjern intervall",
+      "categoriesLabel": "Arbeidsflytkategorier",
+      "categoriesEmpty": "Ingen tilknyttede kategorier.",
+      "categoryIdPlaceholder": "Kategori-ID",
+      "categoryRemove": "Fjern kategori"
+    },
+    "delete": {
+      "title": "Slette tjeneste?",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Denne handlingen kan ikke angres."
+    },
+    "toast": {
+      "created": "Tjeneste opprettet",
+      "createError": "Kunne ikke opprette tjeneste",
+      "updated": "Tjeneste oppdatert",
+      "updateError": "Kunne ikke oppdatere tjeneste",
+      "deleted": "Tjeneste slettet",
+      "deleteBlocked": "Tjenesten kan ikke slettes"
+    },
+    "validation": {
+      "nameRequired": "Navn er påkrevd"
+    }
+  },
+  "partyTypes": {
+    "title": "Parttyper",
+    "subtitle": "Administrer parttyper.",
+    "newButton": "Ny parttype",
+    "searchPlaceholder": "Søk etter navn…",
+    "empty": "Ingen parttyper enda.",
+    "columns": {
+      "name": "Navn",
+      "default": "Standard"
+    },
+    "form": {
+      "createTitle": "Ny parttype",
+      "editTitle": "Rediger parttype",
+      "createDescription": "Fyll ut informasjonen for å opprette en ny parttype.",
+      "editDescription": "Oppdater parttypen nedenfor.",
+      "name": "Navn",
+      "namePlaceholder": "Parttypenavn",
+      "workflowCategory": "Arbeidsflytkategori",
+      "workflowCategoryPlaceholder": "Velg kategori",
+      "workflowCategoryNone": "Ingen",
+      "default": "Standard",
+      "defaultDescription": "Bruk som standard parttype."
+    },
+    "delete": {
+      "title": "Slette parttype?",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Denne handlingen kan ikke angres."
+    },
+    "toast": {
+      "created": "Parttype opprettet",
+      "createError": "Kunne ikke opprette parttype",
+      "updated": "Parttype oppdatert",
+      "updateError": "Kunne ikke oppdatere parttype",
+      "deleted": "Parttype slettet",
+      "deleteBlocked": "Parttypen kan ikke slettes"
+    },
+    "validation": {
+      "nameRequired": "Navn er påkrevd"
+    }
+  },
+  "docTypes": {
+    "title": "Dokumenttyper",
+    "subtitle": "Administrer dokumenttyper.",
+    "newButton": "Ny dokumenttype",
+    "searchPlaceholder": "Søk etter navn…",
+    "empty": "Ingen dokumenttyper enda.",
+    "columns": {
+      "name": "Navn",
+      "required": "Påkrevd"
+    },
+    "form": {
+      "createTitle": "Ny dokumenttype",
+      "editTitle": "Rediger dokumenttype",
+      "createDescription": "Fyll ut informasjonen for å opprette en ny dokumenttype.",
+      "editDescription": "Oppdater dokumenttypen nedenfor.",
+      "name": "Navn",
+      "namePlaceholder": "F.eks. Ferdigattest",
+      "required": "Påkrevd",
+      "requiredDescription": "Må dokumentet leveres?",
+      "partyTypeId": "Parttype-ID",
+      "partyTypeIdPlaceholder": "F.eks. 1",
+      "partyTypeIdDescription": "ID til tilknyttet parttype (valgfritt)."
+    },
+    "delete": {
+      "title": "Slette dokumenttype?",
+      "confirmPrefix": "Er du sikker på at du vil slette",
+      "confirmSuffix": "? Denne handlingen kan ikke angres."
+    },
+    "toast": {
+      "created": "Dokumenttype opprettet",
+      "createError": "Kunne ikke opprette dokumenttype",
+      "updated": "Dokumenttype oppdatert",
+      "updateError": "Kunne ikke oppdatere dokumenttype",
+      "deleted": "Dokumenttype slettet"
+    },
+    "validation": {
+      "nameRequired": "Navn er påkrevd",
+      "partyTypeIdNumber": "Må være et tall"
+    }
+  }
+}

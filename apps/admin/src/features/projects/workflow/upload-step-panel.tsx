@@ -9,6 +9,7 @@
  * 提交走 api-client.postForm(request=JSON.stringify({ProjectWorkflow}) + 文件)。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, Eye, FileText, Send, Loader2, X } from 'lucide-react';
 
 import type { ProjectWorkflowDto } from '@nks/api-types';
@@ -28,6 +29,7 @@ interface UploadStepPanelProps {
 }
 
 export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelProps) {
+  const { t } = useTranslation();
   const preview = useEmailPreview(step.preview);
   const execMut = useExecuteStepMultipart(projectId, step, step.execute);
 
@@ -68,26 +70,26 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
         <>
           {preview.isPending ? (
             <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
-              <Loader2 className="size-4 animate-spin" /> Henter forhåndsvisning…
+              <Loader2 className="size-4 animate-spin" /> {t('workflow.panel.previewLoading')}
             </div>
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="wf-up-from">Fra</Label>
+                  <Label htmlFor="wf-up-from">{t('workflow.panel.from')}</Label>
                   <Input id="wf-up-from" value={emailFrom} onChange={(e) => setEmailFrom(e.target.value)} disabled={disabled} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="wf-up-to">Til</Label>
+                  <Label htmlFor="wf-up-to">{t('workflow.panel.to')}</Label>
                   <Input id="wf-up-to" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} disabled={disabled} />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="wf-up-subject">Emne</Label>
+                <Label htmlFor="wf-up-subject">{t('workflow.panel.subject')}</Label>
                 <Input id="wf-up-subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} disabled={disabled} />
               </div>
               <div className="space-y-1.5">
-                <Label>Innhold</Label>
+                <Label>{t('workflow.panel.content')}</Label>
                 <RichTextEditor value={emailContent} onChange={setEmailContent} disabled={disabled} />
               </div>
               {attachmentURL && (
@@ -97,7 +99,7 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
                   rel="noreferrer"
                   className="text-primary inline-flex items-center gap-1.5 text-sm underline"
                 >
-                  <FileText className="size-4" /> Vis mal-vedlegg (PDF)
+                  <FileText className="size-4" /> {t('workflow.panel.templateAttachment')}
                 </a>
               )}
             </>
@@ -108,8 +110,10 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
       {/* Filopplasting */}
       <div className="space-y-1.5">
         <Label htmlFor="wf-up-files">
-          {step.multiFile ? 'Last opp filer' : 'Last opp fil'}
-          {hasEmail && <span className="text-muted-foreground font-normal"> (valgfritt)</span>}
+          {step.multiFile ? t('workflow.panel.uploadFilesLabel') : t('workflow.panel.uploadFileLabel')}
+          {hasEmail && (
+            <span className="text-muted-foreground font-normal"> {t('workflow.panel.optional')}</span>
+          )}
         </Label>
         <Input
           id="wf-up-files"
@@ -127,7 +131,7 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
                 <button
                   type="button"
                   className="hover:text-destructive"
-                  aria-label="Fjern fil"
+                  aria-label={t('workflow.panel.removeFile')}
                   onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
                 >
                   <X className="size-3.5" />
@@ -156,12 +160,12 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
               })
             }
           >
-            <Eye className="size-4" /> Oppdater forhåndsvisning
+            <Eye className="size-4" /> {t('workflow.actions.updatePreview')}
           </Button>
         )}
         <Button type="button" disabled={disabled || execMut.isPending} onClick={handleSubmit}>
           {execMut.isPending ? <Loader2 className="size-4 animate-spin" /> : hasEmail ? <Send className="size-4" /> : <Upload className="size-4" />}
-          {hasEmail ? 'Send med vedlegg' : 'Last opp og fullfør'}
+          {hasEmail ? t('workflow.actions.sendWithAttachment') : t('workflow.actions.uploadAndComplete')}
         </Button>
       </div>
     </div>

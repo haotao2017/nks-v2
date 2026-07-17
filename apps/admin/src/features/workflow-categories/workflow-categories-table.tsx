@@ -5,6 +5,7 @@
  * DataTable + 分类表单弹窗 + 步骤子管理弹窗 + 删除确认。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { WorkflowCategoryDto } from '@nks/api-types';
 
@@ -35,6 +36,7 @@ export function WorkflowCategoriesTable({
   createOpen,
   onCreateOpenChange,
 }: WorkflowCategoriesTableProps) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useWorkflowCategories();
   const deleteMutation = useDeleteWorkflowCategory();
 
@@ -45,11 +47,12 @@ export function WorkflowCategoriesTable({
   const columns = React.useMemo(
     () =>
       getWorkflowCategoryColumns({
+        t,
         onManageSteps: (c) => setStepsTarget(c),
         onEdit: (c) => setEditTarget(c),
         onDelete: (c) => setDeleteTarget(c),
       }),
-    [],
+    [t],
   );
 
   const confirmDelete = () => {
@@ -66,8 +69,8 @@ export function WorkflowCategoriesTable({
         data={data}
         isLoading={isLoading}
         searchColumn="name"
-        searchPlaceholder="Søk etter navn…"
-        emptyMessage="Ingen arbeidsflyter enda."
+        searchPlaceholder={t('workflowCategories.searchPlaceholder')}
+        emptyMessage={t('workflowCategories.empty')}
       />
 
       {/* 新建 */}
@@ -94,15 +97,17 @@ export function WorkflowCategoriesTable({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette arbeidsflyt?</AlertDialogTitle>
+            <AlertDialogTitle>{t('workflowCategories.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.name}</span>? Denne handlingen kan ikke
-              angres.
+              {t('workflowCategories.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.name}</span>
+              {t('workflowCategories.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -111,7 +116,7 @@ export function WorkflowCategoriesTable({
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

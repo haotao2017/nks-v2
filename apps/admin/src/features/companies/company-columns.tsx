@@ -4,6 +4,7 @@
  * 公司列定义 —— 超级管理面板只读列表。字段取自 CompanyProfile(GetAllProfiles 返回)。
  */
 import type { ColumnDef } from '@tanstack/react-table';
+import type { TFunction } from 'i18next';
 import { ArrowUpDown } from 'lucide-react';
 
 import type { CompanyProfile } from '@nks/api-types';
@@ -11,7 +12,7 @@ import type { CompanyProfile } from '@nks/api-types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-export function getCompanyColumns(): ColumnDef<CompanyProfile>[] {
+export function getCompanyColumns(t: TFunction): ColumnDef<CompanyProfile>[] {
   return [
     {
       accessorKey: 'companyName',
@@ -21,7 +22,7 @@ export function getCompanyColumns(): ColumnDef<CompanyProfile>[] {
           className="-ml-3 h-8"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Selskap
+          {t('companies.columns.company')}
           <ArrowUpDown className="size-3.5" />
         </Button>
       ),
@@ -29,33 +30,37 @@ export function getCompanyColumns(): ColumnDef<CompanyProfile>[] {
     },
     {
       accessorKey: 'organizationalNumber',
-      header: 'Org.nr',
+      header: t('companies.columns.orgNumber'),
       cell: ({ row }) => row.original.organizationalNumber || '—',
     },
     {
       accessorKey: 'ownerName',
-      header: 'Eier',
+      header: t('companies.columns.owner'),
       cell: ({ row }) => row.original.ownerName || '—',
     },
     {
       accessorKey: 'emailAddress',
-      header: 'E-post',
+      header: t('companies.columns.email'),
       cell: ({ row }) => row.original.emailAddress || '—',
     },
     {
       accessorKey: 'isSystemOwner',
-      header: 'Systemeier',
+      header: t('companies.columns.systemOwner'),
       cell: ({ row }) =>
-        row.original.isSystemOwner ? <Badge variant="secondary">Systemeier</Badge> : <span>—</span>,
+        row.original.isSystemOwner ? (
+          <Badge variant="secondary">{t('companies.badges.systemOwner')}</Badge>
+        ) : (
+          <span>—</span>
+        ),
     },
     {
       accessorKey: 'isActive',
-      header: 'Status',
+      header: t('companies.columns.status'),
       cell: ({ row }) =>
         row.original.isActive ? (
-          <Badge variant="secondary">Aktiv</Badge>
+          <Badge variant="secondary">{t('companies.badges.active')}</Badge>
         ) : (
-          <Badge variant="outline">Inaktiv</Badge>
+          <Badge variant="outline">{t('companies.badges.inactive')}</Badge>
         ),
     },
   ];

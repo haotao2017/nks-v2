@@ -12,6 +12,7 @@
 
 import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, FileText, Loader2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,6 +38,7 @@ export default function UploadDocumentPage() {
 }
 
 function UploadDocumentContent() {
+  const { t } = useTranslation();
   const sp = useSearchParams();
   const params = useMemo(() => parsePartyParams(sp), [sp]);
   const valid = isValidBaseParams(params);
@@ -48,7 +50,7 @@ function UploadDocumentContent() {
   if (!valid) return <InvalidLinkCard />;
 
   if (required.isLoading || uploaded.isLoading) {
-    return <LoadingCard label="Laster dokumenter …" />;
+    return <LoadingCard label={t('external.upload.loading')} />;
   }
   if (required.isError) {
     return <LoadErrorCard onRetry={() => required.refetch()} />;
@@ -59,17 +61,14 @@ function UploadDocumentContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Last opp dokumenter</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Last opp dokumentene som kreves for prosjektet. Du kan laste opp flere
-          filer per dokumenttype.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('external.upload.title')}</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{t('external.upload.subtitle')}</p>
       </div>
 
       {docs.length === 0 ? (
         <Card>
           <CardContent className="text-muted-foreground py-10 text-center text-sm">
-            Ingen dokumenter er etterspurt.
+            {t('external.upload.noDocs')}
           </CardContent>
         </Card>
       ) : (
@@ -79,7 +78,7 @@ function UploadDocumentContent() {
               key={doc.docTypeId}
               params={params}
               docTypeId={doc.docTypeId ?? 0}
-              docName={doc.docName ?? 'Dokument'}
+              docName={doc.docName ?? t('external.upload.defaultDocName')}
               isRequired={doc.isRequired ?? false}
               uploadedFileNames={(uploaded.data ?? [])
                 .filter((f) => f.partyDocTypeId === doc.docTypeId)
@@ -113,6 +112,7 @@ function DocTypeRow({
   uploadedFileNames: string[];
   uploadedCount?: number;
 }) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<File[]>([]);
   const upload = useUploadDocs(params);
 
@@ -133,11 +133,11 @@ function DocTypeRow({
       { docTypeId, files: selected },
       {
         onSuccess: () => {
-          toast.success(`«${docName}» lastet opp`);
+          toast.success(t('external.upload.uploadSuccess', { name: docName }));
           setSelected([]);
         },
         onError: (err) =>
-          toast.error(err instanceof Error ? err.message : 'Opplasting feilet'),
+          toast.error(err instanceof Error ? err.message : t('external.upload.uploadError')),
       },
     );
   }
@@ -149,12 +149,14 @@ function DocTypeRow({
           <div className="flex items-center gap-2">
             <FileText className="text-muted-foreground size-4" aria-hidden />
             <CardTitle className="text-base">{docName}</CardTitle>
-            {isRequired ? <Badge variant="destructive">Kreves</Badge> : null}
+            {isRequired ? (
+              <Badge variant="destructive">{t('external.upload.required')}</Badge>
+            ) : null}
           </div>
           {count > 0 ? (
             <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
               <CheckCircle2 className="size-3.5 text-green-600" aria-hidden />
-              {count} opplastet
+              {t('external.upload.uploadedCount', { count })}
             </span>
           ) : null}
         </div>
@@ -171,7 +173,7 @@ function DocTypeRow({
       <CardContent className="space-y-3">
         <label className="border-input hover:bg-accent/50 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed px-4 py-3 text-sm transition-colors">
           <Upload className="size-4" aria-hidden />
-          <span>Velg filer</span>
+          <span>{t('external.upload.chooseFiles')}</span>
           <input
             type="file"
             multiple
@@ -198,7 +200,7 @@ function DocTypeRow({
                 </span>
                 <button
                   type="button"
-                  aria-label={`Fjern ${f.name}`}
+                  aria-label={t('external.upload.removeFile', { name: f.name })}
                   onClick={() => removeAt(i)}
                   className="text-muted-foreground hover:text-foreground"
                 >
@@ -218,10 +220,10 @@ function DocTypeRow({
             {upload.isPending ? (
               <>
                 <Loader2 className="size-4 animate-spin" aria-hidden />
-                Laster opp …
+                {t('external.upload.uploading')}
               </>
             ) : (
-              'Last opp dokumentet'
+              t('external.upload.uploadButton')
             )}
           </Button>
         </div>

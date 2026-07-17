@@ -13,6 +13,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -41,17 +42,12 @@ import { Switch } from '@/components/ui/switch';
 
 import { useCreateDocType, useUpdateDocType } from './api';
 
-const docTypeSchema = z.object({
-  docName: z.string().trim().min(1, 'Navn er påkrevd'),
-  isRequired: z.boolean(),
-  // partyTypeId:第三方类型外键;可选,空则不发送。
-  partyTypeId: z
-    .string()
-    .optional()
-    .refine((v) => !v || /^\d+$/.test(v.trim()), 'Må være et tall'),
-});
-
-type DocTypeFormValues = z.infer<typeof docTypeSchema>;
+/** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
+type DocTypeFormValues = {
+  docName: string;
+  isRequired: boolean;
+  partyTypeId?: string;
+};
 
 export interface DocTypeFormDialogProps {
   open: boolean;
@@ -61,10 +57,25 @@ export interface DocTypeFormDialogProps {
 }
 
 export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(docType?.id);
   const createMutation = useCreateDocType();
   const updateMutation = useUpdateDocType();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const docTypeSchema = React.useMemo(
+    () =>
+      z.object({
+        docName: z.string().trim().min(1, t('docTypes.validation.nameRequired')),
+        isRequired: z.boolean(),
+        // partyTypeId:第三方类型外键;可选,空则不发送。
+        partyTypeId: z
+          .string()
+          .optional()
+          .refine((v) => !v || /^\d+$/.test(v.trim()), t('docTypes.validation.partyTypeIdNumber')),
+      }),
+    [t],
+  );
 
   const form = useForm<DocTypeFormValues>({
     resolver: zodResolver(docTypeSchema),
@@ -103,11 +114,11 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger dokumenttype' : 'Ny dokumenttype'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('docTypes.form.editTitle') : t('docTypes.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? 'Oppdater dokumenttypen nedenfor.'
-              : 'Fyll ut informasjonen for å opprette en ny dokumenttype.'}
+            {isEdit ? t('docTypes.form.editDescription') : t('docTypes.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -118,9 +129,9 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
               name="docName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navn</FormLabel>
+                  <FormLabel>{t('docTypes.form.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="F.eks. Ferdigattest" {...field} />
+                    <Input placeholder={t('docTypes.form.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -132,8 +143,8 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-md border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Påkrevd</FormLabel>
-                    <FormDescription>Må dokumentet leveres?</FormDescription>
+                    <FormLabel>{t('docTypes.form.required')}</FormLabel>
+                    <FormDescription>{t('docTypes.form.requiredDescription')}</FormDescription>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -146,16 +157,16 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
               name="partyTypeId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Parttype-ID</FormLabel>
+                  <FormLabel>{t('docTypes.form.partyTypeId')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       inputMode="numeric"
-                      placeholder="F.eks. 1"
+                      placeholder={t('docTypes.form.partyTypeIdPlaceholder')}
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>ID til tilknyttet parttype (valgfritt).</FormDescription>
+                  <FormDescription>{t('docTypes.form.partyTypeIdDescription')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -168,11 +179,11 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

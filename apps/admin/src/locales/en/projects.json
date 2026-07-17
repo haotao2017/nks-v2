@@ -1,0 +1,150 @@
+{
+  "projects": {
+    "title": "Projects",
+    "newProject": "New project",
+    "createDescription": "Fill in the information to create a new project.",
+    "searchPlaceholder": "Search by title…",
+    "backToProjects": "Back to projects",
+    "notFound": "Project not found",
+    "notFoundDescription": "Project #{{id}} could not be loaded.",
+    "fallbackTitle": "Project #{{id}}",
+    "subnav": {
+      "active": "Active",
+      "archived": "Archived",
+      "deleted": "Deleted"
+    },
+    "empty": {
+      "active": "No active projects yet.",
+      "archived": "No archived projects.",
+      "deleted": "No deleted projects."
+    },
+    "columns": {
+      "title": "Title",
+      "address": "Address",
+      "status": "Status",
+      "date": "Date"
+    },
+    "actions": {
+      "open": "Open workbench",
+      "archive": "Archive",
+      "unarchive": "Restore from archive",
+      "restore": "Restore"
+    },
+    "archiveDialog": {
+      "title": "Archive project?",
+      "description": "Do you want to archive <strong>{{title}}</strong>? You can restore it from the archive later."
+    },
+    "deleteDialog": {
+      "title": "Delete project?",
+      "description": "Do you want to delete <strong>{{title}}</strong>? The project will be moved to deleted and can be restored."
+    },
+    "tabs": {
+      "steps": "Steps",
+      "checklists": "Checklists",
+      "parties": "Participants",
+      "documents": "Documents",
+      "workflow": "Workflow"
+    },
+    "steps": {
+      "title": "Steps",
+      "progress": "{{done}} of {{total}} steps completed.",
+      "done": "Done",
+      "todo": "To do",
+      "defs": {
+        "takkBestillingen": "Thank you for the order",
+        "soknadOmAnsvarsrett": "Application for responsibility",
+        "ansvarligSoker": "Responsible applicant",
+        "gratulererGodkjent": "Congratulations – approved",
+        "createChecklist": "Create checklist",
+        "addParties": "Add parties",
+        "setProLeaderContactCustomer": "Project manager / contact customer",
+        "emailCustomerUpInspection": "Email customer about inspection",
+        "partiesData": "Parties data",
+        "assignInspector": "Assign inspector",
+        "approveInspReport": "Approve inspection report"
+      }
+    },
+    "checklists": {
+      "title": "Checklists",
+      "description": "Checklists linked to the project.",
+      "empty": "No checklists yet.",
+      "fallbackName": "Checklist #{{id}}"
+    },
+    "parties": {
+      "title": "Participants",
+      "description": "Parties linked to the project.",
+      "empty": "No participants yet.",
+      "fallbackName": "Party #{{id}}"
+    },
+    "documents": {
+      "title": "Documents",
+      "comingSoon": "Document management coming — under development."
+    },
+    "toast": {
+      "created": "Project created",
+      "createError": "Could not create project",
+      "updated": "Project updated",
+      "updateError": "Could not update project",
+      "archived": "Project archived",
+      "unarchived": "Project restored from archive",
+      "deleted": "Project deleted",
+      "restored": "Project restored",
+      "actionFailed": "The action failed"
+    }
+  },
+  "contactSelect": {
+    "placeholder": "Select contact",
+    "search": "Search contact...",
+    "empty": "No contact found.",
+    "editAria": "Edit contact",
+    "addAria": "New contact",
+    "name": "Name",
+    "companyName": "Company name",
+    "contactNo": "Contact no.",
+    "email": "E-mail",
+    "update": "Update",
+    "create": "Add",
+    "cancel": "Cancel",
+    "duplicate": "The contact already exists"
+  },
+  "projectWizard": {
+    "steps": {
+      "contactInfo": "Contact info",
+      "projectInfo": "Project info",
+      "customer": "Customer",
+      "pricing": "Pricing"
+    },
+    "fields": {
+      "responsibleApplicant": "Responsible applicant",
+      "title": "Title",
+      "titlePlaceholder": "Project title",
+      "address": "Address",
+      "addressPlaceholder": "Street address",
+      "gardsNo": "Land no.",
+      "bruksnummer": "Unit no.",
+      "postNo": "Postal code",
+      "poststed": "City",
+      "kommune": "Municipality",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "description": "Description",
+      "comments": "Comments",
+      "customer": "Customer",
+      "customerPlaceholder": "Select customer",
+      "contactPerson": "Contact person",
+      "contactPersonPlaceholder": "Select contact person",
+      "service": "Service",
+      "servicePlaceholder": "Select service",
+      "quantity": "Quantity",
+      "price": "Price"
+    },
+    "noServices": "No services added yet.",
+    "addService": "Add service",
+    "removeService": "Remove service",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save",
+    "create": "Create project"
+  }
+}

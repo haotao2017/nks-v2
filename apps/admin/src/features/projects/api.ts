@@ -27,6 +27,7 @@
  *  - 删除/归档为后端「HTTP 200 但 success:false」软失败模式,success===false 时抛错交由 toast。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type {
@@ -141,6 +142,7 @@ export function useProject(projectId: number | undefined) {
 
 /** 创建项目。body 根键小写 project;返回 res.project。 */
 export function useCreateProject() {
+  const { t } = useTranslation();
   return useApiMutation<ProjectDto | undefined, ProjectDto>({
     mutationFn: async (project) => {
       const body: WrapperProjectDto = { project };
@@ -151,13 +153,14 @@ export function useCreateProject() {
       return res?.project;
     },
     invalidateKeys: [projectKeys.list('active'), projectKeys.count()],
-    successMessage: 'Prosjekt opprettet',
-    errorMessage: 'Kunne ikke opprette prosjekt',
+    successMessage: t('projects.toast.created'),
+    errorMessage: t('projects.toast.createError'),
   });
 }
 
 /** 更新项目。body 根键小写 project;返回 res.project。 */
 export function useUpdateProject() {
+  const { t } = useTranslation();
   return useApiMutation<ProjectDto | undefined, ProjectDto>({
     mutationFn: async (project) => {
       const body: WrapperProjectDto = { project };
@@ -168,8 +171,8 @@ export function useUpdateProject() {
       return res?.project;
     },
     invalidateKeys: [projectKeys.all],
-    successMessage: 'Prosjekt oppdatert',
-    errorMessage: 'Kunne ikke oppdatere prosjekt',
+    successMessage: t('projects.toast.updated'),
+    errorMessage: t('projects.toast.updateError'),
   });
 }
 
@@ -178,6 +181,7 @@ export function useUpdateProject() {
  * isDelete=true 软删,false 恢复。success===false 视为软失败并抛错。
  */
 export function useDeleteProject() {
+  const { t } = useTranslation();
   return useApiMutation<
     DeleteProjectResponseDto,
     { projectId: number; isDelete: boolean }
@@ -188,7 +192,7 @@ export function useDeleteProject() {
         { params: { ProjectID: projectId, isDelete } },
       );
       if (res?.success === false) {
-        throw new Error(res.message || 'Handlingen mislyktes');
+        throw new Error(res.message || t('projects.toast.actionFailed'));
       }
       return res;
     },
@@ -199,8 +203,10 @@ export function useDeleteProject() {
     ],
     successMessage: false,
     errorMessage: false,
-    onSuccess: (data) => {
-      toast.success(data?.message || 'Prosjekt oppdatert');
+    onSuccess: (data, { isDelete }) => {
+      toast.success(
+        data?.message || t(isDelete ? 'projects.toast.deleted' : 'projects.toast.restored'),
+      );
     },
   });
 }
@@ -210,6 +216,7 @@ export function useDeleteProject() {
  * isArchive=true 归档,false 取消归档。success===false 视为软失败并抛错。
  */
 export function useArchiveProject() {
+  const { t } = useTranslation();
   return useApiMutation<
     DeleteProjectResponseDto,
     { projectId: number; isArchive: boolean }
@@ -220,7 +227,7 @@ export function useArchiveProject() {
         { params: { ProjectID: projectId, isArchive } },
       );
       if (res?.success === false) {
-        throw new Error(res.message || 'Handlingen mislyktes');
+        throw new Error(res.message || t('projects.toast.actionFailed'));
       }
       return res;
     },
@@ -231,8 +238,10 @@ export function useArchiveProject() {
     ],
     successMessage: false,
     errorMessage: false,
-    onSuccess: (data) => {
-      toast.success(data?.message || 'Prosjekt oppdatert');
+    onSuccess: (data, { isArchive }) => {
+      toast.success(
+        data?.message || t(isArchive ? 'projects.toast.archived' : 'projects.toast.unarchived'),
+      );
     },
   });
 }

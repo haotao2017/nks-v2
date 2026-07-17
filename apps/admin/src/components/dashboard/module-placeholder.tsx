@@ -1,8 +1,13 @@
+'use client';
+
+import { useTranslation } from 'react-i18next';
 import { Construction } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function ModulePlaceholder({ title }: { title: string }) {
+  const { t } = useTranslation();
+
   return (
     <Card className="mx-auto max-w-xl">
       <CardHeader>
@@ -10,10 +15,10 @@ export function ModulePlaceholder({ title }: { title: string }) {
           <Construction className="text-muted-foreground size-5" />
           {title}
         </CardTitle>
-        <CardDescription>Denne modulen er under utvikling.</CardDescription>
+        <CardDescription>{t('dashboard.placeholderDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground text-sm">Kommer snart — implementeres i en senere fase.</p>
+        <p className="text-muted-foreground text-sm">{t('dashboard.placeholderBody')}</p>
       </CardContent>
     </Card>
   );

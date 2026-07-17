@@ -5,6 +5,7 @@
  * 字段取自 UserProfileDto(GetAllUserProfile 返回)。
  */
 import type { ColumnDef } from '@tanstack/react-table';
+import type { TFunction } from 'i18next';
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 import type { UserProfileDto } from '@nks/api-types';
@@ -20,14 +21,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { userTypeLabel } from './api';
-
 export interface UserColumnActions {
   onEdit: (user: UserProfileDto) => void;
   onDelete: (user: UserProfileDto) => void;
+  t: TFunction;
 }
 
-export function getUserColumns({ onEdit, onDelete }: UserColumnActions): ColumnDef<UserProfileDto>[] {
+export function getUserColumns({
+  onEdit,
+  onDelete,
+  t,
+}: UserColumnActions): ColumnDef<UserProfileDto>[] {
   return [
     {
       accessorKey: 'fullName',
@@ -37,7 +41,7 @@ export function getUserColumns({ onEdit, onDelete }: UserColumnActions): ColumnD
           className="-ml-3 h-8"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Navn
+          {t('team.users.columns.name')}
           <ArrowUpDown className="size-3.5" />
         </Button>
       ),
@@ -45,38 +49,45 @@ export function getUserColumns({ onEdit, onDelete }: UserColumnActions): ColumnD
     },
     {
       accessorKey: 'userName',
-      header: 'Brukernavn',
+      header: t('team.users.columns.userName'),
       cell: ({ row }) => row.original.userName || '—',
     },
     {
       accessorKey: 'designation',
-      header: 'Tittel',
+      header: t('team.users.columns.designation'),
       cell: ({ row }) => row.original.designation || '—',
     },
     {
       accessorKey: 'userTypeId',
-      header: 'Brukertype',
-      cell: ({ row }) => userTypeLabel(row.original.userTypeId),
+      header: t('team.users.columns.userType'),
+      cell: ({ row }) =>
+        t(`team.userTypes.${row.original.userTypeId}`, {
+          defaultValue: t('team.userTypes.unknown'),
+        }),
     },
     {
       accessorKey: 'isAdmin',
-      header: 'Admin',
+      header: t('team.users.columns.admin'),
       cell: ({ row }) =>
-        row.original.isAdmin ? <Badge variant="secondary">Admin</Badge> : <span>—</span>,
+        row.original.isAdmin ? (
+          <Badge variant="secondary">{t('team.users.badges.admin')}</Badge>
+        ) : (
+          <span>—</span>
+        ),
     },
     {
       accessorKey: 'isActive',
-      header: 'Status',
+      header: t('team.users.columns.status'),
       cell: ({ row }) =>
         row.original.isActive ? (
-          <Badge variant="secondary">Aktiv</Badge>
+          <Badge variant="secondary">{t('team.users.badges.active')}</Badge>
         ) : (
-          <Badge variant="outline">Inaktiv</Badge>
+          <Badge variant="outline">{t('team.users.badges.inactive')}</Badge>
         ),
     },
     {
       id: 'actions',
-      header: () => <span className="sr-only">Handlinger</span>,
+      header: () => <span className="sr-only">{t('common.actions')}</span>,
       enableSorting: false,
       cell: ({ row }) => {
         const user = row.original;
@@ -86,19 +97,19 @@ export function getUserColumns({ onEdit, onDelete }: UserColumnActions): ColumnD
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="size-8">
                   <MoreHorizontal className="size-4" />
-                  <span className="sr-only">Åpne meny</span>
+                  <span className="sr-only">{t('common.openMenu')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onEdit(user)}>
                   <Pencil className="size-4" />
-                  Rediger
+                  {t('common.edit')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onClick={() => onDelete(user)}>
                   <Trash2 className="size-4" />
-                  Slett
+                  {t('common.delete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

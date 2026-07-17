@@ -19,6 +19,7 @@
  *    如需公司文件夹总览可按同样模式补 useAllCompaniesFolders。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import type {
   CompanyProfile,
@@ -69,14 +70,15 @@ export function useAllCompanyProfiles(enabled = true) {
 
 /** 新建公司。body 根键 companyProfile;响应即 CompanyProfile。需 SystemOwner。 */
 export function useAddCompany() {
+  const { t } = useTranslation();
   return useApiMutation<CompanyProfile, CompanyProfile>({
     mutationFn: async (companyProfile) => {
       const body: WrapperCompanyProfile = { companyProfile };
       return getApiClient().put<CompanyProfile>(endpoints.company.addNewProfile.path, body);
     },
     invalidateKeys: [companiesKeys.profiles()],
-    successMessage: 'Selskap opprettet',
-    errorMessage: 'Kunne ikke opprette selskap',
+    successMessage: t('companies.toast.created'),
+    errorMessage: t('companies.toast.createError'),
   });
 }
 
@@ -93,13 +95,14 @@ export function useBucketDetail(enabled = true) {
 
 /** 更新 S3 存储桶。body 根键 S3bucket;响应即 S3Bucket。需 SystemOwner。 */
 export function useUpdateBucket() {
+  const { t } = useTranslation();
   return useApiMutation<S3Bucket, S3Bucket>({
     mutationFn: async (bucket) => {
       const body: WrapperS3Bucket = { S3bucket: bucket };
       return getApiClient().put<S3Bucket>(endpoints.company.updateS3Bucket.path, body);
     },
     invalidateKeys: [companiesKeys.bucket()],
-    successMessage: 'S3-bøtte oppdatert',
-    errorMessage: 'Kunne ikke oppdatere S3-bøtte',
+    successMessage: t('companies.toast.bucketUpdated'),
+    errorMessage: t('companies.toast.bucketUpdateError'),
   });
 }

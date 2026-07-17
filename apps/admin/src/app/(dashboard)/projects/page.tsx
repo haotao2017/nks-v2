@@ -7,6 +7,7 @@
  */
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ import { useProjectsCount } from '@/features/projects/api';
 import { ProjectWizard } from '@/features/projects/wizard/project-wizard';
 
 export default function ProjectsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [createOpen, setCreateOpen] = React.useState(false);
   const { data: count } = useProjectsCount();
@@ -31,7 +33,7 @@ export default function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-semibold tracking-tight">Prosjekter</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">{t('projects.title')}</h2>
           {typeof count?.notArchivedOrDeleted === 'number' && (
             <Badge variant="secondary" className="h-6 min-w-6 justify-center px-1.5">
               {count.notArchivedOrDeleted}
@@ -40,7 +42,7 @@ export default function ProjectsPage() {
         </div>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="size-4" />
-          Nytt prosjekt
+          {t('projects.newProject')}
         </Button>
       </div>
 
@@ -49,10 +51,8 @@ export default function ProjectsPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nytt prosjekt</DialogTitle>
-            <DialogDescription>
-              Fyll ut informasjonen for å opprette et nytt prosjekt.
-            </DialogDescription>
+            <DialogTitle>{t('projects.newProject')}</DialogTitle>
+            <DialogDescription>{t('projects.createDescription')}</DialogDescription>
           </DialogHeader>
           <ProjectWizard
             onCancel={() => setCreateOpen(false)}

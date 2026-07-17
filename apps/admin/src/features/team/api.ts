@@ -24,6 +24,7 @@
  *  - 密码为明文字段,前端只透传给后端(后端 BCrypt),不在前端加密。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type {
@@ -107,6 +108,7 @@ export function useUserProfile(userProfileId?: number) {
 
 /** 创建用户。body 根键 userProfile;返回 res.userProfile。需 ROLE_ADMIN。 */
 export function useCreateUser() {
+  const { t } = useTranslation();
   return useApiMutation<UserProfileDto | undefined, CreateUserProfileDto>({
     mutationFn: async (userProfile) => {
       const body: CreateUserProfileRequest = { userProfile };
@@ -117,13 +119,14 @@ export function useCreateUser() {
       return res?.userProfile;
     },
     invalidateKeys: [teamKeys.users()],
-    successMessage: 'Bruker opprettet',
-    errorMessage: 'Kunne ikke opprette bruker',
+    successMessage: t('team.toast.userCreated'),
+    errorMessage: t('team.toast.userCreateError'),
   });
 }
 
 /** 更新用户。body 根键 userProfile;返回 res.userProfile。 */
 export function useUpdateUser() {
+  const { t } = useTranslation();
   return useApiMutation<UserProfileDto | undefined, UserProfileUpdateDto>({
     mutationFn: async (userProfile) => {
       const body: UpdateUserProfileRequest = { userProfile };
@@ -134,13 +137,14 @@ export function useUpdateUser() {
       return res?.userProfile;
     },
     invalidateKeys: [teamKeys.users()],
-    successMessage: 'Bruker oppdatert',
-    errorMessage: 'Kunne ikke oppdatere bruker',
+    successMessage: t('team.toast.userUpdated'),
+    errorMessage: t('team.toast.userUpdateError'),
   });
 }
 
 /** 删除用户。query 参数 UserProfileID;success=false 视为软失败。需 ROLE_ADMIN。 */
 export function useDeleteUser() {
+  const { t } = useTranslation();
   return useApiMutation<MessageSuccessResponse, number>({
     mutationFn: async (userProfileId) => {
       const res = await getApiClient().delete<MessageSuccessResponse>(
@@ -148,7 +152,7 @@ export function useDeleteUser() {
         { params: { UserProfileID: userProfileId } },
       );
       if (res?.success === false) {
-        throw new Error(res.message || 'Brukeren kan ikke slettes');
+        throw new Error(res.message || t('team.toast.userDeleteBlocked'));
       }
       return res;
     },
@@ -156,7 +160,7 @@ export function useDeleteUser() {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || 'Bruker slettet');
+      toast.success(data?.message || t('team.toast.userDeleted'));
     },
   });
 }
@@ -167,6 +171,7 @@ export function useDeleteUser() {
 /* -------------------------------------------------------------------------- */
 
 export function useUpdateMyProfile(userProfileId?: number) {
+  const { t } = useTranslation();
   return useApiMutation<UserProfileDto | undefined, UserProfileUpdateDto>({
     mutationFn: async (userProfile) => {
       const body: UpdateUserProfileRequest = { userProfile };
@@ -177,8 +182,8 @@ export function useUpdateMyProfile(userProfileId?: number) {
       return res?.userProfile;
     },
     invalidateKeys: [teamKeys.users(), teamKeys.userProfile(userProfileId)],
-    successMessage: 'Profil oppdatert',
-    errorMessage: 'Kunne ikke oppdatere profil',
+    successMessage: t('team.toast.profileUpdated'),
+    errorMessage: t('team.toast.profileUpdateError'),
   });
 }
 
@@ -203,14 +208,15 @@ export function useCompanyProfile(companyId?: number) {
 
 /** 更新公司资料。body 根键 companyProfile;响应即 CompanyProfile。 */
 export function useUpdateCompanyProfile(companyId?: number) {
+  const { t } = useTranslation();
   return useApiMutation<CompanyProfile, CompanyProfile>({
     mutationFn: async (companyProfile) =>
       getApiClient().put<CompanyProfile>(endpoints.company.updateProfile.path, {
         companyProfile,
       }),
     invalidateKeys: [teamKeys.companyProfile(companyId)],
-    successMessage: 'Selskapsinformasjon oppdatert',
-    errorMessage: 'Kunne ikke oppdatere selskapsinformasjon',
+    successMessage: t('team.toast.companyProfileUpdated'),
+    errorMessage: t('team.toast.companyProfileUpdateError'),
   });
 }
 
@@ -232,14 +238,15 @@ export function useCompanyFolder(companyId?: number) {
 
 /** 更新公司文件夹。body 根键 DocFolders;响应即 DocFolders。后端要求 SystemOwner。 */
 export function useUpdateCompanyFolder(companyId?: number) {
+  const { t } = useTranslation();
   return useApiMutation<DocFolders, DocFolders>({
     mutationFn: async (docFolders) => {
       const body: WrapperDocFolders = { DocFolders: docFolders };
       return getApiClient().put<DocFolders>(endpoints.company.updateSingleFolder.path, body);
     },
     invalidateKeys: [teamKeys.companyFolder(companyId)],
-    successMessage: 'Mappe oppdatert',
-    errorMessage: 'Kunne ikke oppdatere mappe',
+    successMessage: t('team.toast.folderUpdated'),
+    errorMessage: t('team.toast.folderUpdateError'),
   });
 }
 

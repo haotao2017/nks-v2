@@ -12,6 +12,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -43,15 +44,11 @@ import {
   type BuildingSupplierPayload,
 } from './api';
 
-const buildingSupplierSchema = z.object({
-  title: z.string().trim().min(1, 'Navn er påkrevd'),
-  sortOrder: z
-    .string()
-    .optional()
-    .refine((v) => !v || /^\d+$/.test(v.trim()), 'Må være et tall'),
-});
-
-type BuildingSupplierFormValues = z.infer<typeof buildingSupplierSchema>;
+/** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
+type BuildingSupplierFormValues = {
+  title: string;
+  sortOrder?: string;
+};
 
 export interface BuildingSupplierFormDialogProps {
   open: boolean;
@@ -65,10 +62,26 @@ export function BuildingSupplierFormDialog({
   onOpenChange,
   buildingSupplier,
 }: BuildingSupplierFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(buildingSupplier?.id);
   const createMutation = useCreateBuildingSupplier();
   const updateMutation = useUpdateBuildingSupplier();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const buildingSupplierSchema = React.useMemo(
+    () =>
+      z.object({
+        title: z.string().trim().min(1, t('buildingSuppliers.validation.nameRequired')),
+        sortOrder: z
+          .string()
+          .optional()
+          .refine(
+            (v) => !v || /^\d+$/.test(v.trim()),
+            t('buildingSuppliers.validation.sortOrderNumber'),
+          ),
+      }),
+    [t],
+  );
 
   const form = useForm<BuildingSupplierFormValues>({
     resolver: zodResolver(buildingSupplierSchema),
@@ -104,12 +117,14 @@ export function BuildingSupplierFormDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? 'Rediger byggevareleverandør' : 'Ny byggevareleverandør'}
+            {isEdit
+              ? t('buildingSuppliers.form.editTitle')
+              : t('buildingSuppliers.form.createTitle')}
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Oppdater byggevareleverandøren nedenfor.'
-              : 'Fyll ut informasjonen for å opprette en ny byggevareleverandør.'}
+              ? t('buildingSuppliers.form.editDescription')
+              : t('buildingSuppliers.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -120,9 +135,9 @@ export function BuildingSupplierFormDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navn</FormLabel>
+                  <FormLabel>{t('buildingSuppliers.form.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="F.eks. Byggmax" {...field} />
+                    <Input placeholder={t('buildingSuppliers.form.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -133,16 +148,18 @@ export function BuildingSupplierFormDialog({
               name="sortOrder"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sortering</FormLabel>
+                  <FormLabel>{t('buildingSuppliers.form.sortOrder')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       inputMode="numeric"
-                      placeholder="F.eks. 1"
+                      placeholder={t('buildingSuppliers.form.sortOrderPlaceholder')}
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>Rekkefølge i listen (valgfritt).</FormDescription>
+                  <FormDescription>
+                    {t('buildingSuppliers.form.sortOrderDescription')}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -155,11 +172,11 @@ export function BuildingSupplierFormDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

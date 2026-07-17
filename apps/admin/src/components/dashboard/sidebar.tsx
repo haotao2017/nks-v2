@@ -27,7 +27,7 @@ export function Sidebar() {
         <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md">
           <ShieldCheck className="size-4" />
         </div>
-        <span className="font-semibold tracking-tight">NKS Admin</span>
+        <span className="font-semibold tracking-tight">{t('common.appName')}</span>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">

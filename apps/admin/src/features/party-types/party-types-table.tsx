@@ -5,6 +5,7 @@
  * 组合 DataTable + 表单弹窗 + 删除确认。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { PartyTypeDto } from '@nks/api-types';
 
@@ -30,6 +31,7 @@ export interface PartyTypesTableProps {
 }
 
 export function PartyTypesTable({ createOpen, onCreateOpenChange }: PartyTypesTableProps) {
+  const { t } = useTranslation();
   const { data = [], isLoading } = usePartyTypes();
   const deleteMutation = useDeletePartyType();
 
@@ -39,10 +41,11 @@ export function PartyTypesTable({ createOpen, onCreateOpenChange }: PartyTypesTa
   const columns = React.useMemo(
     () =>
       getPartyTypeColumns({
+        t,
         onEdit: (partyType) => setEditTarget(partyType),
         onDelete: (partyType) => setDeleteTarget(partyType),
       }),
-    [],
+    [t],
   );
 
   const confirmDelete = () => {
@@ -59,8 +62,8 @@ export function PartyTypesTable({ createOpen, onCreateOpenChange }: PartyTypesTa
         data={data}
         isLoading={isLoading}
         searchColumn="name"
-        searchPlaceholder="Søk etter navn…"
-        emptyMessage="Ingen parttyper enda."
+        searchPlaceholder={t('partyTypes.searchPlaceholder')}
+        emptyMessage={t('partyTypes.empty')}
       />
 
       {/* 新建 */}
@@ -80,15 +83,17 @@ export function PartyTypesTable({ createOpen, onCreateOpenChange }: PartyTypesTa
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette parttype?</AlertDialogTitle>
+            <AlertDialogTitle>{t('partyTypes.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.name}</span>? Denne handlingen kan ikke
-              angres.
+              {t('partyTypes.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.name}</span>
+              {t('partyTypes.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -97,7 +102,7 @@ export function PartyTypesTable({ createOpen, onCreateOpenChange }: PartyTypesTa
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

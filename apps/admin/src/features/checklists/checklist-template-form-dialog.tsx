@@ -10,6 +10,8 @@
 import * as React from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { z } from 'zod';
 import { Loader2, Plus, X } from 'lucide-react';
 
@@ -36,16 +38,18 @@ import { Input } from '@/components/ui/input';
 
 import { useCreateChecklistTemplate, useUpdateChecklistTemplate } from './api';
 
-const templateSchema = z.object({
-  title: z.string().trim().min(1, 'Tittel er påkrevd'),
-  items: z.array(
-    z.object({
-      title: z.string().trim().min(1, 'Tittel er påkrevd'),
-    }),
-  ),
-});
+/** 校验消息随语言变化,故 schema 按 t 构建。 */
+const makeTemplateSchema = (t: TFunction) =>
+  z.object({
+    title: z.string().trim().min(1, t('checklists.validation.titleRequired')),
+    items: z.array(
+      z.object({
+        title: z.string().trim().min(1, t('checklists.items.validation.titleRequired')),
+      }),
+    ),
+  });
 
-type TemplateFormValues = z.infer<typeof templateSchema>;
+type TemplateFormValues = z.infer<ReturnType<typeof makeTemplateSchema>>;
 
 export interface ChecklistTemplateFormDialogProps {
   open: boolean;
@@ -59,10 +63,13 @@ export function ChecklistTemplateFormDialog({
   onOpenChange,
   template,
 }: ChecklistTemplateFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(template?.id);
   const createMutation = useCreateChecklistTemplate();
   const updateMutation = useUpdateChecklistTemplate();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const templateSchema = React.useMemo(() => makeTemplateSchema(t), [t]);
 
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(templateSchema),
@@ -106,11 +113,13 @@ export function ChecklistTemplateFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Rediger sjekkliste' : 'Ny sjekkliste'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('checklists.form.editTitle') : t('checklists.form.createTitle')}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Oppdater sjekklisten nedenfor.'
-              : 'Fyll ut tittel og legg eventuelt til sjekkpunkter.'}
+              ? t('checklists.form.editDescription')
+              : t('checklists.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -121,9 +130,9 @@ export function ChecklistTemplateFormDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tittel</FormLabel>
+                  <FormLabel>{t('checklists.form.title')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="F.eks. Standard sjekkliste" {...field} />
+                    <Input placeholder={t('checklists.form.titlePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -134,7 +143,7 @@ export function ChecklistTemplateFormDialog({
             {!isEdit && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <FormLabel>Sjekkpunkter</FormLabel>
+                  <FormLabel>{t('checklists.form.itemsLabel')}</FormLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -142,13 +151,13 @@ export function ChecklistTemplateFormDialog({
                     onClick={() => append({ title: '' })}
                   >
                     <Plus className="size-4" />
-                    Legg til
+                    {t('common.add')}
                   </Button>
                 </div>
 
                 {fields.length === 0 ? (
                   <p className="text-muted-foreground text-sm">
-                    Ingen sjekkpunkter enda. Du kan også legge dem til senere.
+                    {t('checklists.form.itemsEmpty')}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -161,7 +170,12 @@ export function ChecklistTemplateFormDialog({
                           <FormItem>
                             <FormControl>
                               <div className="flex items-center gap-2">
-                                <Input placeholder={`Sjekkpunkt ${index + 1}`} {...field} />
+                                <Input
+                                  placeholder={t('checklists.form.itemPlaceholder', {
+                                    index: index + 1,
+                                  })}
+                                  {...field}
+                                />
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -170,7 +184,7 @@ export function ChecklistTemplateFormDialog({
                                   onClick={() => remove(index)}
                                 >
                                   <X className="size-4" />
-                                  <span className="sr-only">Fjern</span>
+                                  <span className="sr-only">{t('checklists.form.itemRemove')}</span>
                                 </Button>
                               </div>
                             </FormControl>
@@ -191,11 +205,11 @@ export function ChecklistTemplateFormDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
-                Avbryt
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett'}
+                {isEdit ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </form>

@@ -2,7 +2,8 @@
  * WORKFLOW_STEPS —— 项目工作流(Workflow 1)的「数据驱动步骤注册表」。
  *
  * 设计:后端有 15 个执行步骤(ProjectWFOne..ProjectWFFifteen),UI 展示为旧 admin 的 16 步。
- * 每步声明 { seq, key, title(挪威语), type, workflowId, workflowStepId, endpoints, flags }。
+ * 每步声明 { seq, key, titleKey, descriptionKey, type, workflowId, workflowStepId, endpoints, flags }。
+ * titleKey/descriptionKey 为 i18n key（workflow.steps.* / workflow.stepDescriptions.*），由渲染组件 t()。
  * project-workflow.tsx 的竖向 stepper 遍历本数组,按 type 选一个通用面板组件渲染,
  * 避免为 16 个几乎重复的步骤各写一个组件。
  *
@@ -38,10 +39,10 @@ export interface WorkflowStepDef {
   seq: number;
   /** 稳定 key(用于选中态与 React key)。 */
   key: string;
-  /** 挪威语标题。 */
-  title: string;
-  /** 简短说明(挪威语)。 */
-  description?: string;
+  /** 标题 i18n key（workflow.steps.*），渲染组件 t()。 */
+  titleKey: string;
+  /** 简短说明 i18n key（workflow.stepDescriptions.*），渲染组件 t()。 */
+  descriptionKey?: string;
   type: WorkflowStepType;
   /** 工作流 ID(Workflow 1)。 */
   workflowId: number;
@@ -77,8 +78,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 1,
     key: 'takk-for-bestillingen',
-    title: 'Takk for bestillingen',
-    description: 'Send bekreftelse på mottatt bestilling til kunden.',
+    titleKey: 'workflow.steps.takk-for-bestillingen',
+    descriptionKey: 'workflow.stepDescriptions.takk-for-bestillingen',
     type: 'email',
     workflowId: WORKFLOW_ID,
     workflowStepId: 1,
@@ -88,8 +89,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 2,
     key: 'ansvarsrett',
-    title: 'Ansvarsrett',
-    description: 'Send ansvarsrett med vedlegg til aktuelle parter.',
+    titleKey: 'workflow.steps.ansvarsrett',
+    descriptionKey: 'workflow.stepDescriptions.ansvarsrett',
     type: 'upload',
     workflowId: WORKFLOW_ID,
     workflowStepId: 2,
@@ -99,8 +100,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 3,
     key: 'igangsettingstillatelse',
-    title: 'Igangsettingstillatelse (IG)',
-    description: 'Last opp igangsettingstillatelse-dokumenter.',
+    titleKey: 'workflow.steps.igangsettingstillatelse',
+    descriptionKey: 'workflow.stepDescriptions.igangsettingstillatelse',
     type: 'upload',
     workflowId: WORKFLOW_ID,
     workflowStepId: 3,
@@ -110,8 +111,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 4,
     key: 'godkjent-byggesoknad',
-    title: 'Godkjent byggesøknad',
-    description: 'Send melding om godkjent byggesøknad.',
+    titleKey: 'workflow.steps.godkjent-byggesoknad',
+    descriptionKey: 'workflow.stepDescriptions.godkjent-byggesoknad',
     type: 'email',
     workflowId: WORKFLOW_ID,
     workflowStepId: 4,
@@ -121,8 +122,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 5,
     key: 'opprett-sjekklister',
-    title: 'Opprett sjekklister',
-    description: 'Bekreft at sjekklister er opprettet for prosjektet.',
+    titleKey: 'workflow.steps.opprett-sjekklister',
+    descriptionKey: 'workflow.stepDescriptions.opprett-sjekklister',
     type: 'simple',
     workflowId: WORKFLOW_ID,
     workflowStepId: 5,
@@ -131,8 +132,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 6,
     key: 'la-til-foretak',
-    title: 'La til foretak',
-    description: 'Bekreft at foretak/parter er lagt til.',
+    titleKey: 'workflow.steps.la-til-foretak',
+    descriptionKey: 'workflow.stepDescriptions.la-til-foretak',
     type: 'simple',
     workflowId: WORKFLOW_ID,
     workflowStepId: 6,
@@ -141,8 +142,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 7,
     key: 'send-paaminnelse',
-    title: 'Send påminnelse',
-    description: 'Sett dato for kundepåminnelse.',
+    titleKey: 'workflow.steps.send-paaminnelse',
+    descriptionKey: 'workflow.stepDescriptions.send-paaminnelse',
     type: 'simple',
     workflowId: WORKFLOW_ID,
     workflowStepId: 7,
@@ -152,8 +153,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 8,
     key: 'epost-kommende-kontroll',
-    title: 'Epost om kommende kontroll',
-    description: 'Varsle parter om kommende kontroll — eller overfør uten å sende.',
+    titleKey: 'workflow.steps.epost-kommende-kontroll',
+    descriptionKey: 'workflow.stepDescriptions.epost-kommende-kontroll',
     type: 'email',
     workflowId: WORKFLOW_ID,
     workflowStepId: 8,
@@ -164,8 +165,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 9,
     key: 'innhenting-av-dokumentasjon',
-    title: 'Innhenting av dokumentasjon',
-    description: 'Send forespørsel om dokumentasjon per part — eller overfør uten å sende.',
+    titleKey: 'workflow.steps.innhenting-av-dokumentasjon',
+    descriptionKey: 'workflow.stepDescriptions.innhenting-av-dokumentasjon',
     type: 'email',
     workflowId: WORKFLOW_ID,
     workflowStepId: 9,
@@ -177,8 +178,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 10,
     key: 'kontroll-dato',
-    title: 'Kontroll-dato',
-    description: 'Sett kontrolldato og tildel inspektør — eller overfør uten kontroll.',
+    titleKey: 'workflow.steps.kontroll-dato',
+    descriptionKey: 'workflow.stepDescriptions.kontroll-dato',
     type: 'date-inspector',
     workflowId: WORKFLOW_ID,
     workflowStepId: 10,
@@ -188,8 +189,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 11,
     key: 'gjennomgaa-rapport',
-    title: 'Gjennomgå rapport',
-    description: 'Godkjenn gjennomgått kontrollrapport.',
+    titleKey: 'workflow.steps.gjennomgaa-rapport',
+    descriptionKey: 'workflow.stepDescriptions.gjennomgaa-rapport',
     type: 'simple',
     workflowId: WORKFLOW_ID,
     workflowStepId: 11,
@@ -199,8 +200,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 12,
     key: 'send-rapport-dialog',
-    title: 'Send rapport (dialog)',
-    description: 'Send rapport/avvik til part (WF12). Ikke brukt i gammel admin — eksponert for full dekning.',
+    titleKey: 'workflow.steps.send-rapport-dialog',
+    descriptionKey: 'workflow.stepDescriptions.send-rapport-dialog',
     type: 'email',
     workflowId: WORKFLOW_ID,
     workflowStepId: 12,
@@ -210,8 +211,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 13,
     key: 'send-faktura',
-    title: 'Send faktura',
-    description: 'Utløs faktura i Tripletex.',
+    titleKey: 'workflow.steps.send-faktura',
+    descriptionKey: 'workflow.stepDescriptions.send-faktura',
     type: 'invoice',
     workflowId: WORKFLOW_ID,
     workflowStepId: 15,
@@ -221,8 +222,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 14,
     key: 'kontrollerklaering',
-    title: 'Kontrollerklæring',
-    description: 'Generer kontrollerklæring (PDF) og send til parter.',
+    titleKey: 'workflow.steps.kontrollerklaering',
+    descriptionKey: 'workflow.stepDescriptions.kontrollerklaering',
     type: 'pdf',
     workflowId: WORKFLOW_ID,
     workflowStepId: 13,
@@ -232,8 +233,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 15,
     key: 'sluttrapport',
-    title: 'Sluttrapport',
-    description: 'Generer sluttrapport (PDF) og send til parter.',
+    titleKey: 'workflow.steps.sluttrapport',
+    descriptionKey: 'workflow.stepDescriptions.sluttrapport',
     type: 'pdf',
     workflowId: WORKFLOW_ID,
     workflowStepId: 14,
@@ -243,8 +244,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
   {
     seq: 16,
     key: 'utfort',
-    title: 'Utført',
-    description: 'Fullfør prosjektet og send avsluttende rapport.',
+    titleKey: 'workflow.steps.utfort',
+    descriptionKey: 'workflow.stepDescriptions.utfort',
     type: 'pdf',
     workflowId: WORKFLOW_ID,
     workflowStepId: 18,

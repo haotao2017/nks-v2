@@ -9,6 +9,7 @@
  * - 步骤查询以 category.id 为 enabled 条件(见 useWorkflowCategorySteps)。
  */
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import type { WorkflowCategoryDto, WorkflowCategoryStepDto } from '@nks/api-types';
@@ -65,6 +66,7 @@ export function WorkflowCategoryStepsDialog({
   onOpenChange,
   category,
 }: WorkflowCategoryStepsDialogProps) {
+  const { t } = useTranslation();
   const categoryId = category?.id ?? null;
   const { data: steps = [], isLoading } = useWorkflowCategorySteps(open ? categoryId : null);
   const deleteMutation = useDeleteWorkflowCategoryStep(categoryId ?? 0);
@@ -94,14 +96,18 @@ export function WorkflowCategoryStepsDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Steg — {category?.name}</DialogTitle>
-            <DialogDescription>Administrer stegene i denne arbeidsflyten.</DialogDescription>
+            <DialogTitle>
+              {t('workflowCategories.steps.dialogTitle', { name: category?.name ?? '' })}
+            </DialogTitle>
+            <DialogDescription>
+              {t('workflowCategories.steps.dialogDescription')}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex justify-end">
             <Button size="sm" onClick={() => setCreateOpen(true)} disabled={categoryId == null}>
               <Plus className="size-4" />
-              Nytt steg
+              {t('workflowCategories.steps.newButton')}
             </Button>
           </div>
 
@@ -109,12 +115,14 @@ export function WorkflowCategoryStepsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">Nr.</TableHead>
-                  <TableHead>Stegnavn</TableHead>
-                  <TableHead>Aktiv</TableHead>
-                  <TableHead>Overførbar</TableHead>
+                  <TableHead className="w-16">
+                    {t('workflowCategories.steps.columns.sequence')}
+                  </TableHead>
+                  <TableHead>{t('workflowCategories.steps.columns.name')}</TableHead>
+                  <TableHead>{t('workflowCategories.steps.columns.active')}</TableHead>
+                  <TableHead>{t('workflowCategories.steps.columns.transferable')}</TableHead>
                   <TableHead>
-                    <span className="sr-only">Handlinger</span>
+                    <span className="sr-only">{t('common.actions')}</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -136,14 +144,20 @@ export function WorkflowCategoryStepsDialog({
                       <TableCell className="font-medium">{step.stepName ?? '—'}</TableCell>
                       <TableCell>
                         {step.isActive ? (
-                          <Badge variant="secondary">Aktiv</Badge>
+                          <Badge variant="secondary">
+                            {t('workflowCategories.steps.activeBadge')}
+                          </Badge>
                         ) : (
-                          <Badge variant="outline">Inaktiv</Badge>
+                          <Badge variant="outline">
+                            {t('workflowCategories.steps.inactiveBadge')}
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell>
                         {step.isTransferable ? (
-                          <Badge variant="secondary">Ja</Badge>
+                          <Badge variant="secondary">
+                            {t('workflowCategories.steps.transferableBadge')}
+                          </Badge>
                         ) : (
                           '—'
                         )}
@@ -153,14 +167,14 @@ export function WorkflowCategoryStepsDialog({
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
                               <MoreHorizontal className="size-4" />
-                              <span className="sr-only">Åpne meny</span>
+                              <span className="sr-only">{t('common.openMenu')}</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => setEditTarget(step)}>
                               <Pencil className="size-4" />
-                              Rediger
+                              {t('common.edit')}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -168,7 +182,7 @@ export function WorkflowCategoryStepsDialog({
                               onClick={() => setDeleteTarget(step)}
                             >
                               <Trash2 className="size-4" />
-                              Slett
+                              {t('common.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -178,7 +192,7 @@ export function WorkflowCategoryStepsDialog({
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="text-muted-foreground h-24 text-center">
-                      Ingen steg enda.
+                      {t('workflowCategories.steps.empty')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -215,15 +229,17 @@ export function WorkflowCategoryStepsDialog({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slette steg?</AlertDialogTitle>
+            <AlertDialogTitle>{t('workflowCategories.steps.delete.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette{' '}
-              <span className="font-medium">{deleteTarget?.stepName}</span>? Denne handlingen kan
-              ikke angres.
+              {t('workflowCategories.steps.delete.confirmPrefix')}{' '}
+              <span className="font-medium">{deleteTarget?.stepName}</span>
+              {t('workflowCategories.steps.delete.confirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -232,7 +248,7 @@ export function WorkflowCategoryStepsDialog({
               disabled={deleteMutation.isPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

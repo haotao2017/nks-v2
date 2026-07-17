@@ -16,6 +16,7 @@
  *  - 删除响应形如 { message, success };这里 success=false 视为软失败并抛错。
  */
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type {
@@ -69,6 +70,7 @@ export function useEmailHashtags() {
 
 /** 创建邮件模板。body 根键小写 emailTemplate;返回 res.emailTemplate。 */
 export function useCreateEmailTemplate() {
+  const { t } = useTranslation();
   return useApiMutation<EmailTemplateDto | undefined, EmailTemplateDto>({
     mutationFn: async (emailTemplate) => {
       const body: CreateEmailTemplateRequest = { emailTemplate };
@@ -79,13 +81,14 @@ export function useCreateEmailTemplate() {
       return res?.emailTemplate;
     },
     invalidateKeys: [emailTemplateKeys.list()],
-    successMessage: 'E-postmal opprettet',
-    errorMessage: 'Kunne ikke opprette e-postmal',
+    successMessage: t('emailTemplates.toast.created'),
+    errorMessage: t('emailTemplates.toast.createError'),
   });
 }
 
 /** 更新邮件模板。body 根键小写 emailTemplate;返回 res.emailTemplate。 */
 export function useUpdateEmailTemplate() {
+  const { t } = useTranslation();
   return useApiMutation<EmailTemplateDto | undefined, EmailTemplateDto>({
     mutationFn: async (emailTemplate) => {
       const body: CreateEmailTemplateRequest = { emailTemplate };
@@ -96,8 +99,8 @@ export function useUpdateEmailTemplate() {
       return res?.emailTemplate;
     },
     invalidateKeys: [emailTemplateKeys.list()],
-    successMessage: 'E-postmal oppdatert',
-    errorMessage: 'Kunne ikke oppdatere e-postmal',
+    successMessage: t('emailTemplates.toast.updated'),
+    errorMessage: t('emailTemplates.toast.updateError'),
   });
 }
 
@@ -106,6 +109,7 @@ export function useUpdateEmailTemplate() {
  * 后端返回 { message, success };success=false 时抛错,统一用后端 message 提示。
  */
 export function useDeleteEmailTemplate() {
+  const { t } = useTranslation();
   return useApiMutation<DeleteEmailTemplateResponseDto, number>({
     mutationFn: async (emailTemplateId) => {
       const res = await getApiClient().delete<DeleteEmailTemplateResponseDto>(
@@ -113,7 +117,7 @@ export function useDeleteEmailTemplate() {
         { params: { EmailTemplateID: emailTemplateId } },
       );
       if (res?.success === false) {
-        throw new Error(res.message || 'E-postmalen kan ikke slettes');
+        throw new Error(res.message || t('emailTemplates.toast.deleteBlocked'));
       }
       return res;
     },
@@ -121,7 +125,7 @@ export function useDeleteEmailTemplate() {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || 'E-postmal slettet');
+      toast.success(data?.message || t('emailTemplates.toast.deleted'));
     },
   });
 }

@@ -11,7 +11,9 @@
  */
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { TFunction } from 'i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -32,22 +34,26 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 
-import { useUserProfile, useUpdateMyProfile, userTypeLabel } from './api';
+import { useUserProfile, useUpdateMyProfile } from './api';
 
-const profileSchema = z.object({
-  fullName: z.string().trim().min(1, 'Navn er påkrevd'),
-  userName: z.string().trim().min(1, 'Brukernavn er påkrevd'),
-  designation: z.string().optional(),
-  password: z.string().optional(),
-});
+const makeProfileSchema = (t: TFunction) =>
+  z.object({
+    fullName: z.string().trim().min(1, t('team.profile.validation.nameRequired')),
+    userName: z.string().trim().min(1, t('team.profile.validation.userNameRequired')),
+    designation: z.string().optional(),
+    password: z.string().optional(),
+  });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+type ProfileFormValues = z.infer<ReturnType<typeof makeProfileSchema>>;
 
 export function MyProfile() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id;
   const { data: profile, isLoading } = useUserProfile(userId);
   const updateMutation = useUpdateMyProfile(userId);
+
+  const profileSchema = React.useMemo(() => makeProfileSchema(t), [t]);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -97,10 +103,10 @@ export function MyProfile() {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>Min profil</CardTitle>
+        <CardTitle>{t('team.profile.title')}</CardTitle>
         <CardDescription>
-          {userTypeLabel(profile?.userTypeId)}
-          {profile?.isAdmin ? ' · Administrator' : ''}
+          {t(`team.userTypes.${profile?.userTypeId}`, { defaultValue: t('team.userTypes.unknown') })}
+          {profile?.isAdmin ? ` · ${t('team.profile.administrator')}` : ''}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -111,7 +117,7 @@ export function MyProfile() {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navn</FormLabel>
+                  <FormLabel>{t('team.profile.name')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -124,7 +130,7 @@ export function MyProfile() {
               name="userName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Brukernavn</FormLabel>
+                  <FormLabel>{t('team.profile.userName')}</FormLabel>
                   <FormControl>
                     <Input autoComplete="off" {...field} />
                   </FormControl>
@@ -137,7 +143,7 @@ export function MyProfile() {
               name="designation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tittel</FormLabel>
+                  <FormLabel>{t('team.profile.designation')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -150,16 +156,16 @@ export function MyProfile() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nytt passord</FormLabel>
+                  <FormLabel>{t('team.profile.newPassword')}</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       autoComplete="new-password"
-                      placeholder="La stå tomt for å beholde"
+                      placeholder={t('team.profile.passwordPlaceholder')}
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>La stå tomt for å beholde nåværende passord.</FormDescription>
+                  <FormDescription>{t('team.profile.passwordHint')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -167,7 +173,7 @@ export function MyProfile() {
             <div className="flex justify-end">
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-                Lagre
+                {t('common.save')}
               </Button>
             </div>
           </form>

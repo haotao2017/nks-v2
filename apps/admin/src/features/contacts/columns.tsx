@@ -5,6 +5,7 @@
  * 其它模块照抄:改字段 + 改回调即可。
  */
 import type { ColumnDef } from '@tanstack/react-table';
+import type { TFunction } from 'i18next';
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 import type { ContactDto } from '@nks/api-types';
@@ -20,11 +21,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export interface ContactColumnActions {
+  /** i18n 翻译函数,由表格层传入以本地化表头/行操作。 */
+  t: TFunction;
   onEdit: (contact: ContactDto) => void;
   onDelete: (contact: ContactDto) => void;
 }
 
 export function getContactColumns({
+  t,
   onEdit,
   onDelete,
 }: ContactColumnActions): ColumnDef<ContactDto>[] {
@@ -37,7 +41,7 @@ export function getContactColumns({
           className="-ml-3 h-8"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Navn
+          {t('contacts.columns.name')}
           <ArrowUpDown className="size-3.5" />
         </Button>
       ),
@@ -45,12 +49,12 @@ export function getContactColumns({
     },
     {
       accessorKey: 'contactNo',
-      header: 'Telefon',
+      header: t('contacts.columns.phone'),
       cell: ({ row }) => row.original.contactNo || '—',
     },
     {
       accessorKey: 'email',
-      header: 'E-post',
+      header: t('contacts.columns.email'),
       cell: ({ row }) =>
         row.original.email ? (
           <a
@@ -65,12 +69,12 @@ export function getContactColumns({
     },
     {
       accessorKey: 'companyName',
-      header: 'Firma',
+      header: t('contacts.columns.company'),
       cell: ({ row }) => row.original.companyName || '—',
     },
     {
       id: 'actions',
-      header: () => <span className="sr-only">Handlinger</span>,
+      header: () => <span className="sr-only">{t('common.actions')}</span>,
       enableSorting: false,
       cell: ({ row }) => {
         const contact = row.original;
@@ -80,14 +84,14 @@ export function getContactColumns({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="size-8">
                   <MoreHorizontal className="size-4" />
-                  <span className="sr-only">Åpne meny</span>
+                  <span className="sr-only">{t('common.openMenu')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onEdit(contact)}>
                   <Pencil className="size-4" />
-                  Rediger
+                  {t('common.edit')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -95,7 +99,7 @@ export function getContactColumns({
                   onClick={() => onDelete(contact)}
                 >
                   <Trash2 className="size-4" />
-                  Slett
+                  {t('common.delete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
