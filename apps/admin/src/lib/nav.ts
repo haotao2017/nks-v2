@@ -15,25 +15,26 @@ import {
 } from 'lucide-react';
 
 export interface NavItem {
-  label: string;
+  /** i18n key(如 `nav.overview`),渲染时用 `t(labelKey)`。 */
+  labelKey: string;
   href: string;
   icon: LucideIcon;
   /** 仅超级管理员可见。 */
   adminOnly?: boolean;
 }
 
-/** 侧边导航 —— 挪威语标签,对应将来要建的业务模块。 */
+/** 侧边导航 —— 标签走 i18n(默认挪威语),对应业务模块。 */
 export const navItems: NavItem[] = [
-  { label: 'Oversikt', href: '/', icon: LayoutDashboard },
-  { label: 'Prosjekter', href: '/projects', icon: FolderKanban },
-  { label: 'Kontakter', href: '/contacts', icon: Contact },
-  { label: 'Tjenester', href: '/services', icon: Boxes },
-  { label: 'Sjekklister', href: '/checklists', icon: ClipboardCheck },
-  { label: 'Parttyper', href: '/party-types', icon: Tags },
-  { label: 'Byggevareleverandører', href: '/building-suppliers', icon: PackageSearch },
-  { label: 'Dokumenttyper', href: '/doc-types', icon: FileText },
-  { label: 'E-postmaler', href: '/email-templates', icon: Mail },
-  { label: 'Arbeidsflyt', href: '/workflow-categories', icon: Workflow },
-  { label: 'Team', href: '/team', icon: Users },
-  { label: 'Selskaper', href: '/admin/companies', icon: Building2, adminOnly: true },
+  { labelKey: 'nav.overview', href: '/', icon: LayoutDashboard },
+  { labelKey: 'nav.projects', href: '/projects', icon: FolderKanban },
+  { labelKey: 'nav.contacts', href: '/contacts', icon: Contact },
+  { labelKey: 'nav.services', href: '/services', icon: Boxes },
+  { labelKey: 'nav.checklists', href: '/checklists', icon: ClipboardCheck },
+  { labelKey: 'nav.partyTypes', href: '/party-types', icon: Tags },
+  { labelKey: 'nav.buildingSuppliers', href: '/building-suppliers', icon: PackageSearch },
+  { labelKey: 'nav.docTypes', href: '/doc-types', icon: FileText },
+  { labelKey: 'nav.emailTemplates', href: '/email-templates', icon: Mail },
+  { labelKey: 'nav.workflowCategories', href: '/workflow-categories', icon: Workflow },
+  { labelKey: 'nav.team', href: '/team', icon: Users },
+  { labelKey: 'nav.companies', href: '/admin/companies', icon: Building2, adminOnly: true },
 ];

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { ShieldCheck } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ function isActive(pathname: string, href: string): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const items = navItems.filter((item) => !item.adminOnly || user?.isAdmin);
 
@@ -44,7 +46,7 @@ export function Sidebar() {
               )}
             >
               <Icon className="size-4 shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span className="truncate">{t(item.labelKey)}</span>
             </Link>
           );
         })}

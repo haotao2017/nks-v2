@@ -1,0 +1,76 @@
+{
+  "nav": {
+    "overview": "Oversikt",
+    "projects": "Prosjekter",
+    "contacts": "Kontakter",
+    "services": "Tjenester",
+    "checklists": "Sjekklistemaler",
+    "partyTypes": "Foretak",
+    "buildingSuppliers": "Boligleverandør",
+    "docTypes": "Dokumenter",
+    "emailTemplates": "E-post maler",
+    "workflowCategories": "Arbeidsflyt",
+    "team": "Team",
+    "companies": "Selskaper"
+  },
+  "common": {
+    "appName": "NKS Admin",
+    "openMenu": "Åpne meny",
+    "toggleTheme": "Bytt tema",
+    "logout": "Logg ut",
+    "user": "Bruker",
+    "language": "Språk"
+  },
+  "login": {
+    "appName": "NKS Admin",
+    "subtitle": "Byggekontroll administrasjon",
+    "title": "Logg inn",
+    "description": "Bruk din NKS-konto for å fortsette",
+    "userName": "Brukernavn",
+    "password": "Passord",
+    "submit": "Logg inn",
+    "userNameRequired": "Brukernavn er påkrevd",
+    "passwordRequired": "Passord er påkrevd",
+    "invalidCredentials": "Feil brukernavn eller passord",
+    "loginFailed": "Innlogging feilet",
+    "loginSuccess": "Innlogging vellykket"
+  },
+  "projectWizard": {
+    "steps": {
+      "projectInfo": "Prosjektinfo",
+      "customer": "Kunde",
+      "pricing": "Priser"
+    },
+    "fields": {
+      "title": "Tittel",
+      "titlePlaceholder": "Prosjekttittel",
+      "address": "Adresse",
+      "addressPlaceholder": "Gateadresse",
+      "gardsNo": "Gårdsnr",
+      "bruksnummer": "Bruksnummer",
+      "postNo": "Postnr",
+      "poststed": "Poststed",
+      "kommune": "Kommune",
+      "latitude": "Breddegrad",
+      "longitude": "Lengdegrad",
+      "description": "Beskrivelse",
+      "comments": "Kommentarer",
+      "customer": "Kunde",
+      "customerPlaceholder": "Velg kunde",
+      "contactPerson": "Kontaktperson",
+      "contactPersonPlaceholder": "Velg kontaktperson",
+      "service": "Tjeneste",
+      "servicePlaceholder": "Velg tjeneste",
+      "quantity": "Antall",
+      "price": "Pris"
+    },
+    "noServices": "Ingen tjenester lagt til enda.",
+    "addService": "Legg til tjeneste",
+    "removeService": "Fjern tjeneste",
+    "cancel": "Avbryt",
+    "back": "Tilbake",
+    "next": "Neste",
+    "save": "Lagre",
+    "create": "Opprett prosjekt"
+  }
+}

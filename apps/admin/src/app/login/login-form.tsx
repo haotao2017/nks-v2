@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -14,14 +15,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 const loginSchema = z.object({
-  userName: z.string().min(1, 'Brukernavn er påkrevd'),
-  password: z.string().min(1, 'Passord er påkrevd'),
+  userName: z.string().min(1, 'login.userNameRequired'),
+  password: z.string().min(1, 'login.passwordRequired'),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const { login, isPending } = useAuth();
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -34,16 +36,16 @@ export function LoginForm() {
   const onSubmit = async (values: LoginValues) => {
     try {
       await login(values);
-      toast.success('Innlogging vellykket');
+      toast.success(t('login.loginSuccess'));
     } catch (err) {
       const message =
         err instanceof NksApiError
           ? err.status === 401
-            ? 'Feil brukernavn eller passord'
+            ? t('login.invalidCredentials')
             : err.message
           : err instanceof Error
             ? err.message
-            : 'Innlogging feilet';
+            : t('login.loginFailed');
       toast.error(message);
     }
   };
@@ -51,7 +53,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4" noValidate>
       <div className="grid gap-2">
-        <Label htmlFor="userName">Brukernavn</Label>
+        <Label htmlFor="userName">{t('login.userName')}</Label>
         <Input
           id="userName"
           autoComplete="username"
@@ -60,12 +62,12 @@ export function LoginForm() {
           {...register('userName')}
         />
         {errors.userName && (
-          <p className="text-destructive text-sm">{errors.userName.message}</p>
+          <p className="text-destructive text-sm">{t(errors.userName.message ?? '')}</p>
         )}
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="password">Passord</Label>
+        <Label htmlFor="password">{t('login.password')}</Label>
         <Input
           id="password"
           type="password"
@@ -74,13 +76,13 @@ export function LoginForm() {
           {...register('password')}
         />
         {errors.password && (
-          <p className="text-destructive text-sm">{errors.password.message}</p>
+          <p className="text-destructive text-sm">{t(errors.password.message ?? '')}</p>
         )}
       </div>
 
       <Button type="submit" className="mt-2 w-full" disabled={isPending}>
         {isPending && <Loader2 className="size-4 animate-spin" />}
-        Logg inn
+        {t('login.submit')}
       </Button>
     </form>
   );

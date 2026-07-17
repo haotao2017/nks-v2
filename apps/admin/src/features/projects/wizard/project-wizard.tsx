@@ -15,6 +15,7 @@
 import * as React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Plus, Trash2, Check } from 'lucide-react';
 
 import type { ProjectDto, ProjectServiceDto } from '@nks/api-types';
@@ -45,7 +46,11 @@ import { useServices } from '@/features/services/api';
 import { useCreateProject, useUpdateProject } from '../api';
 import { wizardSchema, stepFields, type WizardValues } from './schema';
 
-const STEP_LABELS = ['Prosjektinfo', 'Kunde', 'Priser'];
+const STEP_LABEL_KEYS = [
+  'projectWizard.steps.projectInfo',
+  'projectWizard.steps.customer',
+  'projectWizard.steps.pricing',
+];
 
 /** 数字 → 表单 string(undefined/null → '')。 */
 const numToStr = (v?: number) => (typeof v === 'number' ? String(v) : '');
@@ -66,6 +71,7 @@ export interface ProjectWizardProps {
 }
 
 export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(project?.id);
   const [step, setStep] = React.useState(0);
 
@@ -130,7 +136,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
 
   const goNext = async () => {
     const valid = await form.trigger(stepFields[step] as never);
-    if (valid) setStep((s) => Math.min(s + 1, STEP_LABELS.length - 1));
+    if (valid) setStep((s) => Math.min(s + 1, STEP_LABEL_KEYS.length - 1));
   };
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
@@ -171,11 +177,11 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
       <form onSubmit={onSubmit} className="space-y-6">
         {/* Stepper 指示器 */}
         <ol className="flex items-center gap-2">
-          {STEP_LABELS.map((label, i) => {
+          {STEP_LABEL_KEYS.map((labelKey, i) => {
             const done = i < step;
             const current = i === step;
             return (
-              <li key={label} className="flex flex-1 items-center gap-2">
+              <li key={labelKey} className="flex flex-1 items-center gap-2">
                 <div
                   className={cn(
                     'flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium',
@@ -192,9 +198,9 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                     current ? 'text-foreground font-medium' : 'text-muted-foreground',
                   )}
                 >
-                  {label}
+                  {t(labelKey)}
                 </span>
-                {i < STEP_LABELS.length - 1 && <div className="bg-border h-px flex-1" />}
+                {i < STEP_LABEL_KEYS.length - 1 && <div className="bg-border h-px flex-1" />}
               </li>
             );
           })}
@@ -209,9 +215,9 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tittel</FormLabel>
+                    <FormLabel>{t('projectWizard.fields.title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Prosjekttittel" {...field} />
+                      <Input placeholder={t('projectWizard.fields.titlePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -224,9 +230,9 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Adresse</FormLabel>
+                    <FormLabel>{t('projectWizard.fields.address')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Gateadresse" {...field} />
+                      <Input placeholder={t('projectWizard.fields.addressPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -238,7 +244,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               name="gardsNo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Gårdsnr</FormLabel>
+                  <FormLabel>{t('projectWizard.fields.gardsNo')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -251,7 +257,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               name="bruksnmmer"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bruksnummer</FormLabel>
+                  <FormLabel>{t('projectWizard.fields.bruksnummer')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -264,7 +270,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               name="postNo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Postnr</FormLabel>
+                  <FormLabel>{t('projectWizard.fields.postNo')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -277,7 +283,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               name="poststed"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Poststed</FormLabel>
+                  <FormLabel>{t('projectWizard.fields.poststed')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -291,7 +297,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 name="kommune"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kommune</FormLabel>
+                    <FormLabel>{t('projectWizard.fields.kommune')}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -305,7 +311,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               name="latitude"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Breddegrad</FormLabel>
+                  <FormLabel>{t('projectWizard.fields.latitude')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -318,7 +324,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               name="longitude"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Lengdegrad</FormLabel>
+                  <FormLabel>{t('projectWizard.fields.longitude')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -332,7 +338,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Beskrivelse</FormLabel>
+                    <FormLabel>{t('projectWizard.fields.description')}</FormLabel>
                     <FormControl>
                       <Textarea rows={3} {...field} />
                     </FormControl>
@@ -347,7 +353,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 name="comments"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kommentarer</FormLabel>
+                    <FormLabel>{t('projectWizard.fields.comments')}</FormLabel>
                     <FormControl>
                       <Textarea rows={2} {...field} />
                     </FormControl>
@@ -367,11 +373,11 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               name="customerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kunde</FormLabel>
+                  <FormLabel>{t('projectWizard.fields.customer')}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Velg kunde" />
+                        <SelectValue placeholder={t('projectWizard.fields.customerPlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -391,11 +397,11 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               name="contactPersonId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kontaktperson</FormLabel>
+                  <FormLabel>{t('projectWizard.fields.contactPerson')}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Velg kontaktperson" />
+                        <SelectValue placeholder={t('projectWizard.fields.contactPersonPlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -417,7 +423,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
         {step === 2 && (
           <div className="space-y-4">
             {fields.length === 0 && (
-              <p className="text-muted-foreground text-sm">Ingen tjenester lagt til enda.</p>
+              <p className="text-muted-foreground text-sm">{t('projectWizard.noServices')}</p>
             )}
             {fields.map((row, index) => (
               <div key={row.id} className="grid grid-cols-12 items-end gap-2">
@@ -427,11 +433,11 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                     name={`services.${index}.serviceId`}
                     render={({ field }) => (
                       <FormItem>
-                        {index === 0 && <FormLabel>Tjeneste</FormLabel>}
+                        {index === 0 && <FormLabel>{t('projectWizard.fields.service')}</FormLabel>}
                         <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Velg tjeneste" />
+                              <SelectValue placeholder={t('projectWizard.fields.servicePlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -453,7 +459,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                     name={`services.${index}.quantity`}
                     render={({ field }) => (
                       <FormItem>
-                        {index === 0 && <FormLabel>Antall</FormLabel>}
+                        {index === 0 && <FormLabel>{t('projectWizard.fields.quantity')}</FormLabel>}
                         <FormControl>
                           <Input type="number" min={0} {...field} />
                         </FormControl>
@@ -468,7 +474,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                     name={`services.${index}.price`}
                     render={({ field }) => (
                       <FormItem>
-                        {index === 0 && <FormLabel>Pris</FormLabel>}
+                        {index === 0 && <FormLabel>{t('projectWizard.fields.price')}</FormLabel>}
                         <FormControl>
                           <Input placeholder="0" {...field} />
                         </FormControl>
@@ -483,7 +489,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                     variant="ghost"
                     size="icon"
                     onClick={() => remove(index)}
-                    aria-label="Fjern tjeneste"
+                    aria-label={t('projectWizard.removeService')}
                   >
                     <Trash2 className="size-4" />
                   </Button>
@@ -497,7 +503,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               onClick={() => append({ serviceId: '', quantity: '', price: '' })}
             >
               <Plus className="size-4" />
-              Legg til tjeneste
+              {t('projectWizard.addService')}
             </Button>
           </div>
         )}
@@ -510,22 +516,22 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
             onClick={onCancel}
             disabled={isPending}
           >
-            Avbryt
+            {t('projectWizard.cancel')}
           </Button>
           <div className="flex gap-2">
             {step > 0 && (
               <Button type="button" variant="outline" onClick={goBack} disabled={isPending}>
-                Tilbake
+                {t('projectWizard.back')}
               </Button>
             )}
-            {step < STEP_LABELS.length - 1 ? (
+            {step < STEP_LABEL_KEYS.length - 1 ? (
               <Button type="button" onClick={goNext}>
-                Neste
+                {t('projectWizard.next')}
               </Button>
             ) : (
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? 'Lagre' : 'Opprett prosjekt'}
+                {isEdit ? t('projectWizard.save') : t('projectWizard.create')}
               </Button>
             )}
           </div>
