@@ -39,6 +39,15 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+import { usePartyTypes } from '@/features/party-types/api';
 
 import { useCreateDocType, useUpdateDocType } from './api';
 
@@ -63,16 +72,16 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
   const updateMutation = useUpdateDocType();
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  // Ansvarsområde 下拉数据源(party type),与原系统一致(选项 label=name、value=id)。
+  const { data: partyTypes = [] } = usePartyTypes();
+
   const docTypeSchema = React.useMemo(
     () =>
       z.object({
         docName: z.string().trim().min(1, t('docTypes.validation.nameRequired')),
         isRequired: z.boolean(),
-        // partyTypeId:第三方类型外键;可选,空则不发送。
-        partyTypeId: z
-          .string()
-          .optional()
-          .refine((v) => !v || /^\d+$/.test(v.trim()), t('docTypes.validation.partyTypeIdNumber')),
+        // partyTypeId(Ansvarsområde):下拉选中的 party type id(字符串),可选。
+        partyTypeId: z.string().optional(),
       }),
     [t],
   );
@@ -157,16 +166,21 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
               name="partyTypeId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('docTypes.form.partyTypeId')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      placeholder={t('docTypes.form.partyTypeIdPlaceholder')}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>{t('docTypes.form.partyTypeIdDescription')}</FormDescription>
+                  <FormLabel>{t('docTypes.form.partyType')}</FormLabel>
+                  <Select value={field.value || ''} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t('docTypes.form.partyTypePlaceholder')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {partyTypes.map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

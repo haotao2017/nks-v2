@@ -102,7 +102,8 @@
     "empty": "Ingen parttyper enda.",
     "columns": {
       "name": "Navn",
-      "default": "Standard"
+      "default": "Standard",
+      "workflow": "Workflow"
     },
     "form": {
       "createTitle": "Ny parttype",
@@ -111,7 +112,7 @@
       "editDescription": "Oppdater parttypen nedenfor.",
       "name": "Navn",
       "namePlaceholder": "Parttypenavn",
-      "workflowCategory": "Arbeidsflytkategori",
+      "workflowCategory": "Workflow",
       "workflowCategoryPlaceholder": "Velg kategori",
       "workflowCategoryNone": "Ingen",
       "default": "Standard",
@@ -142,7 +143,8 @@
     "empty": "Ingen dokumenttyper enda.",
     "columns": {
       "name": "Navn",
-      "required": "Påkrevd"
+      "partyType": "Ansvarsområde",
+      "required": "Kreves"
     },
     "form": {
       "createTitle": "Ny dokumenttype",
@@ -151,11 +153,10 @@
       "editDescription": "Oppdater dokumenttypen nedenfor.",
       "name": "Navn",
       "namePlaceholder": "F.eks. Ferdigattest",
-      "required": "Påkrevd",
+      "required": "Kreves",
       "requiredDescription": "Må dokumentet leveres?",
-      "partyTypeId": "Parttype-ID",
-      "partyTypeIdPlaceholder": "F.eks. 1",
-      "partyTypeIdDescription": "ID til tilknyttet parttype (valgfritt)."
+      "partyType": "Ansvarsområde",
+      "partyTypePlaceholder": "Velg ansvarsområde"
     },
     "delete": {
       "title": "Slette dokumenttype?",

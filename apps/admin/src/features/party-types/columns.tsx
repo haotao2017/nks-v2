@@ -24,12 +24,15 @@ import {
 export interface PartyTypeColumnActions {
   /** i18n 翻译函数,由表格层传入以本地化表头/行操作。 */
   t: TFunction;
+  /** workflowCategoryID → 类别名(Workflow 列显示名,与原系统一致)。 */
+  workflowName: (id: number | null | undefined) => string;
   onEdit: (partyType: PartyTypeDto) => void;
   onDelete: (partyType: PartyTypeDto) => void;
 }
 
 export function getPartyTypeColumns({
   t,
+  workflowName,
   onEdit,
   onDelete,
 }: PartyTypeColumnActions): ColumnDef<PartyTypeDto>[] {
@@ -57,6 +60,15 @@ export function getPartyTypeColumns({
         ) : (
           <Badge variant="secondary">{t('common.no')}</Badge>
         ),
+    },
+    {
+      id: 'workflow',
+      header: t('partyTypes.columns.workflow'),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {workflowName(row.original.workflowCategoryID) || '—'}
+        </span>
+      ),
     },
     {
       id: 'actions',

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/data-table';
 
-import { usePartyTypes, useDeletePartyType } from './api';
+import { usePartyTypes, useDeletePartyType, useWorkflowCategoryOptions } from './api';
 import { getPartyTypeColumns } from './columns';
 import { PartyTypeFormDialog } from './party-type-form-dialog';
 
@@ -33,19 +33,27 @@ export interface PartyTypesTableProps {
 export function PartyTypesTable({ createOpen, onCreateOpenChange }: PartyTypesTableProps) {
   const { t } = useTranslation();
   const { data = [], isLoading } = usePartyTypes();
+  const { data: categories = [] } = useWorkflowCategoryOptions();
   const deleteMutation = useDeletePartyType();
 
   const [editTarget, setEditTarget] = React.useState<PartyTypeDto | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<PartyTypeDto | null>(null);
 
+  const workflowName = React.useCallback(
+    (id: number | null | undefined) =>
+      id == null ? '' : (categories.find((c) => c.id === id)?.name ?? ''),
+    [categories],
+  );
+
   const columns = React.useMemo(
     () =>
       getPartyTypeColumns({
         t,
+        workflowName,
         onEdit: (partyType) => setEditTarget(partyType),
         onDelete: (partyType) => setDeleteTarget(partyType),
       }),
-    [t],
+    [t, workflowName],
   );
 
   const confirmDelete = () => {

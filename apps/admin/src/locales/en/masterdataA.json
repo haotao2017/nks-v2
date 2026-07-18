@@ -102,7 +102,8 @@
     "empty": "No party types yet.",
     "columns": {
       "name": "Name",
-      "default": "Default"
+      "default": "Default",
+      "workflow": "Workflow"
     },
     "form": {
       "createTitle": "New party type",
@@ -111,7 +112,7 @@
       "editDescription": "Update the party type below.",
       "name": "Name",
       "namePlaceholder": "Party type name",
-      "workflowCategory": "Workflow category",
+      "workflowCategory": "Workflow",
       "workflowCategoryPlaceholder": "Select category",
       "workflowCategoryNone": "None",
       "default": "Default",
@@ -142,6 +143,7 @@
     "empty": "No document types yet.",
     "columns": {
       "name": "Name",
+      "partyType": "Party type",
       "required": "Required"
     },
     "form": {
@@ -153,9 +155,8 @@
       "namePlaceholder": "E.g. Completion certificate",
       "required": "Required",
       "requiredDescription": "Must the document be submitted?",
-      "partyTypeId": "Party type ID",
-      "partyTypeIdPlaceholder": "E.g. 1",
-      "partyTypeIdDescription": "ID of the linked party type (optional)."
+      "partyType": "Party type",
+      "partyTypePlaceholder": "Select party type"
     },
     "delete": {
       "title": "Delete document type?",

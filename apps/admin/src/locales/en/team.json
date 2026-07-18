@@ -52,7 +52,8 @@
         "admin": "Admin",
         "adminHint": "Give the user administrator rights.",
         "active": "Active",
-        "activeHint": "Inactive users cannot log in."
+        "activeHint": "Inactive users cannot log in.",
+        "contact": "Contact"
       },
       "validation": {
         "nameRequired": "Name is required",
@@ -73,7 +74,13 @@
       "validation": {
         "nameRequired": "Name is required",
         "userNameRequired": "Username is required"
-      }
+      },
+      "subtitle": "Manage your own profile.",
+      "contact": "Contact",
+      "active": "Active",
+      "admin": "Admin",
+      "userType": "User type",
+      "userTypePlaceholder": "Select user type"
     },
     "toast": {
       "userCreated": "User created",

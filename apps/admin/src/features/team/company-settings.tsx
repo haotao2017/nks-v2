@@ -314,7 +314,7 @@ export function CompanySettings() {
   const companyId = user?.companyID;
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <CompanyProfileForm companyId={companyId} />
       <CompanyFolderCard companyId={companyId} />
     </div>

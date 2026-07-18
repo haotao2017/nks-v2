@@ -24,12 +24,15 @@ import {
 export interface DocTypeColumnActions {
   /** i18n 翻译函数,由表格层传入以本地化表头/行操作。 */
   t: TFunction;
+  /** partyTypeId → name 的映射(Ansvarsområde 列显示名字,与原系统一致)。 */
+  partyTypeName: (partyTypeId: number | null | undefined) => string;
   onEdit: (docType: DocType) => void;
   onDelete: (docType: DocType) => void;
 }
 
 export function getDocTypeColumns({
   t,
+  partyTypeName,
   onEdit,
   onDelete,
 }: DocTypeColumnActions): ColumnDef<DocType>[] {
@@ -47,6 +50,15 @@ export function getDocTypeColumns({
         </Button>
       ),
       cell: ({ row }) => <span className="font-medium">{row.original.docName ?? '—'}</span>,
+    },
+    {
+      id: 'partyType',
+      header: t('docTypes.columns.partyType'),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {partyTypeName(row.original.partyTypeId) || '—'}
+        </span>
+      ),
     },
     {
       accessorKey: 'isRequired',

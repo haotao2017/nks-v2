@@ -1,13 +1,11 @@
 'use client';
 
 /**
- * Min profil —— 当前登录用户查看/编辑自己的资料。
- *
- * - 读取:useAuth 拿当前用户 id → GetUserProfile?UserProfileID=<id>。
- * - 更新:UpdateUserProfile(useUpdateMyProfile)。仅改姓名/用户名/职称/密码;
- *   isAdmin / isActive / userTypeId / companyId 从已加载资料原样带回,避免被清空
- *   (用户不能在此提升自己的权限)。
- * - 密码留空表示不修改;填了就明文透传后端 BCrypt。
+ * Min profil —— 当前登录用户查看/编辑自己的资料。对齐原系统 teamInfo/userProfile.js 字段:
+ *   - Tittel(designation)/ Brukernavn(userName)/ Passord(password)
+ *   - 关联联系人(contactId,复用 ContactSelect;右侧 Name/Selskapsnavn/Contact No/E-mail 是联系人字段)
+ *   - Aktiv(isActive)/ Admin(isAdmin)/ Brukertype(userTypeId:1=Mobil,2=Desktop,3=Begge)
+ * 名字取自关联联系人,故本表单不单列 fullName(提交时原样保留)。密码留空=不改。
  */
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
@@ -31,17 +29,32 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
+import { ContactSelect } from '@/features/projects/wizard/contact-select';
 
 import { useUserProfile, useUpdateMyProfile } from './api';
 
+/** Brukertype 选项(与原系统一致:1=Mobil,2=Desktop,3=Begge)。 */
+const USER_TYPE_VALUES = ['1', '2', '3'] as const;
+
 const makeProfileSchema = (t: TFunction) =>
   z.object({
-    fullName: z.string().trim().min(1, t('team.profile.validation.nameRequired')),
     userName: z.string().trim().min(1, t('team.profile.validation.userNameRequired')),
     designation: z.string().optional(),
     password: z.string().optional(),
+    contactId: z.string().optional(),
+    isActive: z.boolean(),
+    isAdmin: z.boolean(),
+    userTypeId: z.string().optional(),
   });
 
 type ProfileFormValues = z.infer<ReturnType<typeof makeProfileSchema>>;
@@ -57,16 +70,27 @@ export function MyProfile() {
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { fullName: '', userName: '', designation: '', password: '' },
+    defaultValues: {
+      userName: '',
+      designation: '',
+      password: '',
+      contactId: '',
+      isActive: true,
+      isAdmin: false,
+      userTypeId: '',
+    },
   });
 
   React.useEffect(() => {
     if (profile) {
       form.reset({
-        fullName: profile.fullName ?? '',
         userName: profile.userName ?? '',
         designation: profile.designation ?? '',
         password: '',
+        contactId: profile.contactId != null ? String(profile.contactId) : '',
+        isActive: profile.isActive ?? true,
+        isAdmin: profile.isAdmin ?? false,
+        userTypeId: profile.userTypeId != null ? String(profile.userTypeId) : '',
       });
     }
   }, [profile, form]);
@@ -74,20 +98,22 @@ export function MyProfile() {
   const onSubmit = form.handleSubmit((values) => {
     if (!profile?.id) return;
     const payload: UserProfileUpdateDto = {
-      // 原样保留权限/状态/类型/公司,只覆盖用户可编辑字段。
-      ...profile,
+      ...profile, // 保留 fullName/companyId 等未在此编辑的字段
       id: profile.id,
-      fullName: values.fullName,
       userName: values.userName,
       designation: values.designation || undefined,
       password: values.password?.trim() ? values.password : undefined,
+      contactId: values.contactId ? Number(values.contactId) : undefined,
+      isActive: values.isActive,
+      isAdmin: values.isAdmin,
+      userTypeId: values.userTypeId ? Number(values.userTypeId) : undefined,
     };
     updateMutation.mutate(payload);
   });
 
   if (isLoading) {
     return (
-      <Card className="max-w-2xl">
+      <Card>
         <CardHeader>
           <Skeleton className="h-6 w-40" />
         </CardHeader>
@@ -101,75 +127,133 @@ export function MyProfile() {
   }
 
   return (
-    <Card className="max-w-2xl">
+    <Card>
       <CardHeader>
         <CardTitle>{t('team.profile.title')}</CardTitle>
-        <CardDescription>
-          {t(`team.userTypes.${profile?.userTypeId}`, { defaultValue: t('team.userTypes.unknown') })}
-          {profile?.isAdmin ? ` · ${t('team.profile.administrator')}` : ''}
-        </CardDescription>
+        <CardDescription>{t('team.profile.subtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('team.profile.name')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="userName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('team.profile.userName')}</FormLabel>
-                  <FormControl>
-                    <Input autoComplete="off" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="designation"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('team.profile.designation')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('team.profile.newPassword')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder={t('team.profile.passwordPlaceholder')}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>{t('team.profile.passwordHint')}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={onSubmit} className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* 用户字段 */}
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="designation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('team.profile.designation')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="userName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('team.profile.userName')}</FormLabel>
+                      <FormControl>
+                        <Input autoComplete="off" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('team.profile.newPassword')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder={t('team.profile.passwordPlaceholder')}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>{t('team.profile.passwordHint')}</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* 关联联系人(Name/Selskapsnavn/Contact No/E-mail 由 ContactSelect 承载)*/}
+              <div className="space-y-2">
+                <FormLabel>{t('team.profile.contact')}</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="contactId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ContactSelect value={field.value ?? ''} onChange={field.onChange} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Aktiv / Admin / Brukertype */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-md border p-3">
+                    <FormLabel>{t('team.profile.active')}</FormLabel>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isAdmin"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-md border p-3">
+                    <FormLabel>{t('team.profile.admin')}</FormLabel>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="userTypeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('team.profile.userType')}</FormLabel>
+                    <Select value={field.value || ''} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={t('team.profile.userTypePlaceholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {USER_TYPE_VALUES.map((v) => (
+                          <SelectItem key={v} value={v}>
+                            {t(`team.userTypes.${v}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="flex justify-end">
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && <Loader2 className="size-4 animate-spin" />}

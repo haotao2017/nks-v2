@@ -52,6 +52,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+import { ContactSelect } from '@/features/projects/wizard/contact-select';
+
 import { useCreateUser, useUpdateUser, USER_TYPE_OPTIONS } from './api';
 
 const makeUserSchema = (t: TFunction) =>
@@ -60,6 +62,7 @@ const makeUserSchema = (t: TFunction) =>
       fullName: z.string().trim().min(1, t('team.users.validation.nameRequired')),
       userName: z.string().trim().min(1, t('team.users.validation.userNameRequired')),
       designation: z.string().optional(),
+      contactId: z.string().optional(),
       userTypeId: z.string().min(1, t('team.users.validation.userTypeRequired')),
       isActive: z.boolean(),
       isAdmin: z.boolean(),
@@ -98,6 +101,7 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
       fullName: '',
       userName: '',
       designation: '',
+      contactId: '',
       userTypeId: String(USER_TYPE_OPTIONS[0].value),
       isActive: true,
       isAdmin: false,
@@ -112,6 +116,7 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
         fullName: user?.fullName ?? '',
         userName: user?.userName ?? '',
         designation: user?.designation ?? '',
+        contactId: user?.contactId != null ? String(user.contactId) : '',
         userTypeId:
           user?.userTypeId !== undefined
             ? String(user.userTypeId)
@@ -131,6 +136,7 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
         fullName: values.fullName,
         userName: values.userName,
         designation: values.designation || undefined,
+        contactId: values.contactId ? Number(values.contactId) : undefined,
         userTypeId: Number(values.userTypeId),
         isActive: values.isActive,
         isAdmin: values.isAdmin,
@@ -146,6 +152,7 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
       fullName: values.fullName,
       userName: values.userName,
       designation: values.designation || undefined,
+      contactId: values.contactId ? Number(values.contactId) : undefined,
       userTypeId: Number(values.userTypeId),
       isActive: values.isActive,
       isAdmin: values.isAdmin,
@@ -207,6 +214,19 @@ export function UserFormDialog({ open, onOpenChange, user, companyId }: UserForm
                   <FormLabel>{t('team.users.dialog.designation')}</FormLabel>
                   <FormControl>
                     <Input placeholder={t('team.users.dialog.designationPlaceholder')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="contactId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('team.users.dialog.contact')}</FormLabel>
+                  <FormControl>
+                    <ContactSelect value={field.value ?? ''} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

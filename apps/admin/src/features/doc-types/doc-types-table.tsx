@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/data-table';
+import { usePartyTypes } from '@/features/party-types/api';
 
 import { useDocTypes, useDeleteDocType } from './api';
 import { getDocTypeColumns } from './columns';
@@ -34,19 +35,27 @@ export interface DocTypesTableProps {
 export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableProps) {
   const { t } = useTranslation();
   const { data = [], isLoading } = useDocTypes();
+  const { data: partyTypes = [] } = usePartyTypes();
   const deleteMutation = useDeleteDocType();
 
   const [editTarget, setEditTarget] = React.useState<DocType | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<DocType | null>(null);
 
+  const partyTypeName = React.useCallback(
+    (id: number | null | undefined) =>
+      id == null ? '' : (partyTypes.find((p) => p.id === id)?.name ?? ''),
+    [partyTypes],
+  );
+
   const columns = React.useMemo(
     () =>
       getDocTypeColumns({
         t,
+        partyTypeName,
         onEdit: (docType) => setEditTarget(docType),
         onDelete: (docType) => setDeleteTarget(docType),
       }),
-    [t],
+    [t, partyTypeName],
   );
 
   const confirmDelete = () => {

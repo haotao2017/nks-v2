@@ -52,7 +52,8 @@
         "admin": "Admin",
         "adminHint": "Gi brukeren administratorrettigheter.",
         "active": "Aktiv",
-        "activeHint": "Inaktive brukere kan ikke logge inn."
+        "activeHint": "Inaktive brukere kan ikke logge inn.",
+        "contact": "Kontakt"
       },
       "validation": {
         "nameRequired": "Navn er påkrevd",
@@ -73,7 +74,13 @@
       "validation": {
         "nameRequired": "Navn er påkrevd",
         "userNameRequired": "Brukernavn er påkrevd"
-      }
+      },
+      "subtitle": "Administrer egen profil.",
+      "contact": "Kontakt",
+      "active": "Aktiv",
+      "admin": "Admin",
+      "userType": "Brukertype",
+      "userTypePlaceholder": "Velg brukertype"
     },
     "toast": {
       "userCreated": "Bruker opprettet",
