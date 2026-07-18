@@ -32,10 +32,19 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
 import { useBuildingSuppliers } from '../building-suppliers/api';
 import { useContacts } from '../contacts/api';
+import { ProjectWizard } from './wizard/project-wizard';
+import { ProjectPartiesPanel } from './parties-panel';
 import { useProjectParties, useUpdateProject } from './api';
 
 /** 挪威语短日期(容错:非法/缺失值回退 '—',对齐 columns.tsx)。 */
@@ -106,6 +115,10 @@ export function ProjectOverview({ project }: { project: ProjectDto }) {
   // ── 描述内联编辑 ────────────────────────────────────────────────────────
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(project.description ?? '');
+
+  // ── Tjenester / Foretak 编辑弹窗 ────────────────────────────────────────
+  const [editServicesOpen, setEditServicesOpen] = React.useState(false);
+  const [editPartiesOpen, setEditPartiesOpen] = React.useState(false);
 
   const startEdit = () => {
     setDraft(project.description ?? '');
@@ -224,8 +237,22 @@ export function ProjectOverview({ project }: { project: ProjectDto }) {
           </div>
         </Section>
 
-        {/* Tjenester */}
-        <Section label={t('overviewPanel.services.label')}>
+        {/* Tjenester —— Rediger 打开项目编辑向导(Service 步改服务) */}
+        <Section
+          label={t('overviewPanel.services.label')}
+          action={
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 px-2"
+              onClick={() => setEditServicesOpen(true)}
+            >
+              <Pencil className="size-3.5" />
+              {t('common.edit')}
+            </Button>
+          }
+        >
           {services.length ? (
             <ul className="space-y-1 text-sm">
               {services.map((s) => (
@@ -247,8 +274,22 @@ export function ProjectOverview({ project }: { project: ProjectDto }) {
           )}
         </Section>
 
-        {/* Foretak */}
-        <Section label={t('overviewPanel.parties.label')}>
+        {/* Foretak —— Rediger 打开参与方绑定面板 */}
+        <Section
+          label={t('overviewPanel.parties.label')}
+          action={
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 px-2"
+              onClick={() => setEditPartiesOpen(true)}
+            >
+              <Pencil className="size-3.5" />
+              {t('common.edit')}
+            </Button>
+          }
+        >
           {parties.length ? (
             <ul className="space-y-2 text-sm">
               {parties.map((p) => (
@@ -266,6 +307,34 @@ export function ProjectOverview({ project }: { project: ProjectDto }) {
           )}
         </Section>
       </CardContent>
+
+      {/* Tjenester 编辑 —— 复用项目编辑向导(编辑模式) */}
+      <Dialog open={editServicesOpen} onOpenChange={setEditServicesOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('overviewPanel.services.editTitle')}</DialogTitle>
+            <DialogDescription>{t('overviewPanel.services.editDescription')}</DialogDescription>
+          </DialogHeader>
+          {editServicesOpen && (
+            <ProjectWizard
+              project={project}
+              onCancel={() => setEditServicesOpen(false)}
+              onDone={() => setEditServicesOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Foretak 编辑 —— 复用参与方绑定面板 */}
+      <Dialog open={editPartiesOpen} onOpenChange={setEditPartiesOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{t('overviewPanel.parties.editTitle')}</DialogTitle>
+            <DialogDescription>{t('overviewPanel.parties.editDescription')}</DialogDescription>
+          </DialogHeader>
+          {editPartiesOpen && <ProjectPartiesPanel projectId={Number(project.id)} />}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

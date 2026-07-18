@@ -14,11 +14,15 @@
     },
     "services": {
       "label": "Tjenester",
-      "empty": "Ingen tjenester."
+      "empty": "Ingen tjenester.",
+      "editTitle": "Rediger tjenester",
+      "editDescription": "Gå til «Priser»-steget for å endre tjenester på prosjektet."
     },
     "parties": {
       "label": "Foretak",
-      "empty": "Ingen foretak."
+      "empty": "Ingen foretak.",
+      "editTitle": "Rediger foretak",
+      "editDescription": "Knytt eller bytt kontakt for hvert foretak på prosjektet."
     }
   }
 }

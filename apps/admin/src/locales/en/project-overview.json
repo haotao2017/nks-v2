@@ -14,11 +14,15 @@
     },
     "services": {
       "label": "Services",
-      "empty": "No services."
+      "empty": "No services.",
+      "editTitle": "Edit services",
+      "editDescription": "Go to the \"Pricing\" step to change the project's services."
     },
     "parties": {
       "label": "Parties",
-      "empty": "No parties."
+      "empty": "No parties.",
+      "editTitle": "Edit parties",
+      "editDescription": "Bind or change the contact for each party on the project."
     }
   }
 }

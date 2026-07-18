@@ -9,9 +9,9 @@
  *  - Generert:系统生成文档,按工作流步骤名分组,每个文件用 S3 直链(imageURL)下载。
  *  - Andre:通用附件上传(otherDocs:2)。
  *
- * workflowId 来源:面板仅收 projectId,文档按「工作流类别」组织。这里复用 useProject(projectId)
- *   (与父页共享缓存),从 projectServiceWorkflowList 解析工作流实例;多条时给出选择器,
- *   默认选中 workflowCategoryId===1 或第一条(对齐旧 ProjectWorkplaceHeader 的 Service 下拉)。
+ * workflowId 来源:文档按「工作流类别」组织。工作流实例与选中由详情页头部的
+ *   useWorkflowInstances 统一持有,选中的 workflowCategoryId 通过 `workflowId` prop 下传
+ *   到本面板(与 Arbeidsflyt 面板共用同一选中),故本面板不再自建选择器/派生逻辑。
  */
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,14 +38,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -57,7 +49,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { useProject, useProjectParties } from './api';
+import { useProjectParties } from './api';
 import {
   useDeleteProjectDocument,
   useProjectPartyDocGroups,
@@ -67,93 +59,23 @@ import {
   type UploadDocVars,
 } from './doc-api';
 
-/** 无 projectServiceWorkflowList 时的默认工作流类别(全部步骤),对齐旧 admin。 */
-const DEFAULT_WORKFLOW_ID = 1;
-
-interface WorkflowOption {
-  /** 选择器唯一键(ServiceWorkflowCategory.id,回退 workflowCategoryId)。 */
-  instanceId: number;
-  /** 作为端点 workflowId 参数的工作流类别 ID。 */
-  workflowCategoryId: number;
-  label: string;
-}
-
 // ── 主面板 ──────────────────────────────────────────────────────────────
 
-export function ProjectDocsPanel({ projectId }: { projectId: number }) {
+export function ProjectDocsPanel({
+  projectId,
+  workflowId,
+}: {
+  projectId: number;
+  /** 当前选中工作流类别 ID(由详情页头部选择器选中并下传)。 */
+  workflowId: number;
+}) {
   const { t } = useTranslation();
-
-  const { data: project } = useProject(projectId);
-
-  // 从 projectServiceWorkflowList 解析工作流实例(join projectService 取展示名)。
-  const instances = React.useMemo<WorkflowOption[]>(() => {
-    const swcList = project?.projectServiceWorkflowList ?? [];
-    const services = project?.projectService ?? [];
-    const mapped = swcList
-      .filter((swc) => swc.workflowCategoryId != null)
-      .map((swc) => {
-        const svc = services.find((s) => s.serviceId === swc.serviceId)?.service;
-        const label = svc?.name
-          ? `${svc.name}${svc.description ? ` – ${svc.description}` : ''}`
-          : t('docsPanel.workflow.fallback', { id: swc.workflowCategoryId });
-        return {
-          instanceId: swc.id ?? swc.workflowCategoryId!,
-          workflowCategoryId: swc.workflowCategoryId!,
-          label,
-        } satisfies WorkflowOption;
-      });
-    if (mapped.length > 0) return mapped;
-    return [
-      {
-        instanceId: DEFAULT_WORKFLOW_ID,
-        workflowCategoryId: DEFAULT_WORKFLOW_ID,
-        label: t('docsPanel.workflow.default'),
-      },
-    ];
-  }, [project, t]);
-
-  const defaultId =
-    (instances.find((w) => w.workflowCategoryId === DEFAULT_WORKFLOW_ID) ?? instances[0])
-      ?.instanceId ?? null;
-  const [selectedId, setSelectedId] = React.useState<number | null>(null);
-  const activeId = selectedId ?? defaultId;
-  const selected = instances.find((w) => w.instanceId === activeId) ?? instances[0];
-  const workflowId = selected?.workflowCategoryId ?? DEFAULT_WORKFLOW_ID;
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle>{t('docsPanel.title')}</CardTitle>
-            <CardDescription>{t('docsPanel.description')}</CardDescription>
-          </div>
-          {instances.length > 1 && (
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="docs-wf-select"
-                className="text-muted-foreground whitespace-nowrap text-xs"
-              >
-                {t('docsPanel.workflow.label')}
-              </Label>
-              <Select
-                value={String(activeId ?? '')}
-                onValueChange={(v) => setSelectedId(Number(v))}
-              >
-                <SelectTrigger id="docs-wf-select" className="w-[260px]">
-                  <SelectValue placeholder={t('docsPanel.workflow.placeholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {instances.map((w) => (
-                    <SelectItem key={w.instanceId} value={String(w.instanceId)}>
-                      {w.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
+        <CardTitle>{t('docsPanel.title')}</CardTitle>
+        <CardDescription>{t('docsPanel.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="foretak">

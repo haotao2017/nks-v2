@@ -20,6 +20,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProject } from '@/features/projects/api';
 import { ProjectWorkflow } from '@/features/projects/workflow/project-workflow';
+import { WorkflowSelector } from '@/features/projects/workflow/workflow-selector';
+import { useWorkflowInstances } from '@/features/projects/workflow/use-workflow-instances';
 import { ProjectChecklistsPanel } from '@/features/projects/checklists-panel';
 import { ProjectPartiesPanel } from '@/features/projects/parties-panel';
 import { ProjectDocsPanel } from '@/features/projects/project-docs-panel';
@@ -37,6 +39,9 @@ export default function ProjectWorkbenchPage({
   const projectId = Number(id);
 
   const { data: project, isLoading, isError } = useProject(projectId);
+
+  // 工作流实例 + 选中(头部选择器 / Arbeidsflyt / Dokumenter 三处共用同一选中)。
+  const { instances, selected, setSelectedId } = useWorkflowInstances(project);
 
   if (isLoading) {
     return (
@@ -82,7 +87,15 @@ export default function ProjectWorkbenchPage({
             </h2>
             {project.projectStatus && <Badge variant="secondary">{project.projectStatus}</Badge>}
           </div>
-          <ProjectActions project={project} />
+          <div className="flex flex-wrap items-center gap-2">
+            {/* 工作流(服务)选择器 —— 常显(≥1 条即显示),驱动 Arbeidsflyt 与 Dokumenter。 */}
+            <WorkflowSelector
+              instances={instances}
+              value={selected.instanceId}
+              onChange={setSelectedId}
+            />
+            <ProjectActions project={project} />
+          </div>
         </div>
         {project.address && (
           <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
@@ -104,7 +117,7 @@ export default function ProjectWorkbenchPage({
         </TabsList>
 
         <TabsContent value="arbeidsflyt">
-          <ProjectWorkflow project={project} />
+          <ProjectWorkflow project={project} instance={selected} />
         </TabsContent>
         <TabsContent value="sjekklister">
           <ProjectChecklistsPanel projectId={projectId} />
@@ -113,7 +126,7 @@ export default function ProjectWorkbenchPage({
           <ProjectPartiesPanel projectId={projectId} />
         </TabsContent>
         <TabsContent value="dokumenter">
-          <ProjectDocsPanel projectId={projectId} />
+          <ProjectDocsPanel projectId={projectId} workflowId={selected.workflowCategoryId} />
         </TabsContent>
         </Tabs>
 
