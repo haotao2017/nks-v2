@@ -2,7 +2,7 @@
 
 /**
  * ChecklistTemplate 模块编排层 —— 照抄 workflow-categories-table:
- * DataTable + 模板表单弹窗 + 子项管理弹窗 + 删除确认。
+ * DataTable + 模板表单弹窗 + 子项管理弹窗 + 单删/批量删除。
  */
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,8 +20,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/data-table';
+import {
+  BulkDeleteConfirmDialog,
+  BulkDeleteToolbar,
+  collectNumericIds,
+  useBulkIdsDialog,
+} from '@/components/table-bulk-delete';
 
-import { useChecklistTemplates, useDeleteChecklistTemplate } from './api';
+import { useChecklistTemplates, useDeleteChecklistTemplate, useBulkDeleteChecklistTemplates } from './api';
 import { getChecklistTemplateColumns } from './columns';
 import { ChecklistTemplateFormDialog } from './checklist-template-form-dialog';
 import { ChecklistTemplateItemsDialog } from './checklist-template-items-dialog';
@@ -39,10 +45,12 @@ export function ChecklistTemplatesTable({
   const { t } = useTranslation();
   const { data = [], isLoading } = useChecklistTemplates();
   const deleteMutation = useDeleteChecklistTemplate();
+  const bulkDeleteMutation = useBulkDeleteChecklistTemplates();
 
   const [editTarget, setEditTarget] = React.useState<ChecklistTemplateDto | null>(null);
   const [itemsTarget, setItemsTarget] = React.useState<ChecklistTemplateDto | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<ChecklistTemplateDto | null>(null);
+  const { bulkIds, setBulkIds, close: closeBulk } = useBulkIdsDialog();
 
   const columns = React.useMemo(
     () =>
@@ -62,6 +70,16 @@ export function ChecklistTemplatesTable({
     });
   };
 
+  const confirmBulkDelete = () => {
+    if (!bulkIds || bulkIds.ids.length === 0) return;
+    bulkDeleteMutation.mutate(bulkIds.ids, {
+      onSuccess: () => {
+        bulkIds.clear();
+        closeBulk();
+      },
+    });
+  };
+
   return (
     <>
       <DataTable
@@ -71,6 +89,25 @@ export function ChecklistTemplatesTable({
         searchColumn="title"
         searchPlaceholder={t('checklists.searchPlaceholder')}
         emptyMessage={t('checklists.empty')}
+        enableRowSelection
+        getRowId={(row, index) => String(row.id ?? index)}
+        selectAllAriaLabel={t('bulk.selectAll')}
+        selectRowAriaLabel={t('bulk.selectRow')}
+        renderBulkActions={(rows, clear) => {
+          const ids = collectNumericIds(rows);
+          if (ids.length === 0) return null;
+          return (
+            <BulkDeleteToolbar
+              count={ids.length}
+              pending={bulkDeleteMutation.isPending}
+              onRequestDelete={() => setBulkIds({ ids, clear })}
+              onClear={clear}
+              selectedLabel={t('bulk.selected', { count: ids.length })}
+              clearLabel={t('bulk.clear')}
+              deleteLabel={t('common.delete')}
+            />
+          );
+        }}
       />
 
       {/* 新建 */}
@@ -121,6 +158,19 @@ export function ChecklistTemplatesTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkDeleteConfirmDialog
+        bulkIds={bulkIds}
+        onOpenChange={(open) => !open && closeBulk()}
+        onConfirm={confirmBulkDelete}
+        pending={bulkDeleteMutation.isPending}
+        title={t('bulkDeleteDialog.title', { count: bulkIds?.ids.length ?? 0 })}
+        description={t('bulkDeleteDialog.description', {
+          count: bulkIds?.ids.length ?? 0,
+        })}
+        cancelLabel={t('common.cancel')}
+        deleteLabel={t('common.delete')}
+      />
     </>
   );
 }

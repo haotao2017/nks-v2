@@ -48,11 +48,26 @@ public class DocTypeServiceImpl implements DocTypeService {
     public WrapperDocType updateSingleDocType(DocType docType, Integer companyId) {
         WrapperDocType data = new WrapperDocType();
 
-        // Ensure the record exists and belongs to the requesting company before updating
+        // Ensure the record exists and belongs to the requesting company before updating.
+        // Sparse body: copy existing then overlay only non-null incoming fields
+        // so omitted/null fields do not wipe persisted values (e.g. sortOrder, partyTypeId).
         Optional<DocType> existingOpt = docTypeRepository.findById(docType.getId());
         if (existingOpt.isPresent() && companyId.equals(existingOpt.get().getCompanyId())) {
-            docType.setCompanyId(companyId);
-            DocType updatedDocType = docTypeRepository.save(docType);
+            DocType existing = existingOpt.get();
+            if (docType.getDocName() != null) {
+                existing.setDocName(docType.getDocName());
+            }
+            if (docType.getIsRequired() != null) {
+                existing.setIsRequired(docType.getIsRequired());
+            }
+            if (docType.getPartyTypeId() != null) {
+                existing.setPartyTypeId(docType.getPartyTypeId());
+            }
+            if (docType.getSortOrder() != null) {
+                existing.setSortOrder(docType.getSortOrder());
+            }
+            existing.setCompanyId(companyId);
+            DocType updatedDocType = docTypeRepository.save(existing);
             data.setDocType(updatedDocType);
         } else {
             log.warn("Document type with id {} not found for update for company {}", docType.getId(), companyId);

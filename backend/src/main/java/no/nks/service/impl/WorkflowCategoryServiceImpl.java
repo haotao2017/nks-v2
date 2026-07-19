@@ -33,7 +33,7 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
     public WrapperWorkflowCategory getSingleWorkflowCategory(Integer workflowCategoryId) {
         log.info("Finding workflow category with ID: {}", workflowCategoryId);
         WorkflowCategory workflowCategory = workflowCategoryRepository.findById(workflowCategoryId)
-                .orElseThrow(() -> new EntityNotFoundException("工作流类别不存在：ID=" + workflowCategoryId));
+                .orElseThrow(() -> new EntityNotFoundException("Arbeidsflytkategori finnes ikke: ID=" + workflowCategoryId));
 
         return new WrapperWorkflowCategory(mapToDto(workflowCategory));
     }
@@ -43,11 +43,11 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
     public WrapperWorkflowCategory updateSingleWorkflowCategory(WorkflowCategoryDto workflowCategoryDto) {
         log.info("Updating workflow category with ID: {}", workflowCategoryDto.getId());
         if (workflowCategoryDto.getId() == null) {
-            throw new IllegalArgumentException("更新工作流类别时ID不能为空");
+            throw new IllegalArgumentException("ID må oppgis ved oppdatering av arbeidsflytkategori");
         }
 
         WorkflowCategory existingCategory = workflowCategoryRepository.findById(workflowCategoryDto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("工作流类别不存在：ID=" + workflowCategoryDto.getId()));
+                .orElseThrow(() -> new EntityNotFoundException("Arbeidsflytkategori finnes ikke: ID=" + workflowCategoryDto.getId()));
 
         // 先更新名称
         existingCategory.setName(workflowCategoryDto.getName());
@@ -74,25 +74,25 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
     public RequestResponse deleteSingleWorkflowCategory(Integer workflowCategoryId) {
         log.info("Deleting workflow category with ID: {}", workflowCategoryId);
         if (workflowCategoryId == null) {
-            return new RequestResponse(false, "工作流类别ID不能为空");
+            return new RequestResponse(false, "Arbeidsflytkategori-ID mangler");
         }
 
         if (!workflowCategoryRepository.existsById(workflowCategoryId)) {
-            return new RequestResponse(false, "工作流类别不存在：ID=" + workflowCategoryId);
+            return new RequestResponse(false, "Arbeidsflytkategori finnes ikke: ID=" + workflowCategoryId);
         }
 
         // 检查是否有关联的步骤
         List<WorkflowCategoryStep> steps = workflowCategoryStepRepository.findByWorkflowCategoryIdOrderByStepSequenceAsc(workflowCategoryId);
         if (!steps.isEmpty()) {
-            return new RequestResponse(false, "该工作流类别存在关联步骤，无法删除");
+            return new RequestResponse(false, "Kategorien har tilknyttede steg og kan ikke slettes");
         }
 
         try {
             workflowCategoryRepository.deleteById(workflowCategoryId);
-            return new RequestResponse(true, "工作流类别已成功删除");
+            return new RequestResponse(true, "Arbeidsflytkategori slettet");
         } catch (Exception e) {
             log.error("删除工作流类别时出错", e);
-            return new RequestResponse(false, "删除工作流类别时出错：" + e.getMessage());
+            return new RequestResponse(false, "Feil ved sletting av arbeidsflytkategori: " + e.getMessage());
         }
     }
 
@@ -101,7 +101,7 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
     public WrapperWorkflowCategory createSingleWorkflowCategory(WorkflowCategoryDto workflowCategoryDto) {
         log.info("Creating new workflow category");
         if (workflowCategoryDto == null) {
-            throw new IllegalArgumentException("工作流类别数据不能为空");
+            throw new IllegalArgumentException("Arbeidsflytkategori-data mangler");
         }
 
         // 确保创建时不带ID
@@ -141,7 +141,7 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
         log.info("Finding workflow category steps for category ID: {}", workflowCategoryId);
         // 首先检查工作流类别是否存在
         if (!workflowCategoryRepository.existsById(workflowCategoryId)) {
-            throw new EntityNotFoundException("工作流类别不存在：ID=" + workflowCategoryId);
+            throw new EntityNotFoundException("Arbeidsflytkategori finnes ikke: ID=" + workflowCategoryId);
         }
 
         List<WorkflowCategoryStep> steps = workflowCategoryStepRepository.findByWorkflowCategoryIdOrderByStepSequenceAsc(workflowCategoryId);
@@ -156,7 +156,7 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
         log.info("Creating new workflow category step for category ID: {}", stepDto.getWorkflowCategoryId());
         // 检查关联的工作流类别是否存在
         if (!workflowCategoryRepository.existsById(stepDto.getWorkflowCategoryId())) {
-            throw new EntityNotFoundException("工作流类别不存在：ID=" + stepDto.getWorkflowCategoryId());
+            throw new EntityNotFoundException("Arbeidsflytkategori finnes ikke: ID=" + stepDto.getWorkflowCategoryId());
         }
 
         // 确保创建时不带ID
@@ -177,7 +177,7 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
     public WrapperWorkflowCategoryStep getSingleWorkflowCategoryStep(Integer workflowCategoryStepId) {
         log.info("Finding workflow category step with ID: {}", workflowCategoryStepId);
         WorkflowCategoryStep step = workflowCategoryStepRepository.findById(workflowCategoryStepId)
-                .orElseThrow(() -> new EntityNotFoundException("工作流步骤不存在：ID=" + workflowCategoryStepId));
+                .orElseThrow(() -> new EntityNotFoundException("Arbeidsflytsteg finnes ikke: ID=" + workflowCategoryStepId));
 
         return new WrapperWorkflowCategoryStep(mapToStepDto(step));
     }
@@ -187,15 +187,15 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
     public WrapperWorkflowCategoryStep updateSingleWorkflowCategoryStep(WorkflowCategoryStepDto stepDto) {
         log.info("Updating workflow category step with ID: {}", stepDto.getId());
         if (stepDto.getId() == null) {
-            throw new IllegalArgumentException("更新工作流步骤时ID不能为空");
+            throw new IllegalArgumentException("ID må oppgis ved oppdatering av arbeidsflytsteg");
         }
 
         WorkflowCategoryStep existingStep = workflowCategoryStepRepository.findById(stepDto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("工作流步骤不存在：ID=" + stepDto.getId()));
+                .orElseThrow(() -> new EntityNotFoundException("Arbeidsflytsteg finnes ikke: ID=" + stepDto.getId()));
 
         // 检查关联的工作流类别是否存在
         if (!workflowCategoryRepository.existsById(stepDto.getWorkflowCategoryId())) {
-            throw new EntityNotFoundException("工作流类别不存在：ID=" + stepDto.getWorkflowCategoryId());
+            throw new EntityNotFoundException("Arbeidsflytkategori finnes ikke: ID=" + stepDto.getWorkflowCategoryId());
         }
 
         // 更新字段
@@ -214,19 +214,19 @@ public class WorkflowCategoryServiceImpl implements WorkflowCategoryService {
     public RequestResponse deleteSingleWorkflowCategoryStep(Integer workflowCategoryStepId) {
         log.info("Deleting workflow category step with ID: {}", workflowCategoryStepId);
         if (workflowCategoryStepId == null) {
-            return new RequestResponse(false, "工作流步骤ID不能为空");
+            return new RequestResponse(false, "Arbeidsflytsteg-ID mangler");
         }
 
         if (!workflowCategoryStepRepository.existsById(workflowCategoryStepId)) {
-            return new RequestResponse(false, "工作流步骤不存在：ID=" + workflowCategoryStepId);
+            return new RequestResponse(false, "Arbeidsflytsteg finnes ikke: ID=" + workflowCategoryStepId);
         }
 
         try {
             workflowCategoryStepRepository.deleteById(workflowCategoryStepId);
-            return new RequestResponse(true, "工作流步骤已成功删除");
+            return new RequestResponse(true, "Arbeidsflytsteg slettet");
         } catch (Exception e) {
             log.error("删除工作流步骤时出错", e);
-            return new RequestResponse(false, "删除工作流步骤时出错：" + e.getMessage());
+            return new RequestResponse(false, "Feil ved sletting av arbeidsflytsteg: " + e.getMessage());
         }
     }
 

@@ -29,7 +29,8 @@
       "createError": "Kunne ikke opprette byggevareleverandør",
       "updated": "Byggevareleverandør oppdatert",
       "updateError": "Kunne ikke oppdatere byggevareleverandør",
-      "deleted": "Byggevareleverandør slettet"
+      "deleted": "Byggevareleverandør slettet",
+      "bulkDeleted": "{{count}} byggevareleverandører slettet"
     },
     "validation": {
       "nameRequired": "Navn er påkrevd",
@@ -87,7 +88,8 @@
       "updated": "E-postmal oppdatert",
       "updateError": "Kunne ikke oppdatere e-postmal",
       "deleted": "E-postmal slettet",
-      "deleteBlocked": "E-postmalen kan ikke slettes"
+      "deleteBlocked": "E-postmalen kan ikke slettes",
+      "bulkDeleted": "{{count}} e-postmaler slettet"
     },
     "validation": {
       "titleRequired": "Tittel er påkrevd",
@@ -214,7 +216,8 @@
       "updated": "Sjekkliste oppdatert",
       "updateError": "Kunne ikke oppdatere sjekkliste",
       "deleted": "Sjekkliste slettet",
-      "deleteBlocked": "Sjekklisten kan ikke slettes"
+      "deleteBlocked": "Sjekklisten kan ikke slettes",
+      "bulkDeleted": "{{count}} sjekklister slettet"
     },
     "validation": {
       "titleRequired": "Tittel er påkrevd"

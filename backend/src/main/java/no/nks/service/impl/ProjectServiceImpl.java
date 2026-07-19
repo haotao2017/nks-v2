@@ -28,14 +28,16 @@ import no.nks.repository.PartyTypeRepository;
 import no.nks.repository.UserRepository;
 import no.nks.repository.ProjectChecklistRepository;
 import no.nks.repository.ChecklistItemRepository;
+import no.nks.util.SoftDeleteFlags;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.CacheManager;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -99,7 +101,7 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
     }
 
     @Override
-    @org.springframework.cache.annotation.Cacheable(value = "projectCountsCache", key = "#companyId")
+    @Cacheable(value = "projectCountsCache", key = "#companyId")
     public ProjectCountDto getProjectsCount(Integer companyId) {
         return ProjectCountDto.builder()
                 .notArchivedOrDeleted(projectRepository.countByNotArchivedOrDeletedAndCompanyId(companyId))
@@ -162,10 +164,10 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
     @org.springframework.cache.annotation.Cacheable(value = "projectCache", key = "#projectId + '_' + #companyId", unless = "#result == null")
     public ProjectDto getProjectById(Integer projectId, Integer companyId) {
         Project project = projectRepository.findProjectWithBasicInfo(projectId)
-                .orElseThrow(() -> new EntityNotFoundException("项目未找到，ID: " + projectId));
+                .orElseThrow(() -> new EntityNotFoundException("Prosjektet ble ikke funnet, ID: " + projectId));
 
         if (!project.getCompanyId().equals(companyId)) {
-            throw new AccessDeniedException("无权访问此项目");
+            throw new AccessDeniedException("Du har ikke tilgang til dette prosjektet");
         }
 
         ProjectDto projectDto = mapProjectToDto(project);
@@ -297,14 +299,14 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
     @org.springframework.cache.annotation.CacheEvict(value = "projectCache", key = "#projectDto.id + '_' + #companyId")
     public ProjectDto updateProject(ProjectDto projectDto, Integer companyId) {
         if (projectDto.getId() == null) {
-            throw new IllegalArgumentException("项目ID不能为空");
+            throw new IllegalArgumentException("Prosjekt-ID mangler");
         }
 
         Project existingProject = projectRepository.findProjectWithBasicInfo(projectDto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("项目未找到，ID: " + projectDto.getId()));
+                .orElseThrow(() -> new EntityNotFoundException("Prosjektet ble ikke funnet, ID: " + projectDto.getId()));
 
         if (!existingProject.getCompanyId().equals(companyId)) {
-            throw new AccessDeniedException("无权更新此项目");
+            throw new AccessDeniedException("Du har ikke tilgang til å oppdatere dette prosjektet");
         }
 
         updateProjectFields(existingProject, projectDto);
@@ -322,7 +324,7 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
                     resultDto.setProjectService(updatedServices);
                 })
                 .exceptionally(ex -> {
-                    log.error("处理项目服务时发生错误, 项目ID: {}", updatedProject.getId(), ex);
+                    log.error("处理项目服务时En feil oppstod, 项目ID: {}", updatedProject.getId(), ex);
                     return null;
                 });
         }
@@ -400,6 +402,10 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "projectCountsCache", key = "#companyId"),
+            @CacheEvict(value = "projectCache", key = "#result.id + '_' + #companyId", condition = "#result != null && #result.id != null")
+    })
     public ProjectDto createProject(ProjectDto projectDto, Integer companyId) {
         Project project = new Project();
 
@@ -442,51 +448,63 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "projectCountsCache", key = "#companyId"),
+            @CacheEvict(value = "projectCache", key = "#projectId + '_' + #companyId")
+    })
     public DeleteProjectResponseDto deleteProject(Integer projectId, boolean isDelete, Integer companyId) {
         try {
             Project project = projectRepository.findProjectWithBasicInfo(projectId)
-                    .orElseThrow(() -> new EntityNotFoundException("项目未找到，ID: " + projectId));
+                    .orElseThrow(() -> new EntityNotFoundException("Prosjektet ble ikke funnet, ID: " + projectId));
 
             if (!project.getCompanyId().equals(companyId)) {
                 log.warn("权限不足：用户的公司ID{}与项目的公司ID{}不匹配, 项目ID: {}", companyId, project.getCompanyId(), projectId);
-                return new DeleteProjectResponseDto("无权操作此项目", false);
+                return new DeleteProjectResponseDto("Du har ikke tilgang til dette prosjektet", false);
             }
 
-            project.setIsDeleted(isDelete);
-            projectRepository.save(project);
+            project.setIsDeleted(SoftDeleteFlags.toFlag(isDelete));
+            projectRepository.saveAndFlush(project);
 
-            return new DeleteProjectResponseDto("项目状态已更新", true);
+            return new DeleteProjectResponseDto(
+                    isDelete ? "Prosjektet er slettet" : "Prosjektet er gjenopprettet",
+                    true);
         } catch (EntityNotFoundException e) {
             log.error("删除项目失败: {}", e.getMessage());
             return new DeleteProjectResponseDto(e.getMessage(), false);
         } catch (Exception e) {
-            log.error("删除项目时发生错误: {}", e.getMessage(), e);
-            return new DeleteProjectResponseDto("操作失败: " + e.getMessage(), false);
+            log.error("删除项目时En feil oppstod: {}", e.getMessage(), e);
+            return new DeleteProjectResponseDto("Handlingen mislyktes: " + e.getMessage(), false);
         }
     }
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "projectCountsCache", key = "#companyId"),
+            @CacheEvict(value = "projectCache", key = "#projectId + '_' + #companyId")
+    })
     public DeleteProjectResponseDto archiveProject(Integer projectId, boolean isArchive, Integer companyId) {
         try {
             Project project = projectRepository.findProjectWithBasicInfo(projectId)
-                    .orElseThrow(() -> new EntityNotFoundException("项目未找到，ID: " + projectId));
+                    .orElseThrow(() -> new EntityNotFoundException("Prosjektet ble ikke funnet, ID: " + projectId));
 
             if (!project.getCompanyId().equals(companyId)) {
                 log.warn("权限不足：用户的公司ID{}与项目的公司ID{}不匹配, 项目ID: {}", companyId, project.getCompanyId(), projectId);
-                return new DeleteProjectResponseDto("无权操作此项目", false);
+                return new DeleteProjectResponseDto("Du har ikke tilgang til dette prosjektet", false);
             }
 
-            project.setIsArchived(isArchive);
-            projectRepository.save(project);
+            project.setIsArchived(SoftDeleteFlags.toFlag(isArchive));
+            projectRepository.saveAndFlush(project);
 
-            return new DeleteProjectResponseDto("项目状态已更新", true);
+            return new DeleteProjectResponseDto(
+                    isArchive ? "Prosjektet er arkivert" : "Prosjektet er hentet ut av arkivet",
+                    true);
         } catch (EntityNotFoundException e) {
             log.error("归档项目失败: {}", e.getMessage());
             return new DeleteProjectResponseDto(e.getMessage(), false);
         } catch (Exception e) {
-            log.error("归档项目时发生错误: {}", e.getMessage(), e);
-            return new DeleteProjectResponseDto("操作失败: " + e.getMessage(), false);
+            log.error("归档项目时En feil oppstod: {}", e.getMessage(), e);
+            return new DeleteProjectResponseDto("Handlingen mislyktes: " + e.getMessage(), false);
         }
     }
 
@@ -709,7 +727,7 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
                         }
                     }
                 } catch (Exception e) {
-                    log.error("为服务 {} 创建检查清单时发生错误: {}", service.getName(), e.getMessage(), e);
+                    log.error("为服务 {} 创建检查清单时En feil oppstod: {}", service.getName(), e.getMessage(), e);
                 }
             }
 
@@ -881,7 +899,7 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
                 projectPartyRepository.saveAll(partiesToSave);
             }
         } catch (Exception e) {
-            log.error("添加项目参与方时发生错误, 项目ID: {}", projectId, e);
+            log.error("添加项目参与方时En feil oppstod, 项目ID: {}", projectId, e);
         }
     }
 
@@ -891,7 +909,7 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
         log.debug("获取项目负责人信息，项目ID: {}, 公司ID: {}", projectId, companyId);
 
         Integer projectLeaderId = projectRepository.findProjectLeaderIdByIdAndCompanyId(projectId, companyId)
-                .orElseThrow(() -> new EntityNotFoundException("项目未找到，ID: " + projectId));
+                .orElseThrow(() -> new EntityNotFoundException("Prosjektet ble ikke funnet, ID: " + projectId));
 
         ProjectProjectLeaderDto leaderDto = new ProjectProjectLeaderDto();
         leaderDto.setProjectId(projectId);
@@ -915,7 +933,7 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
 
         if (!projectRepository.existsByIdAndCompanyId(projectId, companyId)) {
             log.warn("权限不足：用户的公司ID{}与项目不匹配, 项目ID: {}", companyId, projectId);
-            throw new AccessDeniedException("无权更新此项目");
+            throw new AccessDeniedException("Du har ikke tilgang til å oppdatere dette prosjektet");
         }
 
         projectRepository.updateProjectLeaderId(projectId, projectLeaderId, LocalDateTime.now());
@@ -936,11 +954,11 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
         log.debug("获取项目联系客户提醒日期，项目ID: {}, 公司ID: {}", projectId, companyId);
 
         Project project = projectRepository.findProjectWithBasicInfo(projectId)
-                .orElseThrow(() -> new EntityNotFoundException("项目未找到，ID: " + projectId));
+                .orElseThrow(() -> new EntityNotFoundException("Prosjektet ble ikke funnet, ID: " + projectId));
 
         if (!project.getCompanyId().equals(companyId)) {
             log.warn("权限不足：用户的公司ID{}与项目的公司ID{}不匹配, 项目ID: {}", companyId, project.getCompanyId(), projectId);
-            throw new AccessDeniedException("无权访问此项目");
+            throw new AccessDeniedException("Du har ikke tilgang til dette prosjektet");
         }
 
         ProjectContactCustomerDto contactCustomerDto = new ProjectContactCustomerDto();
@@ -963,11 +981,11 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
                 workflowId, workflowStepId, projectId, companyId);
 
         Project project = projectRepository.findProjectWithBasicInfo(projectId)
-                .orElseThrow(() -> new EntityNotFoundException("项目未找到，ID: " + projectId));
+                .orElseThrow(() -> new EntityNotFoundException("Prosjektet ble ikke funnet, ID: " + projectId));
 
         if (!project.getCompanyId().equals(companyId)) {
             log.warn("权限不足：用户的公司ID{}与项目的公司ID{}不匹配, 项目ID: {}", companyId, project.getCompanyId(), projectId);
-            throw new AccessDeniedException("无权访问此项目");
+            throw new AccessDeniedException("Du har ikke tilgang til dette prosjektet");
         }
 
         ProjectProjectWFTenSavedDetailsDto detailsDto = new ProjectProjectWFTenSavedDetailsDto();

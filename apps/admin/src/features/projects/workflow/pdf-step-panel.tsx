@@ -21,6 +21,7 @@ import { RichTextEditor } from '@/features/email-templates/rich-text-editor';
 
 import type { WorkflowStepDef } from './workflow-steps';
 import { buildStepBase, useEmailPreview, useExecuteStepMultipart } from './workflow-api';
+import { fetchUrlAsFile } from './fetch-attachment';
 
 interface PdfStepPanelProps {
   projectId: number;
@@ -57,15 +58,23 @@ export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
   }, [projectId, step.key]);
 
   function handleSubmit() {
-    const extra: Partial<ProjectWorkflowDto> = {
-      isTransfer: false,
-      emailFrom,
-      emailTo,
-      emailSubject,
-      emailContent,
-      attachmentURL,
-    };
-    execMut.mutate({ extra, files: file ? [file] : undefined });
+    void (async () => {
+      const extra: Partial<ProjectWorkflowDto> = {
+        isTransfer: false,
+        emailFrom,
+        emailTo,
+        emailSubject,
+        emailContent,
+        attachmentURL,
+      };
+      let filesToSend = file ? [file] : [];
+      // 对齐旧 admin:无用户替换文件时，仍把模板 PDF fetch 后作为 multipart 附件
+      if (filesToSend.length === 0 && attachmentURL) {
+        const template = await fetchUrlAsFile(attachmentURL, 'rapport.pdf');
+        if (template) filesToSend = [template];
+      }
+      execMut.mutate({ extra, files: filesToSend.length ? filesToSend : undefined });
+    })();
   }
 
   if (preview.isPending) {

@@ -13,6 +13,7 @@ import no.nks.entity.ChecklistTemplate;
 import no.nks.entity.ChecklistItemTemplate;
 import no.nks.entity.InspectionLog;
 import no.nks.entity.Project;
+import no.nks.entity.ProjectChecklist;
 import no.nks.exception.ResourceNotFoundException;
 import no.nks.exception.BusinessException;
 import no.nks.repository.ChecklistItemImageRepository;
@@ -20,12 +21,16 @@ import no.nks.repository.ChecklistItemRepository;
 import no.nks.repository.ChecklistTemplateRepository;
 import no.nks.repository.ChecklistItemTemplateRepository;
 import no.nks.repository.InspectionLogRepository;
+import no.nks.repository.ProjectChecklistRepository;
 import no.nks.repository.ProjectRepository;
 import no.nks.repository.ContactBookRepository;
 import no.nks.service.FileStorageService;
 import no.nks.service.MobileAppService;
 import no.nks.service.ProjectService;
 import no.nks.service.ProjectChecklistService;
+import no.nks.util.ChecklistStatusNormalizer;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,11 +52,13 @@ public class MobileAppServiceImpl implements MobileAppService {
     private final ChecklistTemplateRepository checklistTemplateRepository;
     private final ChecklistItemTemplateRepository checklistItemTemplateRepository;
     private final InspectionLogRepository inspectionLogRepository;
+    private final ProjectChecklistRepository projectChecklistRepository;
     private final FileStorageService fileStorageService;
     private final ObjectMapper objectMapper;
     private final ContactBookRepository contactBookRepository;
     private final ProjectService projectService;
     private final ProjectChecklistService projectChecklistService;
+    private final CacheManager cacheManager;
 
     @Override
     public ResponseContainer getProjectList(Integer inspectorId, Integer companyId) {
@@ -347,19 +354,14 @@ public class MobileAppServiceImpl implements MobileAppService {
             ChecklistItem item = checklistItemRepository.findById(checklistItemId)
                     .orElseThrow(() -> new ResourceNotFoundException("Checklist item not found with ID: " + checklistItemId));
 
-            // Translate status from Norwegian to English if needed
-            String status = request.getStatus();
-            if ("IA".equals(status)) {
-                status = "NA";
-            } else if ("Avvik".equals(status)) {
-                status = "Dev";
-            }
+            // Translate status from Norwegian aliases to wire values (OK/Dev/NA)
+            String status = ChecklistStatusNormalizer.normalize(request.getStatus());
 
             // Remove existing images - optimized to a single delete operation
             checklistItemImageRepository.deleteByChecklistItemId(checklistItemId);
 
             // Process image uploads if status is not "NA"
-            if (status != null && !"NA".equals(status) && files != null && !files.isEmpty()) {
+            if (ChecklistStatusNormalizer.isPhotoEligible(status) && files != null && !files.isEmpty()) {
                 LocalDateTime now = LocalDateTime.now();
                 for (int i = 0; i < files.size(); i++) {
                     MultipartFile file = files.get(i);
@@ -384,7 +386,7 @@ public class MobileAppServiceImpl implements MobileAppService {
                     image.setCaptureDate(now);
 
                     // Set isOkForFinalPdf based on status
-                    image.setIsOkForFinalPdf(!"Dev".equals(status));
+                    image.setIsOkForFinalPdf(!ChecklistStatusNormalizer.isDeviation(status));
 
                     checklistItemImageRepository.save(image);
                 }
@@ -393,7 +395,7 @@ public class MobileAppServiceImpl implements MobileAppService {
             // Update checklist item
             if (status != null && !status.isEmpty()) {
                 item.setStatus(status);
-                if ("Dev".equals(status)) {
+                if (ChecklistStatusNormalizer.isDeviation(status)) {
                     item.setWasDev(true);
                 }
             }
@@ -403,6 +405,15 @@ public class MobileAppServiceImpl implements MobileAppService {
             }
 
             checklistItemRepository.save(item);
+
+            // Evict checklist caches so web UI sees updated item status/images
+            Integer projectId = request.getProjectID() > 0 ? request.getProjectID() : null;
+            if (projectId == null && item.getChecklistId() != null) {
+                projectId = projectChecklistRepository.findById(item.getChecklistId())
+                        .map(ProjectChecklist::getProjectId)
+                        .orElse(null);
+            }
+            evictProjectChecklistCaches(projectId, companyId);
 
             // Set response
             responseData.setProjectID(request.getProjectID());
@@ -419,6 +430,21 @@ public class MobileAppServiceImpl implements MobileAppService {
         }
 
         return response;
+    }
+
+    private void evictProjectChecklistCaches(Integer projectId, Integer companyId) {
+        Cache projectChecklists = cacheManager.getCache("projectChecklists");
+        if (projectChecklists != null && projectId != null) {
+            projectChecklists.evict("project_" + projectId);
+        }
+        Cache projectChecklistsCache = cacheManager.getCache("projectChecklistsCache");
+        if (projectChecklistsCache != null) {
+            if (projectId != null && companyId != null) {
+                projectChecklistsCache.evict(projectId + "_" + companyId);
+            } else {
+                projectChecklistsCache.clear();
+            }
+        }
     }
 
     @Override

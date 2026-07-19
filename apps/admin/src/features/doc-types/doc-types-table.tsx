@@ -2,7 +2,7 @@
 
 /**
  * DocTypes 模块编排层 —— 照抄 features/contacts/contacts-table.tsx。
- * 组合 DataTable + 表单弹窗 + 删除确认。
+ * 组合 DataTable + 表单弹窗 + 单删/批量删除。
  */
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,9 +20,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/data-table';
+import {
+  BulkDeleteConfirmDialog,
+  BulkDeleteToolbar,
+  collectNumericIds,
+  useBulkIdsDialog,
+} from '@/components/table-bulk-delete';
 import { usePartyTypes } from '@/features/party-types/api';
 
-import { useDocTypes, useDeleteDocType } from './api';
+import { useDocTypes, useDeleteDocType, useBulkDeleteDocTypes } from './api';
 import { getDocTypeColumns } from './columns';
 import { DocTypeFormDialog } from './doc-type-form-dialog';
 
@@ -37,9 +43,11 @@ export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableP
   const { data = [], isLoading } = useDocTypes();
   const { data: partyTypes = [] } = usePartyTypes();
   const deleteMutation = useDeleteDocType();
+  const bulkDeleteMutation = useBulkDeleteDocTypes();
 
   const [editTarget, setEditTarget] = React.useState<DocType | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<DocType | null>(null);
+  const { bulkIds, setBulkIds, close: closeBulk } = useBulkIdsDialog();
 
   const partyTypeName = React.useCallback(
     (id: number | null | undefined) =>
@@ -65,6 +73,16 @@ export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableP
     });
   };
 
+  const confirmBulkDelete = () => {
+    if (!bulkIds || bulkIds.ids.length === 0) return;
+    bulkDeleteMutation.mutate(bulkIds.ids, {
+      onSuccess: () => {
+        bulkIds.clear();
+        closeBulk();
+      },
+    });
+  };
+
   return (
     <>
       <DataTable
@@ -74,6 +92,25 @@ export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableP
         searchColumn="docName"
         searchPlaceholder={t('docTypes.searchPlaceholder')}
         emptyMessage={t('docTypes.empty')}
+        enableRowSelection
+        getRowId={(row, index) => String(row.id ?? index)}
+        selectAllAriaLabel={t('bulk.selectAll')}
+        selectRowAriaLabel={t('bulk.selectRow')}
+        renderBulkActions={(rows, clear) => {
+          const ids = collectNumericIds(rows);
+          if (ids.length === 0) return null;
+          return (
+            <BulkDeleteToolbar
+              count={ids.length}
+              pending={bulkDeleteMutation.isPending}
+              onRequestDelete={() => setBulkIds({ ids, clear })}
+              onClear={clear}
+              selectedLabel={t('bulk.selected', { count: ids.length })}
+              clearLabel={t('bulk.clear')}
+              deleteLabel={t('common.delete')}
+            />
+          );
+        }}
       />
 
       {/* 新建 */}
@@ -117,6 +154,19 @@ export function DocTypesTable({ createOpen, onCreateOpenChange }: DocTypesTableP
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkDeleteConfirmDialog
+        bulkIds={bulkIds}
+        onOpenChange={(open) => !open && closeBulk()}
+        onConfirm={confirmBulkDelete}
+        pending={bulkDeleteMutation.isPending}
+        title={t('bulkDeleteDialog.title', { count: bulkIds?.ids.length ?? 0 })}
+        description={t('bulkDeleteDialog.description', {
+          count: bulkIds?.ids.length ?? 0,
+        })}
+        cancelLabel={t('common.cancel')}
+        deleteLabel={t('common.delete')}
+      />
     </>
   );
 }

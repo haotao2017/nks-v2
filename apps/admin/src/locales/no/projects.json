@@ -114,6 +114,7 @@
       "unarchivedMany": "{{count}} prosjekter gjenopprettet fra arkiv",
       "deletedMany": "{{count}} prosjekter slettet",
       "restoredMany": "{{count}} prosjekter gjenopprettet",
+      "serviceDeleted": "Tjeneste fjernet fra prosjektet",
       "actionFailed": "Handlingen mislyktes"
     }
   },

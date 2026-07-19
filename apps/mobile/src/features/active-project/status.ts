@@ -15,3 +15,30 @@ export function normalizeChecklistStatus(
   if (s === 'NA' || s === 'IA') return 'NA';
   return null;
 }
+
+/** OK / Dev 落状态前必须有图；NA 不要求。 */
+export function statusRequiresPhoto(status: ChecklistStatus): boolean {
+  return status === 'OK' || status === 'Dev';
+}
+
+/**
+ * 选状态时：无图且需拍照 → pending；否则可直接写入。
+ * NA 始终可直接写入（并清空图片由调用方处理）。
+ */
+export function shouldDeferStatusForPhoto(
+  status: ChecklistStatus,
+  imageCount: number,
+): boolean {
+  return statusRequiresPhoto(status) && imageCount === 0;
+}
+
+/** 删光图片后，若当前仍是 OK/Dev，应同步清掉状态。 */
+export function shouldClearStatusAfterAllImagesRemoved(
+  status: ChecklistStatus | null | undefined,
+  remainingImageCount: number,
+): boolean {
+  return (
+    remainingImageCount === 0 &&
+    (status === 'OK' || status === 'Dev')
+  );
+}

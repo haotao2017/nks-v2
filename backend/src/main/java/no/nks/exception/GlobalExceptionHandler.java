@@ -118,7 +118,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<RequestResponse> handleGlobalException(Exception ex, WebRequest request) {
         log.error("全局异常捕获: Request: {} Error: {}", request.getDescription(false), ex.getMessage(), ex);
         return new ResponseEntity<>(
-                RequestResponse.failure("发生内部错误，请联系管理员。详细信息: " + ex.getMessage()),
+                RequestResponse.failure("En intern feil oppstod. Kontakt administrator. Detaljer: " + ex.getMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }

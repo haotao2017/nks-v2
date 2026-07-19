@@ -114,6 +114,7 @@
       "unarchivedMany": "{{count}} projects restored from archive",
       "deletedMany": "{{count}} projects deleted",
       "restoredMany": "{{count}} projects restored",
+      "serviceDeleted": "Service removed from project",
       "actionFailed": "The action failed"
     }
   },

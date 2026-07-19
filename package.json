@@ -11,6 +11,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
+    "test": "pnpm --filter @nks/mobile test && pnpm --filter @nks/admin test && (cd backend && ./mvnw -q test)",
     "admin": "pnpm --filter @nks/admin dev",
     "mobile": "pnpm --filter @nks/mobile start"
   },

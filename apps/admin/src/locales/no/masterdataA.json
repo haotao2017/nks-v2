@@ -114,7 +114,8 @@
       "updated": "Tjeneste oppdatert",
       "updateError": "Kunne ikke oppdatere tjeneste",
       "deleted": "Tjeneste slettet",
-      "deleteBlocked": "Tjenesten kan ikke slettes"
+      "deleteBlocked": "Tjenesten kan ikke slettes",
+      "bulkDeleted": "{{count}} tjenester slettet"
     },
     "validation": {
       "nameRequired": "Navn er påkrevd",
@@ -156,7 +157,8 @@
       "updated": "Parttype oppdatert",
       "updateError": "Kunne ikke oppdatere parttype",
       "deleted": "Parttype slettet",
-      "deleteBlocked": "Parttypen kan ikke slettes"
+      "deleteBlocked": "Parttypen kan ikke slettes",
+      "bulkDeleted": "{{count}} parttyper slettet"
     },
     "validation": {
       "nameRequired": "Navn er påkrevd"
@@ -183,7 +185,8 @@
       "required": "Kreves",
       "requiredDescription": "Må dokumentet leveres?",
       "partyType": "Ansvarsområde",
-      "partyTypePlaceholder": "Velg ansvarsområde"
+      "partyTypePlaceholder": "Velg ansvarsområde",
+      "partyTypeNone": "Ingen"
     },
     "delete": {
       "title": "Slette dokumenttype?",
@@ -195,7 +198,8 @@
       "createError": "Kunne ikke opprette dokumenttype",
       "updated": "Dokumenttype oppdatert",
       "updateError": "Kunne ikke oppdatere dokumenttype",
-      "deleted": "Dokumenttype slettet"
+      "deleted": "Dokumenttype slettet",
+      "bulkDeleted": "{{count}} dokumenttyper slettet"
     },
     "validation": {
       "nameRequired": "Navn er påkrevd",

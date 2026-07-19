@@ -11,7 +11,7 @@ import java.util.List;
 public class QuickCreateProjectRequest {
     
     // 只需要项目标题
-    @NotBlank(message = "项目标题不能为空")
+    @NotBlank(message = "Prosjekttittel mangler")
     private String projectTitle;
     
     // 可选：选择的模板ID列表

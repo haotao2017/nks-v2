@@ -29,7 +29,8 @@
       "createError": "Could not create building supplier",
       "updated": "Building supplier updated",
       "updateError": "Could not update building supplier",
-      "deleted": "Building supplier deleted"
+      "deleted": "Building supplier deleted",
+      "bulkDeleted": "{{count}} building suppliers deleted"
     },
     "validation": {
       "nameRequired": "Name is required",
@@ -87,7 +88,8 @@
       "updated": "Email template updated",
       "updateError": "Could not update email template",
       "deleted": "Email template deleted",
-      "deleteBlocked": "The email template cannot be deleted"
+      "deleteBlocked": "The email template cannot be deleted",
+      "bulkDeleted": "{{count}} email templates deleted"
     },
     "validation": {
       "titleRequired": "Title is required",
@@ -214,7 +216,8 @@
       "updated": "Checklist updated",
       "updateError": "Could not update checklist",
       "deleted": "Checklist deleted",
-      "deleteBlocked": "The checklist cannot be deleted"
+      "deleteBlocked": "The checklist cannot be deleted",
+      "bulkDeleted": "{{count}} checklists deleted"
     },
     "validation": {
       "titleRequired": "Title is required"

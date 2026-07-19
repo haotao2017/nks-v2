@@ -69,6 +69,15 @@ public interface EmailService {
      */
     boolean saveEmailHistory(ProjectWorkflowDto projectWorkflow);
 
+    /**
+     * Save email history record with authenticated company ID when available.
+     *
+     * @param projectWorkflow project workflow data containing email information
+     * @param companyId       company ID (preferred over hardcoded default)
+     * @return true if history was saved successfully, false otherwise
+     */
+    boolean saveEmailHistory(ProjectWorkflowDto projectWorkflow, Integer companyId);
+
     void sendEmailAndSaveHistoryAsync(ProjectWorkflowDto projectWorkflow, Integer companyId);
 
     void sendStepEightEmailAndSaveHistoryAsync(ProjectWorkflowDto projectWorkflow, Integer companyId);

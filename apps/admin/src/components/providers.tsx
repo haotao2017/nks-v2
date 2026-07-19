@@ -25,9 +25,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30_000,
+            // Short stale window; list mutations invalidate + refetch actively.
+            // Combined with api-client cache:'no-store' to avoid browser HTTP cache.
+            staleTime: 5_000,
             retry: 1,
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true,
           },
         },
       }),

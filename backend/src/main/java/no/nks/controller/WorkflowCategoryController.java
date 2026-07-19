@@ -45,7 +45,7 @@ public class WorkflowCategoryController {
         // 验证是否为系统所有者公司(CompanyID=1)
         if (user.getCompanyID() == null || user.getCompanyID() != 1) {
             log.warn("User {} with CompanyID {} attempted to update workflow category without proper permissions.", user.getUsername(), user.getCompanyID());
-            return ResponseEntity.badRequest().body(new RequestResponse(false, "只有系统所有者公司才能执行此操作"));
+            return ResponseEntity.badRequest().body(new RequestResponse(false, "Kun systemeier-selskap kan utføre denne handlingen"));
         }
 
         WrapperWorkflowCategory response = workflowCategoryService.updateSingleWorkflowCategory(request.getWorkflowCategory());
@@ -62,7 +62,7 @@ public class WorkflowCategoryController {
         // 验证是否为系统所有者公司(CompanyID=1)
         if (user.getCompanyID() == null || user.getCompanyID() != 1) {
             log.warn("User {} with CompanyID {} attempted to delete workflow category without proper permissions.", user.getUsername(), user.getCompanyID());
-            return ResponseEntity.badRequest().body(new RequestResponse(false, "只有系统所有者公司才能执行此操作"));
+            return ResponseEntity.badRequest().body(new RequestResponse(false, "Kun systemeier-selskap kan utføre denne handlingen"));
         }
 
         RequestResponse response = workflowCategoryService.deleteSingleWorkflowCategory(workflowCategoryId);
@@ -84,7 +84,7 @@ public class WorkflowCategoryController {
         // 验证是否为系统所有者公司(CompanyID=1)
         if (user.getCompanyID() == null || user.getCompanyID() != 1) {
             log.warn("User {} with CompanyID {} attempted to create workflow category without proper permissions.", user.getUsername(), user.getCompanyID());
-            return ResponseEntity.badRequest().body(new RequestResponse(false, "只有系统所有者公司才能执行此操作"));
+            return ResponseEntity.badRequest().body(new RequestResponse(false, "Kun systemeier-selskap kan utføre denne handlingen"));
         }
 
         WrapperWorkflowCategory response = workflowCategoryService.createSingleWorkflowCategory(request.getWorkflowCategory());
@@ -127,7 +127,7 @@ public class WorkflowCategoryController {
         // 验证是否为系统所有者公司(CompanyID=1)
         if (user.getCompanyID() == null || user.getCompanyID() != 1) {
             log.warn("User {} with CompanyID {} attempted to create workflow category step without proper permissions.", user.getUsername(), user.getCompanyID());
-            return ResponseEntity.badRequest().body(new RequestResponse(false, "只有系统所有者公司才能执行此操作"));
+            return ResponseEntity.badRequest().body(new RequestResponse(false, "Kun systemeier-selskap kan utføre denne handlingen"));
         }
 
         WrapperWorkflowCategoryStep response = workflowCategoryService.createSingleWorkflowCategoryStep(request.getWorkflowCategoryStep());
@@ -156,7 +156,7 @@ public class WorkflowCategoryController {
         // 验证是否为系统所有者公司(CompanyID=1)
         if (user.getCompanyID() == null || user.getCompanyID() != 1) {
             log.warn("User {} with CompanyID {} attempted to update workflow category step without proper permissions.", user.getUsername(), user.getCompanyID());
-            return ResponseEntity.badRequest().body(new RequestResponse(false, "只有系统所有者公司才能执行此操作"));
+            return ResponseEntity.badRequest().body(new RequestResponse(false, "Kun systemeier-selskap kan utføre denne handlingen"));
         }
 
         WrapperWorkflowCategoryStep response = workflowCategoryService.updateSingleWorkflowCategoryStep(request.getWorkflowCategoryStep());
@@ -173,7 +173,7 @@ public class WorkflowCategoryController {
         // 验证是否为系统所有者公司(CompanyID=1)
         if (user.getCompanyID() == null || user.getCompanyID() != 1) {
             log.warn("User {} with CompanyID {} attempted to delete workflow category step without proper permissions.", user.getUsername(), user.getCompanyID());
-            return ResponseEntity.badRequest().body(new RequestResponse(false, "只有系统所有者公司才能执行此操作"));
+            return ResponseEntity.badRequest().body(new RequestResponse(false, "Kun systemeier-selskap kan utføre denne handlingen"));
         }
 
         RequestResponse response = workflowCategoryService.deleteSingleWorkflowCategoryStep(workflowCategoryStepId);

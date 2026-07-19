@@ -79,6 +79,7 @@
       "noRecipients": "No recipients selected. Add at least one to send.",
       "uploadFilesLabel": "Upload files",
       "uploadFileLabel": "Upload file",
+      "uploadRequired": "Upload at least one file before completing this step",
       "attachmentsLabel": "Attachments",
       "templateAttachment": "View template attachment (PDF)",
       "removeFile": "Remove file",

@@ -19,6 +19,18 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isLoginPage = pathname === LOGIN_PATH;
 
+  // 旧邮件链接 PascalCase 路径 → kebab 路由（大小写敏感服务器否则 404）
+  if (pathname === '/external/UploadDocument') {
+    const url = req.nextUrl.clone();
+    url.pathname = '/external/upload-document';
+    return NextResponse.redirect(url);
+  }
+  if (pathname === '/external/UpdateDeviation') {
+    const url = req.nextUrl.clone();
+    url.pathname = '/external/update-deviation';
+    return NextResponse.redirect(url);
+  }
+
   // 免登录公开路由:外部参与方无 token,不做守卫/重定向。
   if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return NextResponse.next();

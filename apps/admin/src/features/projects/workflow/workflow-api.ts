@@ -30,6 +30,7 @@ import i18n from '@/lib/i18n';
 import { useApiMutation } from '@/lib/query';
 
 import type { EndpointDescriptor, WorkflowStepDef } from './workflow-steps';
+import { useServiceWorkflowCategoryId } from './workflow-instance-context';
 
 /** 统一查询 key。 */
 export const workflowKeys = {
@@ -43,16 +44,18 @@ export const workflowKeys = {
   invoice: (projectId: number) => [...workflowKeys.all, 'invoice', projectId] as const,
 };
 
-/** 构造某步的三元组基础请求体(projectId + workflowId + workflowStepId)。 */
+/** 构造某步的三元组基础请求体(projectId + workflowId + workflowStepId + 可选实例 ID)。 */
 export function buildStepBase(
   projectId: number,
   step: Pick<WorkflowStepDef, 'workflowId' | 'workflowStepId'>,
   extra?: Partial<ProjectWorkflowDto>,
+  serviceWorkflowCategoryId?: number,
 ): ProjectWorkflowDto {
   return {
     projectId,
     workflowId: step.workflowId,
     workflowStepId: step.workflowStepId,
+    ...(serviceWorkflowCategoryId != null ? { serviceWorkflowCategoryId } : {}),
     ...extra,
   };
 }
@@ -130,17 +133,17 @@ export function useWfTenSavedDetails(projectId: number, enabled = true) {
   return useQuery({
     queryKey: workflowKeys.wfTenSaved(projectId),
     queryFn: async () => {
-      const res = await getApiClient().get<Record<string, unknown>>(
-        endpoints.project.getWFTenSavedDetails.path,
-        { params: { ProjectID: projectId, WorkflowId: 1, WorkflowStepId: 10 } },
-      );
-      // 响应包装键在契约包无对应接口,窄取常见键。
-      return (res?.projectWFTenSavedDetails ?? res) as {
-        projectInspectorId?: number;
-        projectInspectionDate?: string;
-        projectInspectionEventComment?: string;
-        projectSkipInspection?: boolean;
-      } | null;
+      const res = await getApiClient().get<{
+        projectWFTenSavedDetails?: {
+          inspectorId?: number;
+          inspectionDate?: string;
+          inspectionEventComment?: string;
+          skipInspection?: boolean;
+        };
+      }>(endpoints.project.getWFTenSavedDetails.path, {
+        params: { ProjectID: projectId, WorkflowId: 1, WorkflowStepId: 10 },
+      });
+      return res?.projectWFTenSavedDetails ?? null;
     },
     enabled: enabled && Number.isFinite(projectId) && projectId > 0,
   });
@@ -154,10 +157,23 @@ export function useWfTenSavedDetails(projectId: number, enabled = true) {
  */
 export function useEmailPreview(previewEndpoint?: EndpointDescriptor) {
   const { t } = useTranslation();
+  const serviceWorkflowCategoryId = useServiceWorkflowCategoryId();
   return useMutation({
     mutationFn: async (body: ProjectWorkflowDto) => {
       if (!previewEndpoint) throw new Error(t('workflow.errors.noPreview'));
-      const res = await getApiClient().post<WrapperProjectWorkflowDto>(previewEndpoint.path, wrap(body));
+      const merged = buildStepBase(
+        body.projectId ?? 0,
+        {
+          workflowId: body.workflowId ?? 0,
+          workflowStepId: body.workflowStepId ?? 0,
+        },
+        body,
+        serviceWorkflowCategoryId,
+      );
+      const res = await getApiClient().post<WrapperProjectWorkflowDto>(
+        previewEndpoint.path,
+        wrap(merged),
+      );
       return unwrapWorkflow(res);
     },
   });
@@ -176,10 +192,11 @@ export function useExecuteStepJson(
   opts?: { successMessage?: string | false },
 ) {
   const { t } = useTranslation();
+  const serviceWorkflowCategoryId = useServiceWorkflowCategoryId();
   return useApiMutation<RequestResponse, ProjectWorkflowDto>({
     mutationFn: async (extra) => {
       if (!endpoint) throw new Error(t('workflow.errors.noAction'));
-      const body = buildStepBase(projectId, step, extra);
+      const body = buildStepBase(projectId, step, extra, serviceWorkflowCategoryId);
       const res = await getApiClient().post<RequestResponse>(endpoint.path, wrap(body));
       return assertOk(res);
     },
@@ -207,10 +224,11 @@ export function useExecuteStepMultipart(
   opts?: { successMessage?: string | false },
 ) {
   const { t } = useTranslation();
+  const serviceWorkflowCategoryId = useServiceWorkflowCategoryId();
   return useApiMutation<RequestResponse, MultipartVars>({
     mutationFn: async ({ extra, files }) => {
       if (!endpoint) throw new Error(t('workflow.errors.noAction'));
-      const body = buildStepBase(projectId, step, extra);
+      const body = buildStepBase(projectId, step, extra, serviceWorkflowCategoryId);
       const form = new FormData();
       form.append('request', JSON.stringify(wrap(body)));
       if (files?.length) {
@@ -242,10 +260,16 @@ export function useSendEmail(
   endpoint: EndpointDescriptor | undefined,
 ) {
   const { t } = useTranslation();
+  const serviceWorkflowCategoryId = useServiceWorkflowCategoryId();
   return useApiMutation<RequestResponse, ProjectWorkflowDto>({
     mutationFn: async (extra) => {
       if (!endpoint) throw new Error(t('workflow.errors.noEmailEndpoint'));
-      const body = buildStepBase(projectId, step, { isTransfer: false, ...extra });
+      const body = buildStepBase(
+        projectId,
+        step,
+        { isTransfer: false, ...extra },
+        serviceWorkflowCategoryId,
+      );
       const res = await getApiClient().post<RequestResponse>(endpoint.path, wrap(body));
       return assertOk(res);
     },
@@ -267,10 +291,16 @@ export function useTransferStep(
   endpoint: EndpointDescriptor | undefined,
 ) {
   const { t } = useTranslation();
+  const serviceWorkflowCategoryId = useServiceWorkflowCategoryId();
   return useApiMutation<RequestResponse, void>({
     mutationFn: async () => {
       if (!endpoint) throw new Error(t('workflow.errors.noTransferEndpoint'));
-      const body = buildStepBase(projectId, step, { isTransfer: true });
+      const body = buildStepBase(
+        projectId,
+        step,
+        { isTransfer: true },
+        serviceWorkflowCategoryId,
+      );
       if (endpoint.multipart) {
         const form = new FormData();
         form.append('request', JSON.stringify(wrap(body)));
@@ -290,10 +320,11 @@ export function useTransferStep(
 
 /** 发票详情预览 —— POST ProjectWFFifteenGetDetails → projectInvoiceDataENT。 */
 export function useInvoiceDetails(projectId: number, step: WorkflowStepDef, enabled = true) {
+  const serviceWorkflowCategoryId = useServiceWorkflowCategoryId();
   return useQuery({
     queryKey: workflowKeys.invoice(projectId),
     queryFn: async () => {
-      const body = buildStepBase(projectId, step);
+      const body = buildStepBase(projectId, step, undefined, serviceWorkflowCategoryId);
       const res = await getApiClient().post<WrapperProjectInvoiceDataDto>(
         endpoints.projectWorkflow.wfFifteenGetDetails.path,
         wrap(body),

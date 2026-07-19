@@ -92,15 +92,18 @@ public class ServiceController {
         RequestResponse.CompanyInfo companyInfo = new RequestResponse.CompanyInfo();
         companyInfo.setCompanyID(user.getCompanyID());
 
-        // 使用setter方法设置公司信息
-        serviceService.setDataCompany(companyInfo);
+        try {
+            serviceService.setDataCompany(companyInfo);
 
-        // 创建服务 - 传递服务名称作为第二个参数
-        String serviceName = param.getService().getName(); // 从ServiceDto中获取服务名称
-        WrapperService response = serviceService.createSingleService(param.getService(), serviceName);
+            // 创建服务 - 传递服务名称作为第二个参数
+            String serviceName = param.getService().getName(); // 从ServiceDto中获取服务名称
+            WrapperService response = serviceService.createSingleService(param.getService(), serviceName);
 
-        log.info("成功创建ID为{}的服务", response.getService().getId());
-        return ResponseEntity.ok(response);
+            log.info("成功创建ID为{}的服务", response.getService().getId());
+            return ResponseEntity.ok(response);
+        } finally {
+            serviceService.clearDataCompany();
+        }
     }
 
     /**
@@ -124,7 +127,6 @@ public class ServiceController {
             RequestResponse.CompanyInfo companyInfo = new RequestResponse.CompanyInfo();
             companyInfo.setCompanyID(user.getCompanyID());
 
-            // 使用setter方法设置公司信息
             serviceService.setDataCompany(companyInfo);
 
             // 获取所有服务
@@ -139,8 +141,10 @@ public class ServiceController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             // 控制器中捕获异常但不处理，让全局异常处理器统一处理
-            log.error("获取服务列表时发生错误: {}", e.getMessage());
+            log.error("获取服务列表时En feil oppstod: {}", e.getMessage());
             throw e;
+        } finally {
+            serviceService.clearDataCompany();
         }
     }
 }

@@ -49,9 +49,34 @@ export function useLoadActiveProject(projectId: string) {
     const hasLocal = current.detail?.projectID === projectId;
     // 已就绪且是同一项目:沿用本地副本,不重复拉取(可用 reload() 手动刷新)。
     if (hasLocal && current.status === 'ready') return;
+
+    const hasUnsynced =
+      hasLocal &&
+      Boolean(
+        current.detail?.projectDirty ||
+          current.detail?.checklists.some((cl) =>
+            cl.checkItems.some((it) => it.updated === false),
+          ),
+      );
+
+    // 冷启动后 status=idle 但 persist 有本地脏数据:先恢复 ready，勿用服务端覆盖。
+    if (hasUnsynced && current.detail) {
+      dispatch(loadSucceeded(current.detail));
+      if (await isOnlineNow()) {
+        try {
+          await resyncPending();
+        } catch {
+          /* 补传失败保留本地 */
+        }
+      }
+      return;
+    }
+
     if (!(await isOnlineNow())) {
       // 离线:有本地副本就沿用(持久化副本);否则报错。
-      if (!hasLocal) {
+      if (hasLocal && current.detail) {
+        dispatch(loadSucceeded(current.detail));
+      } else {
         dispatch(beginLoad(projectId));
         dispatch(loadFailed('Ingen nettverkstilkobling'));
       }

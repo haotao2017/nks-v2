@@ -108,7 +108,7 @@ export function useDeleteContact() {
     successMessage: false, // 用后端返回的 message 提示
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('contacts.toast.deleted'));
+      toast.success(t('contacts.toast.deleted'));
     },
   });
 }

@@ -109,7 +109,34 @@ export function useDeleteService() {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('services.toast.deleted'));
+      toast.success(t('services.toast.deleted'));
+    },
+  });
+}
+
+/** 批量删除服务(逐个 DeleteService)。 */
+export function useBulkDeleteServices() {
+  const { t } = useTranslation();
+  return useApiMutation<{ deleted: number }, number[]>({
+    mutationFn: async (ids) => {
+      let deleted = 0;
+      for (const ServiceID of ids) {
+        const res = await getApiClient().delete<RequestResponse>(
+          endpoints.service.delete.path,
+          { params: { ServiceID } },
+        );
+        if (res?.isSuccess === false) {
+          throw new Error(res.message || t('services.toast.deleteBlocked'));
+        }
+        deleted += 1;
+      }
+      return { deleted };
+    },
+    invalidateKeys: [serviceKeys.list()],
+    successMessage: false,
+    errorMessage: false,
+    onSuccess: (data) => {
+      toast.success(t('services.toast.bulkDeleted', { count: data.deleted }));
     },
   });
 }

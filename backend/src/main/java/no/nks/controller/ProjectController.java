@@ -196,12 +196,12 @@ public class ProjectController {
      * 验证用户并获取公司ID
      * @param user 当前认证用户
      * @return 公司ID
-     * @throws AccessDeniedException 如果用户未认证或无公司ID
+     * @throws AccessDeniedException 如果Bruker er ikke autentisert eller mangler firmakobling
      */
     private Integer validateAndGetCompanyId(User user) {
         if (user == null || user.getCompanyID() == null) {
-            log.warn("用户未认证或无公司ID");
-            throw new AccessDeniedException("用户未认证或无公司ID");
+            log.warn("Bruker er ikke autentisert eller mangler firmakobling");
+            throw new AccessDeniedException("Bruker er ikke autentisert eller mangler firmakobling");
         }
         return user.getCompanyID();
     }

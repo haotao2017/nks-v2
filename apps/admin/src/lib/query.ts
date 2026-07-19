@@ -61,7 +61,13 @@ export function useApiMutation<TData, TVariables>({
     onSuccess: async (data, vars) => {
       if (invalidateKeys?.length) {
         await Promise.all(
-          invalidateKeys.map((key) => queryClient.invalidateQueries({ queryKey: key })),
+          invalidateKeys.map((key) =>
+            queryClient.invalidateQueries({
+              queryKey: key,
+              // Force refetch of mounted queries even within staleTime.
+              refetchType: 'active',
+            }),
+          ),
         );
       }
       if (successMessage !== false && successMessage) {

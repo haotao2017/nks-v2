@@ -75,19 +75,19 @@ public class ProjectPartyServiceImpl implements ProjectPartyService {
                     param.getProjectParty().getPartyTypeId());
 
             if (exists) {
-                log.warn("参与方与项目参与方类型的关联已存在");
-                return RequestResponse.failure("参与方与项目参与方类型的关联已存在");
+                log.warn("Koblingen mellom part og parttype finnes allerede");
+                return RequestResponse.failure("Koblingen mellom part og parttype finnes allerede");
             }
 
             // 创建新的关联
             ProjectParty projectParty = convertToEntity(param.getProjectParty());
             projectPartyRepository.save(projectParty);
 
-            log.debug("成功关联参与方与项目参与方类型");
-            return RequestResponse.success("成功关联参与方与项目参与方类型");
+            log.debug("Part koblet til prosjektets parttype");
+            return RequestResponse.success("Part koblet til prosjektets parttype");
         } catch (Exception e) {
-            log.error("关联参与方与项目参与方类型失败: {}", e.getMessage(), e);
-            return RequestResponse.failure("关联参与方与项目参与方类型失败: " + e.getMessage());
+            log.error("Kunne ikke koble part til parttype: {}", e.getMessage(), e);
+            return RequestResponse.failure("Kunne ikke koble part til parttype: " + e.getMessage());
         }
     }
 
@@ -100,13 +100,13 @@ public class ProjectPartyServiceImpl implements ProjectPartyService {
      */
     private void validateProjectBelongsToCompany(Integer projectId, Integer companyId) {
         if (projectId == null || companyId == null) {
-            throw new IllegalArgumentException("项目ID和公司ID不能为空");
+            throw new IllegalArgumentException("Prosjekt-ID og firma-ID mangler");
         }
 
         boolean exists = projectRepository.existsByIdAndCompanyId(projectId, companyId);
         if (!exists) {
             log.warn("项目 {} 不存在或不属于公司 {}", projectId, companyId);
-            throw new IllegalArgumentException("项目不存在或无权访问");
+            throw new IllegalArgumentException("Prosjektet finnes ikke eller tilgang mangler");
         }
     }
 

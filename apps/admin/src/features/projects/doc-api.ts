@@ -192,7 +192,7 @@ export function useDeleteProjectDocument(projectId: number, workflowId: number) 
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('docsPanel.toast.deleted'));
+      toast.success(t('docsPanel.toast.deleted'));
     },
   });
 }

@@ -73,6 +73,11 @@ const makeUserSchema = (t: TFunction) =>
     .refine((v) => v.isEdit || (v.password?.trim().length ?? 0) > 0, {
       message: t('team.users.validation.passwordRequired'),
       path: ['password'],
+    })
+    // 创建时 contactId 必填（后端 @NotNull）。
+    .refine((v) => v.isEdit || (v.contactId?.trim().length ?? 0) > 0, {
+      message: t('team.users.validation.contactRequired'),
+      path: ['contactId'],
     });
 
 type UserFormValues = z.infer<ReturnType<typeof makeUserSchema>>;

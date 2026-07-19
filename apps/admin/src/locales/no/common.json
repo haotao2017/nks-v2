@@ -63,8 +63,19 @@
     "contacts": "Kontakter",
     "checklists": "Sjekklister",
     "dataPending": "Data kobles til i en senere fase",
+    "liveCounts": "Gjeldende antall",
     "placeholderDesc": "Denne modulen er under utvikling.",
     "placeholderBody": "Kommer snart — implementeres i en senere fase."
+  },
+  "bulk": {
+    "selected": "{{count}} valgt",
+    "clear": "Fjern valg",
+    "selectAll": "Velg alle",
+    "selectRow": "Velg rad"
+  },
+  "bulkDeleteDialog": {
+    "title": "Slette {{count}} elementer?",
+    "description": "Er du sikker på at du vil slette {{count}} valgte elementer? Dette kan ikke angres."
   },
   "dataTable": {
     "searchPlaceholder": "Søk…",

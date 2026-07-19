@@ -12,7 +12,7 @@ public class WorkflowCategoryDto {
 
     private Integer id;
 
-    @NotBlank(message = "工作流类别名称不能为空")
+    @NotBlank(message = "Navn på arbeidsflytkategori mangler")
     private String name;
 
     private Boolean isDefault;

@@ -4,14 +4,36 @@ import { useTranslation } from 'react-i18next';
 import { FolderKanban, Users, ClipboardCheck } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useContacts } from '@/features/contacts/api';
+import { useChecklistTemplates } from '@/features/checklists/api';
+import { useProjectsCount } from '@/features/projects/api';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
+  const projectsCount = useProjectsCount();
+  const contacts = useContacts();
+  const checklists = useChecklistTemplates();
 
   const stats = [
-    { label: t('dashboard.activeProjects'), value: '—', icon: FolderKanban },
-    { label: t('dashboard.contacts'), value: '—', icon: Users },
-    { label: t('dashboard.checklists'), value: '—', icon: ClipboardCheck },
+    {
+      label: t('dashboard.activeProjects'),
+      value: projectsCount.data?.notArchivedOrDeleted,
+      pending: projectsCount.isPending,
+      icon: FolderKanban,
+    },
+    {
+      label: t('dashboard.contacts'),
+      value: contacts.data?.length,
+      pending: contacts.isPending,
+      icon: Users,
+    },
+    {
+      label: t('dashboard.checklists'),
+      value: checklists.data?.length,
+      pending: checklists.isPending,
+      icon: ClipboardCheck,
+    },
   ];
 
   return (
@@ -29,8 +51,14 @@ export default function DashboardPage() {
               <stat.icon className="text-muted-foreground size-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <CardDescription>{t('dashboard.dataPending')}</CardDescription>
+              {stat.pending ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <div className="text-2xl font-bold">
+                  {stat.value === undefined ? '—' : stat.value}
+                </div>
+              )}
+              <CardDescription>{t('dashboard.liveCounts')}</CardDescription>
             </CardContent>
           </Card>
         ))}

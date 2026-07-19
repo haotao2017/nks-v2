@@ -13,7 +13,7 @@ import java.util.List;
 public class CreateChecklistWithProjectRequest {
 
     // 项目基本信息 - 只需要标题
-    @NotBlank(message = "项目标题不能为空")
+    @NotBlank(message = "Prosjekttittel mangler")
     private String projectTitle;
 
     // 可选的项目信息

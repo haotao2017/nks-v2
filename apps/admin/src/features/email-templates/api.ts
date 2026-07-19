@@ -125,7 +125,34 @@ export function useDeleteEmailTemplate() {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('emailTemplates.toast.deleted'));
+      toast.success(t('emailTemplates.toast.deleted'));
+    },
+  });
+}
+
+/** 批量删除邮件模板。 */
+export function useBulkDeleteEmailTemplates() {
+  const { t } = useTranslation();
+  return useApiMutation<{ deleted: number }, number[]>({
+    mutationFn: async (ids) => {
+      let deleted = 0;
+      for (const EmailTemplateID of ids) {
+        const res = await getApiClient().delete<DeleteEmailTemplateResponseDto>(
+          endpoints.emailTemplate.delete.path,
+          { params: { EmailTemplateID } },
+        );
+        if (res?.success === false) {
+          throw new Error(res.message || t('emailTemplates.toast.deleteBlocked'));
+        }
+        deleted += 1;
+      }
+      return { deleted };
+    },
+    invalidateKeys: [emailTemplateKeys.list()],
+    successMessage: false,
+    errorMessage: false,
+    onSuccess: (data) => {
+      toast.success(t('emailTemplates.toast.bulkDeleted', { count: data.deleted }));
     },
   });
 }

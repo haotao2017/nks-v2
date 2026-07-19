@@ -59,7 +59,8 @@
         "nameRequired": "Navn er påkrevd",
         "userNameRequired": "Brukernavn er påkrevd",
         "userTypeRequired": "Brukertype er påkrevd",
-        "passwordRequired": "Passord er påkrevd"
+        "passwordRequired": "Passord er påkrevd",
+        "contactRequired": "Kontakt er påkrevd"
       }
     },
     "profile": {
@@ -88,6 +89,7 @@
       "userUpdated": "Bruker oppdatert",
       "userUpdateError": "Kunne ikke oppdatere bruker",
       "userDeleted": "Bruker slettet",
+      "usersBulkDeleted": "{{count}} brukere slettet",
       "userDeleteBlocked": "Brukeren kan ikke slettes",
       "profileUpdated": "Profil oppdatert",
       "profileUpdateError": "Kunne ikke oppdatere profil",
@@ -171,11 +173,17 @@
       "owner": "Eier",
       "address": "Adresse",
       "postCode": "Postnummer",
+      "postSted": "Poststed",
       "telephone": "Telefon",
       "mobile": "Mobil",
       "email": "E-postadresse",
       "nameOnEmail": "Navn på e-postadresse",
       "senderEmail": "Avsender e-postadresse",
+      "smtpDisplayName": "Visningsnavn (SMTP)",
+      "smtpHost": "SMTP-vert",
+      "smtpPort": "SMTP-port",
+      "smtpUserName": "SMTP-brukernavn",
+      "smtpPassword": "SMTP-passord",
       "active": "Aktiv",
       "activeHint": "Inaktive selskaper kan ikke logge inn eller brukes."
     },
@@ -189,9 +197,11 @@
       "designation": "Stilling",
       "userName": "Brukernavn",
       "password": "Passord",
+      "contact": "Kontakt",
       "validation": {
         "userNameRequired": "Brukernavn er påkrevd",
-        "passwordRequired": "Passord er påkrevd"
+        "passwordRequired": "Passord er påkrevd",
+        "contactRequired": "Kontakt er påkrevd"
       }
     },
     "folderDialog": {

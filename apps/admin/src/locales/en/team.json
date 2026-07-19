@@ -59,7 +59,8 @@
         "nameRequired": "Name is required",
         "userNameRequired": "Username is required",
         "userTypeRequired": "User type is required",
-        "passwordRequired": "Password is required"
+        "passwordRequired": "Password is required",
+        "contactRequired": "Contact is required"
       }
     },
     "profile": {
@@ -88,6 +89,7 @@
       "userUpdated": "User updated",
       "userUpdateError": "Could not update user",
       "userDeleted": "User deleted",
+      "usersBulkDeleted": "{{count}} users deleted",
       "userDeleteBlocked": "The user cannot be deleted",
       "profileUpdated": "Profile updated",
       "profileUpdateError": "Could not update profile",
@@ -171,11 +173,17 @@
       "owner": "Owner",
       "address": "Address",
       "postCode": "Post code",
+      "postSted": "City",
       "telephone": "Telephone",
       "mobile": "Mobile",
       "email": "Email address",
       "nameOnEmail": "Name on email address",
       "senderEmail": "Sender email address",
+      "smtpDisplayName": "Display name (SMTP)",
+      "smtpHost": "SMTP host",
+      "smtpPort": "SMTP port",
+      "smtpUserName": "SMTP username",
+      "smtpPassword": "SMTP password",
       "active": "Active",
       "activeHint": "Inactive companies cannot log in or be used."
     },
@@ -189,9 +197,11 @@
       "designation": "Designation",
       "userName": "Username",
       "password": "Password",
+      "contact": "Contact",
       "validation": {
         "userNameRequired": "Username is required",
-        "passwordRequired": "Password is required"
+        "passwordRequired": "Password is required",
+        "contactRequired": "Contact is required"
       }
     },
     "folderDialog": {

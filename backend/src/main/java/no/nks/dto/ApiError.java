@@ -39,7 +39,7 @@ public class ApiError {
     public ApiError(HttpStatus status, Throwable ex) {
         this();
         this.status = status;
-        this.message = "发生错误";
+        this.message = "En feil oppstod";
         this.debugMessage = ex.getLocalizedMessage();
     }
 

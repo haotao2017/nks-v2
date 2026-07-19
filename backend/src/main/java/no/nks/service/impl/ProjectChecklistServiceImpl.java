@@ -63,7 +63,7 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
         log.debug("获取检查清单ID为 {} 的详情", checklistId);
 
         ProjectChecklist checklist = projectChecklistRepository.findById(checklistId)
-                .orElseThrow(() -> new EntityNotFoundException("检查清单不存在: " + checklistId));
+                .orElseThrow(() -> new EntityNotFoundException("Sjekkliste finnes ikke: " + checklistId));
 
         // 验证检查清单所属的项目是否属于该公司
         validateProjectBelongsToCompany(checklist.getProjectId(), companyId);
@@ -98,7 +98,7 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
 
         // 验证检查清单是否存在
         ProjectChecklist existingChecklist = projectChecklistRepository.findById(checklistDto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("检查清单不存在: " + checklistDto.getId()));
+                .orElseThrow(() -> new EntityNotFoundException("Sjekkliste finnes ikke: " + checklistDto.getId()));
 
         // 验证检查清单所属的项目是否属于该公司
         validateProjectBelongsToCompany(existingChecklist.getProjectId(), companyId);
@@ -127,7 +127,7 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
 
         // 验证检查清单是否存在
         ProjectChecklist checklist = projectChecklistRepository.findById(checklistId)
-                .orElseThrow(() -> new EntityNotFoundException("检查清单不存在: " + checklistId));
+                .orElseThrow(() -> new EntityNotFoundException("Sjekkliste finnes ikke: " + checklistId));
 
         // 验证检查清单所属的项目是否属于该公司
         validateProjectBelongsToCompany(checklist.getProjectId(), companyId);
@@ -154,10 +154,10 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
             projectChecklistRepository.deleteById(checklistId);
 
             log.debug("成功删除检查清单，ID: {}", checklistId);
-            return new RequestResponse(true, "检查清单删除成功");
+            return new RequestResponse(true, "Sjekkliste slettet");
         } catch (Exception e) {
-            log.error("删除检查清单时发生错误: {}", e.getMessage());
-            return new RequestResponse(false, "删除检查清单时发生错误: " + e.getMessage());
+            log.error("Feil ved sletting av sjekkliste: {}", e.getMessage());
+            return new RequestResponse(false, "Feil ved sletting av sjekkliste: " + e.getMessage());
         }
     }
 
@@ -169,7 +169,7 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
 
         // 验证检查清单是否存在
         ProjectChecklist checklist = projectChecklistRepository.findById(checklistItemDto.getChecklistId())
-                .orElseThrow(() -> new EntityNotFoundException("检查清单不存在: " + checklistItemDto.getChecklistId()));
+                .orElseThrow(() -> new EntityNotFoundException("Sjekkliste finnes ikke: " + checklistItemDto.getChecklistId()));
 
         // 验证检查清单所属的项目是否属于该公司
         validateProjectBelongsToCompany(checklist.getProjectId(), companyId);
@@ -191,11 +191,11 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
 
         // 验证检查清单项是否存在
         ChecklistItem existingItem = checklistItemRepository.findById(checklistItemDto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("检查清单项不存在: " + checklistItemDto.getId()));
+                .orElseThrow(() -> new EntityNotFoundException("Sjekklistepunkt finnes ikke: " + checklistItemDto.getId()));
 
         // 验证检查清单项所属的检查清单
         ProjectChecklist checklist = projectChecklistRepository.findById(existingItem.getChecklistId())
-                .orElseThrow(() -> new EntityNotFoundException("检查清单不存在: " + existingItem.getChecklistId()));
+                .orElseThrow(() -> new EntityNotFoundException("Sjekkliste finnes ikke: " + existingItem.getChecklistId()));
 
         // 验证检查清单所属的项目是否属于该公司
         validateProjectBelongsToCompany(checklist.getProjectId(), companyId);
@@ -229,11 +229,11 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
 
         // 验证检查清单项是否存在
         ChecklistItem checklistItem = checklistItemRepository.findById(checklistItemId)
-                .orElseThrow(() -> new EntityNotFoundException("检查清单项不存在: " + checklistItemId));
+                .orElseThrow(() -> new EntityNotFoundException("Sjekklistepunkt finnes ikke: " + checklistItemId));
 
         // 验证检查清单项所属的检查清单
         ProjectChecklist checklist = projectChecklistRepository.findById(checklistItem.getChecklistId())
-                .orElseThrow(() -> new EntityNotFoundException("检查清单不存在: " + checklistItem.getChecklistId()));
+                .orElseThrow(() -> new EntityNotFoundException("Sjekkliste finnes ikke: " + checklistItem.getChecklistId()));
 
         // 验证检查清单所属的项目是否属于该公司
         validateProjectBelongsToCompany(checklist.getProjectId(), companyId);
@@ -249,10 +249,10 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
             clearProjectChecklistCache(checklist.getProjectId(), checklist.getId());
 
             log.debug("成功删除检查清单项，ID: {}", checklistItemId);
-            return new RequestResponse(true, "检查清单项删除成功");
+            return new RequestResponse(true, "Sjekklistepunkt slettet");
         } catch (Exception e) {
-            log.error("删除检查清单项时发生错误: {}", e.getMessage());
-            return new RequestResponse(false, "删除检查清单项时发生错误: " + e.getMessage());
+            log.error("Feil ved sletting av sjekklistepunkt: {}", e.getMessage());
+            return new RequestResponse(false, "Feil ved sletting av sjekklistepunkt: " + e.getMessage());
         }
     }
 
@@ -267,24 +267,24 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
         try {
             // 1. 验证项目服务是否存在
             ProjectService projectService = projectServiceRepository.findById(projectServiceId)
-                .orElseThrow(() -> new EntityNotFoundException("项目服务不存在: " + projectServiceId));
+                .orElseThrow(() -> new EntityNotFoundException("Prosjekttjeneste finnes ikke: " + projectServiceId));
 
             // 2. 验证项目服务是否属于指定的项目
             if (!projectService.getProjectId().equals(projectId)) {
-                throw new IllegalArgumentException("项目服务不属于该项目");
+                throw new IllegalArgumentException("Prosjekttjenesten tilhører ikke dette prosjektet");
             }
 
             // 3. 删除项目服务本身
             projectServiceRepository.deleteById(projectServiceId);
 
             log.debug("成功删除项目服务，项目ID: {}, 服务ID: {}", projectId, projectServiceId);
-            return new RequestResponse(true, "项目服务删除成功");
+            return new RequestResponse(true, "Prosjekttjeneste slettet");
         } catch (EntityNotFoundException | IllegalArgumentException e) {
-            log.error("删除项目服务时发生错误: {}", e.getMessage());
+            log.error("Feil ved sletting av prosjekttjeneste: {}", e.getMessage());
             return new RequestResponse(false, e.getMessage());
         } catch (Exception e) {
-            log.error("删除项目服务时发生错误: {}", e.getMessage());
-            return new RequestResponse(false, "删除项目服务时发生错误: " + e.getMessage());
+            log.error("Feil ved sletting av prosjekttjeneste: {}", e.getMessage());
+            return new RequestResponse(false, "Feil ved sletting av prosjekttjeneste: " + e.getMessage());
         }
     }
 
@@ -300,14 +300,14 @@ public class ProjectChecklistServiceImpl implements ProjectChecklistService {
         Optional<Project> projectOpt = projectRepository.findById(projectId);
 
         if (projectOpt.isEmpty()) {
-            log.error("项目不存在: {}", projectId);
-            throw new EntityNotFoundException("项目不存在: " + projectId);
+            log.error("Prosjektet finnes ikke: {}", projectId);
+            throw new EntityNotFoundException("Prosjektet finnes ikke: " + projectId);
         }
 
         Project project = projectOpt.get();
         if (!project.getCompanyId().equals(companyId)) {
-            log.error("无权访问项目: {}，该项目属于公司: {}", projectId, project.getCompanyId());
-            throw new AccessDeniedException("无权访问此项目");
+            log.error("Ingen tilgang til prosjekt: {}，该项目属于公司: {}", projectId, project.getCompanyId());
+            throw new AccessDeniedException("Du har ikke tilgang til dette prosjektet");
         }
     }
 

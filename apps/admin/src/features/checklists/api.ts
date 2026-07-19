@@ -142,7 +142,7 @@ export function useDeleteChecklistTemplate() {
     successMessage: false, // 用后端返回的 message 提示
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('checklists.toast.deleted'));
+      toast.success(t('checklists.toast.deleted'));
     },
   });
 }
@@ -203,7 +203,34 @@ export function useDeleteChecklistItem(templateId: number) {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('checklists.items.toast.deleted'));
+      toast.success(t('checklists.items.toast.deleted'));
+    },
+  });
+}
+
+/** 批量删除清单模板。 */
+export function useBulkDeleteChecklistTemplates() {
+  const { t } = useTranslation();
+  return useApiMutation<{ deleted: number }, number[]>({
+    mutationFn: async (ids) => {
+      let deleted = 0;
+      for (const ChecklistTemplateID of ids) {
+        const res = await getApiClient().delete<MessageSuccessResponse>(
+          endpoints.checklistTemplate.delete.path,
+          { params: { ChecklistTemplateID } },
+        );
+        if (res?.success === false) {
+          throw new Error(res.message || t('checklists.toast.deleteBlocked'));
+        }
+        deleted += 1;
+      }
+      return { deleted };
+    },
+    invalidateKeys: [checklistTemplateKeys.list()],
+    successMessage: false,
+    errorMessage: false,
+    onSuccess: (data) => {
+      toast.success(t('checklists.toast.bulkDeleted', { count: data.deleted }));
     },
   });
 }

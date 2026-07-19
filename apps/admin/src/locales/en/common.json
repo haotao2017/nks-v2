@@ -63,8 +63,19 @@
     "contacts": "Contacts",
     "checklists": "Checklists",
     "dataPending": "Data will be connected in a later phase",
+    "liveCounts": "Current totals",
     "placeholderDesc": "This module is under development.",
     "placeholderBody": "Coming soon — implemented in a later phase."
+  },
+  "bulk": {
+    "selected": "{{count}} selected",
+    "clear": "Clear selection",
+    "selectAll": "Select all",
+    "selectRow": "Select row"
+  },
+  "bulkDeleteDialog": {
+    "title": "Delete {{count}} items?",
+    "description": "Are you sure you want to delete {{count}} selected items? This cannot be undone."
   },
   "dataTable": {
     "searchPlaceholder": "Search…",

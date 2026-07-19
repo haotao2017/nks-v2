@@ -1,8 +1,7 @@
 'use client';
 
 /**
- * Services 模块编排层 —— 照抄 features/contacts/contacts-table.tsx。
- * 组合 DataTable + 表单弹窗 + 删除确认。
+ * Services 模块编排层 —— DataTable + 表单弹窗 + 单删/批量删除。
  */
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,8 +19,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/data-table';
+import {
+  BulkDeleteConfirmDialog,
+  BulkDeleteToolbar,
+  collectNumericIds,
+  useBulkIdsDialog,
+} from '@/components/table-bulk-delete';
 
-import { useServices, useDeleteService } from './api';
+import { useServices, useDeleteService, useBulkDeleteServices } from './api';
 import { getServiceColumns } from './columns';
 import { ServiceFormDialog } from './service-form-dialog';
 
@@ -34,9 +39,11 @@ export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableP
   const { t } = useTranslation();
   const { data = [], isLoading } = useServices();
   const deleteMutation = useDeleteService();
+  const bulkDeleteMutation = useBulkDeleteServices();
 
   const [editTarget, setEditTarget] = React.useState<ServiceDto | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<ServiceDto | null>(null);
+  const { bulkIds, setBulkIds, close: closeBulk } = useBulkIdsDialog();
 
   const columns = React.useMemo(
     () =>
@@ -55,6 +62,16 @@ export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableP
     });
   };
 
+  const confirmBulkDelete = () => {
+    if (!bulkIds || bulkIds.ids.length === 0) return;
+    bulkDeleteMutation.mutate(bulkIds.ids, {
+      onSuccess: () => {
+        bulkIds.clear();
+        closeBulk();
+      },
+    });
+  };
+
   return (
     <>
       <DataTable
@@ -64,19 +81,34 @@ export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableP
         searchColumn="name"
         searchPlaceholder={t('services.searchPlaceholder')}
         emptyMessage={t('services.empty')}
+        enableRowSelection
+        getRowId={(row, index) => String(row.id ?? index)}
+        selectAllAriaLabel={t('bulk.selectAll')}
+        selectRowAriaLabel={t('bulk.selectRow')}
+        renderBulkActions={(rows, clear) => {
+          const ids = collectNumericIds(rows);
+          if (ids.length === 0) return null;
+          return (
+            <BulkDeleteToolbar
+              count={ids.length}
+              pending={bulkDeleteMutation.isPending}
+              onRequestDelete={() => setBulkIds({ ids, clear })}
+              onClear={clear}
+              selectedLabel={t('bulk.selected', { count: ids.length })}
+              clearLabel={t('bulk.clear')}
+              deleteLabel={t('common.delete')}
+            />
+          );
+        }}
       />
 
-      {/* 新建 */}
       <ServiceFormDialog open={createOpen} onOpenChange={onCreateOpenChange} />
-
-      {/* 编辑 */}
       <ServiceFormDialog
         open={editTarget !== null}
         onOpenChange={(open) => !open && setEditTarget(null)}
         service={editTarget ?? undefined}
       />
 
-      {/* 删除确认 */}
       <AlertDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
@@ -107,6 +139,19 @@ export function ServicesTable({ createOpen, onCreateOpenChange }: ServicesTableP
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkDeleteConfirmDialog
+        bulkIds={bulkIds}
+        onOpenChange={(open) => !open && closeBulk()}
+        onConfirm={confirmBulkDelete}
+        pending={bulkDeleteMutation.isPending}
+        title={t('bulkDeleteDialog.title', { count: bulkIds?.ids.length ?? 0 })}
+        description={t('bulkDeleteDialog.description', {
+          count: bulkIds?.ids.length ?? 0,
+        })}
+        cancelLabel={t('common.cancel')}
+        deleteLabel={t('common.delete')}
+      />
     </>
   );
 }

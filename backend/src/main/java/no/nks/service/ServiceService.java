@@ -13,6 +13,11 @@ public interface ServiceService {
     void setDataCompany(RequestResponse.CompanyInfo dataCompany);
 
     /**
+     * Clear ThreadLocal company context after request handling.
+     */
+    void clearDataCompany();
+
+    /**
      * 获取单个服务
      * 对应C#中的GetSingleService方法
      */

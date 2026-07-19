@@ -36,6 +36,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { ContactSelect } from '@/features/projects/wizard/contact-select';
 
 import { useCreateCompanyUser } from './api';
 
@@ -44,6 +45,7 @@ const makeAdminSchema = (t: TFunction) =>
     designation: z.string().optional(),
     userName: z.string().trim().min(1, t('companies.adminDialog.validation.userNameRequired')),
     password: z.string().trim().min(1, t('companies.adminDialog.validation.passwordRequired')),
+    contactId: z.string().trim().min(1, t('companies.adminDialog.validation.contactRequired')),
   });
 
 type AdminFormValues = z.infer<ReturnType<typeof makeAdminSchema>>;
@@ -63,12 +65,12 @@ export function CreateAdminUserDialog({ open, onOpenChange, company }: CreateAdm
 
   const form = useForm<AdminFormValues>({
     resolver: zodResolver(adminSchema),
-    defaultValues: { designation: '', userName: '', password: '' },
+    defaultValues: { designation: '', userName: '', password: '', contactId: '' },
   });
 
   React.useEffect(() => {
     if (open) {
-      form.reset({ designation: '', userName: '', password: '' });
+      form.reset({ designation: '', userName: '', password: '', contactId: '' });
     }
   }, [open, form]);
 
@@ -78,6 +80,7 @@ export function CreateAdminUserDialog({ open, onOpenChange, company }: CreateAdm
       designation: values.designation || undefined,
       userName: values.userName,
       password: values.password, // 明文透传
+      contactId: Number(values.contactId),
       isAdmin: true,
       isSystemOwner: false,
       companyId: company.id,
@@ -99,6 +102,22 @@ export function CreateAdminUserDialog({ open, onOpenChange, company }: CreateAdm
 
         <Form {...form}>
           <form onSubmit={onSubmit} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="contactId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('companies.adminDialog.contact')}</FormLabel>
+                  <FormControl>
+                    <ContactSelect
+                      value={field.value ?? ''}
+                      onChange={(id) => field.onChange(id)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="designation"

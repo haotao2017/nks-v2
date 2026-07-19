@@ -13,6 +13,7 @@ import no.nks.exception.UsernameConflictException;
 import no.nks.repository.ContactBookRepository;
 import no.nks.repository.UserRepository;
 import no.nks.service.UserProfileService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -71,6 +72,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
+    @CacheEvict(value = "inspectorsNewFormatCache", allEntries = true)
     public UserProfileDto updateUserProfile(UserProfileUpdateDto dto, User requestingUser) {
         log.info("Attempting to update profile for user ID: {} by user: {}", dto.getId(), requestingUser.getUsername());
 
@@ -173,6 +175,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
+    @CacheEvict(value = "inspectorsNewFormatCache", allEntries = true)
     public UserProfileDto createUserProfile(CreateUserProfileDto dto) {
         log.info("Attempting to create a new user profile with username: {}", dto.getUserName());
 
@@ -231,6 +234,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
+    @CacheEvict(value = "inspectorsNewFormatCache", allEntries = true)
     public void deleteUserProfile(Integer userId) {
         log.info("Attempting to delete user profile with ID: {}", userId);
 

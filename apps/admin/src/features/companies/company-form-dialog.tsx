@@ -5,8 +5,9 @@
  *
  * - 新建:AddNewCompanyProfile,body 根键 companyProfile。
  * - 编辑:UpdateProfile(带 id);打开时用 GetProfile 拉取该公司完整资料回填。
- * - 字段对齐 CompanyProfile 契约:基础信息 + postCode / telephone / mobile /
- *   nameOnEmailAddress / senderEmailAddress(均可选)+ isActive 开关(编辑可启停)。
+ * - 字段对齐 CompanyProfile 契约:基础信息 + postCode / postSted(只读,邮编查找) +
+ *   telephone / mobile / nameOnEmailAddress / senderEmailAddress +
+ *   SMTP(compEmail*) + isActive 开关(编辑可启停)。
  */
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
@@ -16,7 +17,7 @@ import type { TFunction } from 'i18next';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
-import type { CompanyProfile } from '@nks/api-types';
+import type { CompanyProfile, PostCodeDto } from '@nks/api-types';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +40,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 
+import { usePostCodes } from '@/features/misc/api';
+
 import { useAddCompany, useUpdateCompany, useCompanyProfileDetail } from './api';
 
 const makeCompanySchema = (t: TFunction) =>
@@ -52,10 +55,16 @@ const makeCompanySchema = (t: TFunction) =>
       .string()
       .optional()
       .refine((v) => !v || /^\d+$/.test(v.trim()), t('companies.validation.postCodeNumber')),
+    postSted: z.string().optional(),
     telephone: z.string().optional(),
     mobile: z.string().optional(),
     nameOnEmailAddress: z.string().optional(),
     senderEmailAddress: z.string().optional(),
+    compEmailHost: z.string().optional(),
+    compEmailPort: z.string().optional(),
+    compEmailUserName: z.string().optional(),
+    compEmailPassword: z.string().optional(),
+    compEmailDisplayName: z.string().optional(),
     isActive: z.boolean(),
   });
 
@@ -68,25 +77,40 @@ const EMPTY_VALUES: CompanyFormValues = {
   address: '',
   emailAddress: '',
   postCode: '',
+  postSted: '',
   telephone: '',
   mobile: '',
   nameOnEmailAddress: '',
   senderEmailAddress: '',
+  compEmailHost: '',
+  compEmailPort: '',
+  compEmailUserName: '',
+  compEmailPassword: '',
+  compEmailDisplayName: '',
   isActive: true,
 };
 
-function toFormValues(profile: CompanyProfile): CompanyFormValues {
+function toFormValues(profile: CompanyProfile, postCodes: PostCodeDto[]): CompanyFormValues {
+  const code = profile.postCode != null ? String(profile.postCode) : '';
+  const found =
+    code.length === 4 ? postCodes.find((p) => p.postnummer === code) : undefined;
   return {
     companyName: profile.companyName ?? '',
     organizationalNumber: profile.organizationalNumber ?? '',
     ownerName: profile.ownerName ?? '',
     address: profile.address ?? '',
     emailAddress: profile.emailAddress ?? '',
-    postCode: profile.postCode != null ? String(profile.postCode) : '',
+    postCode: code,
+    postSted: found?.poststed ?? '',
     telephone: profile.telephone ?? '',
     mobile: profile.mobile ?? '',
     nameOnEmailAddress: profile.nameOnEmailAddress ?? '',
     senderEmailAddress: profile.senderEmailAddress ?? '',
+    compEmailHost: profile.compEmailHost ?? '',
+    compEmailPort: profile.compEmailPort ?? '',
+    compEmailUserName: profile.compEmailUserName ?? '',
+    compEmailPassword: profile.compEmailPassword ?? '',
+    compEmailDisplayName: profile.compEmailDisplayName ?? '',
     isActive: profile.isActive ?? true,
   };
 }
@@ -104,6 +128,7 @@ export function CompanyFormDialog({ open, onOpenChange, company }: CompanyFormDi
   const addMutation = useAddCompany();
   const updateMutation = useUpdateCompany(company?.id);
   const isPending = addMutation.isPending || updateMutation.isPending;
+  const { data: postCodes = [] } = usePostCodes();
 
   // 编辑时拉取完整资料回填(GetAllProfiles 可能为精简投影)。
   const { data: detail } = useCompanyProfileDetail(company?.id, isEdit && open);
@@ -115,18 +140,31 @@ export function CompanyFormDialog({ open, onOpenChange, company }: CompanyFormDi
     defaultValues: EMPTY_VALUES,
   });
 
+  const watchedPostCode = form.watch('postCode');
+
+  /** 邮编 4 位时本地匹配回填 postSted(后端 CompanyProfile 无独立 postSted 字段,仅展示)。 */
+  React.useEffect(() => {
+    const code = (watchedPostCode ?? '').trim();
+    if (code.length !== 4 || postCodes.length === 0) return;
+    const found = postCodes.find((p) => p.postnummer === code);
+    form.setValue('postSted', found?.poststed ?? '', { shouldValidate: false });
+  }, [watchedPostCode, postCodes, form]);
+
   React.useEffect(() => {
     if (!open) return;
     if (isEdit) {
       // 优先用刚拉到的 detail;未到达前先用传入的行数据。
-      form.reset(toFormValues(detail ?? company ?? {}));
+      form.reset(toFormValues(detail ?? company ?? {}, postCodes));
     } else {
       form.reset(EMPTY_VALUES);
     }
-  }, [open, isEdit, company, detail, form]);
+  }, [open, isEdit, company, detail, form, postCodes]);
 
   const onSubmit = form.handleSubmit((values) => {
+    // 编辑时合并已拉取的完整档案,避免未展示的字段被 null 覆盖。
+    const base = isEdit ? { ...(detail ?? company ?? {}) } : {};
     const payload: CompanyProfile = {
+      ...base,
       ...(isEdit && company?.id ? { id: company.id } : {}),
       companyName: values.companyName,
       organizationalNumber: values.organizationalNumber || undefined,
@@ -138,6 +176,11 @@ export function CompanyFormDialog({ open, onOpenChange, company }: CompanyFormDi
       mobile: values.mobile || undefined,
       nameOnEmailAddress: values.nameOnEmailAddress || undefined,
       senderEmailAddress: values.senderEmailAddress || undefined,
+      compEmailHost: values.compEmailHost || undefined,
+      compEmailPort: values.compEmailPort || undefined,
+      compEmailUserName: values.compEmailUserName || undefined,
+      compEmailPassword: values.compEmailPassword || undefined,
+      compEmailDisplayName: values.compEmailDisplayName || undefined,
       isActive: values.isActive,
     };
 
@@ -147,7 +190,7 @@ export function CompanyFormDialog({ open, onOpenChange, company }: CompanyFormDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? t('companies.dialog.editTitle') : t('companies.dialog.title')}
@@ -226,6 +269,19 @@ export function CompanyFormDialog({ open, onOpenChange, company }: CompanyFormDi
             />
             <FormField
               control={form.control}
+              name="postSted"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('companies.dialog.postSted')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} disabled readOnly />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="telephone"
               render={({ field }) => (
                 <FormItem>
@@ -284,6 +340,71 @@ export function CompanyFormDialog({ open, onOpenChange, company }: CompanyFormDi
                   <FormLabel>{t('companies.dialog.senderEmail')}</FormLabel>
                   <FormControl>
                     <Input type="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="compEmailDisplayName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('companies.dialog.smtpDisplayName')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="compEmailHost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('companies.dialog.smtpHost')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="compEmailPort"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('companies.dialog.smtpPort')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="compEmailUserName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('companies.dialog.smtpUserName')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="compEmailPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('companies.dialog.smtpPassword')}</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

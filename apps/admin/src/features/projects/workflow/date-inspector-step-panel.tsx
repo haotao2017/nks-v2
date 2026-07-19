@@ -79,10 +79,10 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
     setHydrated(true);
     const d = saved.data;
     if (d) {
-      if (d.projectInspectorId) setInspectorId(String(d.projectInspectorId));
-      if (d.projectInspectionDate) setDate(toLocalInput(d.projectInspectionDate));
-      if (d.projectInspectionEventComment) setComment(d.projectInspectionEventComment);
-      if (typeof d.projectSkipInspection === 'boolean') setSkip(d.projectSkipInspection);
+      if (d.inspectorId) setInspectorId(String(d.inspectorId));
+      if (d.inspectionDate) setDate(toLocalInput(d.inspectionDate));
+      if (d.inspectionEventComment) setComment(d.inspectionEventComment);
+      if (typeof d.skipInspection === 'boolean') setSkip(d.skipInspection);
     }
   }
 
@@ -97,7 +97,7 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
           projectInspectorId: undefined,
           projectInspectionDate: undefined,
           projectInspectionEventComment: undefined,
-          isInspectorEmail: false,
+          isInspectorEmail: true,
         }
       : {
           isTransfer: false,

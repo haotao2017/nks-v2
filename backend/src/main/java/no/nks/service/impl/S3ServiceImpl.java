@@ -351,7 +351,7 @@ public class S3ServiceImpl implements S3Service, IS3Service {
             log.debug("S3文件已成功删除: {}", key);
             return true;
         } catch (SdkException e) {
-            log.debug("删除S3文件时发生错误(不影响业务): {}", e.getMessage());
+            log.debug("删除S3文件时En feil oppstod(不影响业务): {}", e.getMessage());
             return true; // 即使出现异常也返回true，确保上层调用不受影响
         }
     }
@@ -388,7 +388,7 @@ public class S3ServiceImpl implements S3Service, IS3Service {
 
             return deleteFile(bucketFolder, fileName);
         } catch (Exception e) {
-            log.error("删除S3文件时发生错误: {}", e.getMessage(), e);
+            log.error("删除S3文件时En feil oppstod: {}", e.getMessage(), e);
             return false;
         }
     }

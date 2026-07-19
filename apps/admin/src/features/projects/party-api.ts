@@ -56,7 +56,7 @@ export function useAssociateProjectParty(projectId: number) {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('partiesPanel.toast.associated'));
+      toast.success(t('partiesPanel.toast.associated'));
     },
   });
 }

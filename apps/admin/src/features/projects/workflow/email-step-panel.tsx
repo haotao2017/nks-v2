@@ -37,8 +37,12 @@ interface EmailStepPanelProps {
   disabled?: boolean;
 }
 
-/** 外部文档上传基址(与旧 admin 的 BaseURLSite 一致)。 */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+/** 外部文档上传基址(与旧 admin 的 BaseURLSite 一致)；空 env 时回退到当前 origin。 */
+function resolveSiteUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+  if (configured) return configured;
+  return typeof window !== 'undefined' ? window.location.origin : '';
+}
 
 export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProps) {
   const { t } = useTranslation();
@@ -106,6 +110,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
 
   function handleSend() {
     const useSend = Boolean(step.sendEmail);
+    const siteUrl = resolveSiteUrl();
     if (isMulti) {
       // 仅保留(未被移除)的参与方进入列表并置 sendEmail:true(对齐旧 Wf1S10 toSendIds 语义)。
       const list = parties
@@ -118,7 +123,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
         emailTo: '',
         emailFrom,
         emailProjectParties: { emailProjectPartiesWorkflowList: list },
-        baseURLSite: SITE_URL ? `${SITE_URL}/external/UploadDocument` : undefined,
+        baseURLSite: siteUrl ? `${siteUrl}/external/upload-document` : undefined,
       };
       if (useSend) sendMut.mutate(extra as ProjectWorkflowDto);
       else execMut.mutate(extra as ProjectWorkflowDto);

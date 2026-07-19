@@ -68,15 +68,12 @@ function statusClass(status?: string): string {
 interface InspectReportStepPanelProps {
   projectId: number;
   step: WorkflowStepDef;
-  /** ServiceWorkflowCategory.id,对齐旧 selectedWorkflowId。 */
-  serviceWorkflowCategoryId?: number;
   disabled?: boolean;
 }
 
 export function InspectReportStepPanel({
   projectId,
   step,
-  serviceWorkflowCategoryId,
   disabled,
 }: InspectReportStepPanelProps) {
   const { t } = useTranslation();
@@ -125,14 +122,10 @@ export function InspectReportStepPanel({
   }
 
   function handleApprove() {
-    const extra: Partial<ProjectWorkflowDto> = {
+    approveMut.mutate({
       isTransfer: false,
       isApprovedInspReport: true,
-    };
-    if (serviceWorkflowCategoryId != null) {
-      extra.serviceWorkflowCategoryId = serviceWorkflowCategoryId;
-    }
-    approveMut.mutate(extra as ProjectWorkflowDto);
+    } as ProjectWorkflowDto);
   }
 
   if (inspQuery.isPending) {

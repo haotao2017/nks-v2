@@ -104,7 +104,30 @@ export function useDeleteDocType() {
     invalidateKeys: [docTypeKeys.list()],
     successMessage: false, // 用后端返回的 message 提示
     onSuccess: (data) => {
-      toast.success(data?.message || t('docTypes.toast.deleted'));
+      toast.success(t('docTypes.toast.deleted'));
+    },
+  });
+}
+
+/** 批量删除文档类型。 */
+export function useBulkDeleteDocTypes() {
+  const { t } = useTranslation();
+  return useApiMutation<{ deleted: number }, number[]>({
+    mutationFn: async (ids) => {
+      let deleted = 0;
+      for (const DocTypeID of ids) {
+        await getApiClient().delete(endpoints.docType.delete.path, {
+          params: { DocTypeID },
+        });
+        deleted += 1;
+      }
+      return { deleted };
+    },
+    invalidateKeys: [docTypeKeys.list()],
+    successMessage: false,
+    errorMessage: false,
+    onSuccess: (data) => {
+      toast.success(t('docTypes.toast.bulkDeleted', { count: data.deleted }));
     },
   });
 }

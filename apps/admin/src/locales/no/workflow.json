@@ -79,6 +79,7 @@
       "noRecipients": "Ingen mottakere valgt. Legg til minst én for å sende.",
       "uploadFilesLabel": "Last opp filer",
       "uploadFileLabel": "Last opp fil",
+      "uploadRequired": "Last opp minst én fil før du fullfører steget",
       "attachmentsLabel": "Vedlegg",
       "templateAttachment": "Vis mal-vedlegg (PDF)",
       "removeFile": "Fjern fil",

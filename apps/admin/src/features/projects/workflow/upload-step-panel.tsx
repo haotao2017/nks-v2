@@ -21,6 +21,8 @@ import { RichTextEditor } from '@/features/email-templates/rich-text-editor';
 
 import type { WorkflowStepDef } from './workflow-steps';
 import { buildStepBase, useEmailPreview, useExecuteStepMultipart } from './workflow-api';
+import { fetchUrlAsFile } from './fetch-attachment';
+import { toast } from 'sonner';
 
 interface UploadStepPanelProps {
   projectId: number;
@@ -58,10 +60,23 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
   }, [projectId, step.key]);
 
   function handleSubmit() {
-    const extra: Partial<ProjectWorkflowDto> = hasEmail
-      ? { isTransfer: false, emailFrom, emailTo, emailSubject, emailContent, attachmentURL }
-      : { isTransfer: false };
-    execMut.mutate({ extra, files });
+    void (async () => {
+      // IG (wf3): 无文件不允许完成（对齐旧 Wf1S3）
+      if (!hasEmail && files.length === 0) {
+        toast.error(t('workflow.panel.uploadRequired'));
+        return;
+      }
+      const extra: Partial<ProjectWorkflowDto> = hasEmail
+        ? { isTransfer: false, emailFrom, emailTo, emailSubject, emailContent, attachmentURL }
+        : { isTransfer: false };
+      let filesToSend = [...files];
+      // Ansvarsrett: 无用户附件时仍拉取模板 PDF（对齐旧 Wf1S2）
+      if (hasEmail && filesToSend.length === 0 && attachmentURL) {
+        const template = await fetchUrlAsFile(attachmentURL, 'ansvarsrett.pdf');
+        if (template) filesToSend = [template];
+      }
+      execMut.mutate({ extra, files: filesToSend });
+    })();
   }
 
   return (
@@ -93,14 +108,22 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
                 <RichTextEditor value={emailContent} onChange={setEmailContent} disabled={disabled} />
               </div>
               {attachmentURL && (
-                <a
-                  href={attachmentURL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-primary inline-flex items-center gap-1.5 text-sm underline"
-                >
-                  <FileText className="size-4" /> {t('workflow.panel.templateAttachment')}
-                </a>
+                <div className="space-y-1.5">
+                  <Label>{t('workflow.panel.templateAttachment')}</Label>
+                  <iframe
+                    title={t('workflow.panel.templateAttachment')}
+                    src={attachmentURL}
+                    className="h-96 w-full rounded-md border"
+                  />
+                  <a
+                    href={attachmentURL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary inline-flex items-center gap-1.5 text-sm underline"
+                  >
+                    <FileText className="size-4" /> {t('workflow.panel.templateAttachment')}
+                  </a>
+                </div>
               )}
             </>
           )}

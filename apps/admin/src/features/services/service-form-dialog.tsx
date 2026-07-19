@@ -3,7 +3,7 @@
 /**
  * 新建/编辑服务弹窗 —— 照抄 features/contacts/contact-form-dialog.tsx 模式,
  * 对齐旧 Fuse 项目(serviceDialog.js / serviceAppSlice.js)的字段语义:
- *  - serviceTypeId(Tiltaksklasse)   单选:1 / 2 / Ingen(None → undefined)
+ *  - serviceTypeId(Tiltaksklasse)   单选:1 / 2 / Ingen(None → 落库 3，对齐旧 Fuse)
  *  - checklistTempId(检查单模板)     下拉:选项来自 useChecklistTemplates(label=title)
  *  - serviceWorkflowCategory(工作流)  按名称多选:选项来自 useWorkflowCategoryOptions
  *  - serviceChargedAs(计价方式)       单选:1=per enhet / 2=fastpris,并互斥渲染
@@ -64,8 +64,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useWorkflowCategoryOptions } from '../party-types/api';
 import { useChecklistTemplates } from '../checklists/api';
 import { useCreateService, useUpdateService } from './api';
+import {
+  encodeServiceTypeFormValue,
+  hydrateServiceTypeFormValue,
+  SERVICE_TYPE_NONE_FORM,
+} from './service-type';
 
-/** 「不关联」哨兵值(radix Select 不允许空字符串 item)。 */
+/** 「不关联检查单模板」哨兵值(radix Select 不允许空字符串 item)。 */
 const NONE = 'none';
 
 /** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
@@ -149,13 +154,8 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
       form.reset({
         name: service?.name ?? '',
         description: service?.description ?? '',
-        // 编辑时若无 serviceTypeId 视为 Ingen;新建默认 Tiltaksklasse 1(旧版默认)。
-        serviceTypeId:
-          service?.serviceTypeId !== undefined
-            ? String(service.serviceTypeId)
-            : service
-              ? NONE
-              : '1',
+        // Tiltaksklasse: 新建默认 1;编辑时 3/缺失 → Ingen(none)。
+        serviceTypeId: hydrateServiceTypeFormValue(service?.serviceTypeId, Boolean(service)),
         checklistTempId:
           service?.checklistTempId !== undefined ? String(service.checklistTempId) : NONE,
         serviceChargedAs: numStr(service?.serviceChargedAs) || '1',
@@ -178,7 +178,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
       ...(service?.id ? { id: service.id } : {}),
       name: values.name,
       description: values.description,
-      serviceTypeId: values.serviceTypeId === NONE ? undefined : toNum(values.serviceTypeId),
+      serviceTypeId: encodeServiceTypeFormValue(values.serviceTypeId),
       checklistTempId:
         values.checklistTempId === NONE ? undefined : toNum(values.checklistTempId),
       serviceChargedAs: toNum(values.serviceChargedAs),
@@ -259,7 +259,9 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                     <SelectContent>
                       <SelectItem value="1">{t('services.form.serviceTypeOption1')}</SelectItem>
                       <SelectItem value="2">{t('services.form.serviceTypeOption2')}</SelectItem>
-                      <SelectItem value={NONE}>{t('services.form.serviceTypeNone')}</SelectItem>
+                      <SelectItem value={SERVICE_TYPE_NONE_FORM}>
+                        {t('services.form.serviceTypeNone')}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

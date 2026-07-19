@@ -29,15 +29,26 @@ function pick(sp: URLSearchParams | ReadonlyURLSearchParams, name: string): stri
   return '';
 }
 
+/** 旧 UploadDocs 硬编码的 UrlKey（重定向链路上未带 UrlKey 时使用）。 */
+const LEGACY_UPLOAD_DOCS_URL_KEY = 'hZ8ygadsDaOLDSYS';
+
 export function parsePartyParams(
   sp: URLSearchParams | ReadonlyURLSearchParams,
 ): PartyParams {
+  // 旧 UploadDocs 重定向别名: prId → ProjectID; ID → PartyID
+  const projectId = pick(sp, 'ProjectID') || pick(sp, 'prId');
+  const partyId = pick(sp, 'PartyID') || pick(sp, 'ID');
+  const partyTypeId = pick(sp, 'PartyTypeID');
+  const urlKeyRaw = pick(sp, 'UrlKey');
+  // 遗留重定向仅带 prId+ID+PartyTypeId，无 UrlKey → 使用旧 UploadDocs 硬编码 key
+  const legacyRedirect =
+    !urlKeyRaw && Boolean(pick(sp, 'prId') && pick(sp, 'ID') && partyTypeId);
   return {
-    workflowId: pick(sp, 'WorkflowId'),
-    projectId: pick(sp, 'ProjectID'),
-    partyId: pick(sp, 'PartyID'),
-    partyTypeId: pick(sp, 'PartyTypeID'),
-    urlKey: pick(sp, 'UrlKey'),
+    workflowId: pick(sp, 'WorkflowId') || '1',
+    projectId,
+    partyId,
+    partyTypeId,
+    urlKey: urlKeyRaw || (legacyRedirect ? LEGACY_UPLOAD_DOCS_URL_KEY : ''),
     ckii: pick(sp, 'CKII'),
   };
 }

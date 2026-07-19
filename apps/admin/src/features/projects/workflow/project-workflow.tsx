@@ -51,6 +51,7 @@ import { PdfStepPanel } from './pdf-step-panel';
 import { SimpleStepPanel } from './simple-step-panel';
 import { InspectReportStepPanel } from './inspect-report-step-panel';
 import { Wf2StepOnePanel } from './wf2-step-panel';
+import { WorkflowInstanceProvider } from './workflow-instance-context';
 
 /** Workflow 2(UK lufttetthet)类别 ID。 */
 export const WORKFLOW_CATEGORY_LUFTTETHET = 2;
@@ -60,13 +61,11 @@ function StepPanel({
   projectId,
   project,
   step,
-  serviceWorkflowCategoryId,
   disabled,
 }: {
   projectId: number;
   project: ProjectDto;
   step: WorkflowStepDef;
-  serviceWorkflowCategoryId?: number;
   disabled?: boolean;
 }) {
   switch (step.type) {
@@ -81,14 +80,7 @@ function StepPanel({
     case 'pdf':
       return <PdfStepPanel projectId={projectId} step={step} disabled={disabled} />;
     case 'inspect-report':
-      return (
-        <InspectReportStepPanel
-          projectId={projectId}
-          step={step}
-          serviceWorkflowCategoryId={serviceWorkflowCategoryId}
-          disabled={disabled}
-        />
-      );
+      return <InspectReportStepPanel projectId={projectId} step={step} disabled={disabled} />;
     case 'simple':
       return <SimpleStepPanel projectId={projectId} step={step} disabled={disabled} />;
     default:
@@ -153,6 +145,7 @@ export function ProjectWorkflow({
   const closeDialog = () => setDialog(null);
 
   return (
+    <WorkflowInstanceProvider serviceWorkflowCategoryId={instance.instanceId}>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -253,7 +246,6 @@ export function ProjectWorkflow({
                 projectId={projectId}
                 project={project}
                 step={dialog.step}
-                serviceWorkflowCategoryId={instance.instanceId}
                 disabled={dialog.mode === 'view'}
               />
             </>
@@ -261,5 +253,6 @@ export function ProjectWorkflow({
         </DialogContent>
       </Dialog>
     </Card>
+    </WorkflowInstanceProvider>
   );
 }

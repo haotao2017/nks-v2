@@ -117,7 +117,40 @@ export function useDeleteBuildingSupplier() {
     invalidateKeys: [buildingSupplierKeys.list()],
     successMessage: false, // 用后端返回的 message 提示
     onSuccess: (data) => {
-      toast.success(data?.requestResponse?.message || t('buildingSuppliers.toast.deleted'));
+      toast.success(t('buildingSuppliers.toast.deleted'));
+    },
+  });
+}
+
+/** 批量删除建筑供应商。 */
+export function useBulkDeleteBuildingSuppliers() {
+  const { t } = useTranslation();
+  return useApiMutation<{ deleted: number }, number[]>({
+    mutationFn: async (ids) => {
+      let deleted = 0;
+      for (const BuildingSupplierID of ids) {
+        try {
+          await getApiClient().delete<ResponseBuildingSupplier>(
+            endpoints.buildingSupplier.delete.path,
+            { params: { BuildingSupplierID } },
+          );
+        } catch (err) {
+          if (err instanceof NksApiError && err.body && typeof err.body === 'object') {
+            const nested = (err.body as unknown as ResponseBuildingSupplier).requestResponse
+              ?.message;
+            if (nested) throw new Error(nested);
+          }
+          throw err;
+        }
+        deleted += 1;
+      }
+      return { deleted };
+    },
+    invalidateKeys: [buildingSupplierKeys.list()],
+    successMessage: false,
+    errorMessage: false,
+    onSuccess: (data) => {
+      toast.success(t('buildingSuppliers.toast.bulkDeleted', { count: data.deleted }));
     },
   });
 }

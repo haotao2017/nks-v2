@@ -371,7 +371,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             log.debug("共返回 {} 个文档", documentList.size());
 
         } catch (Exception e) {
-            log.error("获取项目文档列表时发生错误", e);
+            log.error("获取项目文档列表时En feil oppstod", e);
             response.setProjectDocumentList(new ArrayList<>());
         }
 
@@ -483,7 +483,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             log.debug("共返回 {} 个文档", documentList.size());
 
         } catch (Exception e) {
-            log.error("获取单个参与方的项目文档列表时发生错误", e);
+            log.error("获取单个参与方的项目文档列表时En feil oppstod", e);
             response.setProjectDocumentList(new ArrayList<>());
         }
 
@@ -562,7 +562,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             log.debug("共返回需要审批的文档 {} 个", documentList.size());
 
         } catch (Exception e) {
-            log.error("获取需要审批的项目文档列表时发生错误", e);
+            log.error("获取需要审批的项目文档列表时En feil oppstod", e);
             response.setProjectDocumentList(new ArrayList<>());
         }
 
@@ -618,7 +618,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             }
 
         } catch (Exception e) {
-            log.error("获取参与方需要审批的文档列表时发生错误，项目ID: {}, 参与方类型ID: {}, 参与方ID: {}",
+            log.error("获取参与方需要审批的文档列表时En feil oppstod，项目ID: {}, 参与方类型ID: {}, 参与方ID: {}",
                     projectId, partyTypeId, partyId, e);
         }
 
@@ -680,7 +680,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
 
             return response;
         } catch (Exception e) {
-            log.error("上传文档过程中发生错误", e);
+            log.error("上传文档过程中En feil oppstod", e);
             return RequestResponse.failure("Failed to upload document: " + e.getMessage());
         }
     }
@@ -796,8 +796,8 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             log.debug("找到 {} 个系统生成的文档", documentList.size());
             return response;
         } catch (Exception e) {
-            log.error("获取系统生成的文档列表时发生错误", e);
-            // 发生错误时返回空列表
+            log.error("获取系统生成的文档列表时En feil oppstod", e);
+            // En feil oppstod时返回空列表
             WrapperProjectDocumentDto response = new WrapperProjectDocumentDto();
             response.setProjectId(projectId);
             response.setWorkflowId(workflowId);
@@ -1039,7 +1039,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             }
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
-            log.error("异步删除S3文件时发生错误: {}", fileName, e);
+            log.error("异步删除S3文件时En feil oppstod: {}", fileName, e);
             return CompletableFuture.completedFuture(false);
         }
     }
@@ -1069,7 +1069,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             log.debug("异步文件上传成功: {}", fileName);
             return CompletableFuture.completedFuture(true);
         } catch (Exception e) {
-            log.error("异步处理文件上传时发生错误", e);
+            log.error("异步处理文件上传时En feil oppstod", e);
             // 如果上传失败，删除之前创建的数据库记录
             docRepository.delete(doc);
             return CompletableFuture.completedFuture(false);
@@ -1144,7 +1144,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
 
                     // 保存邮件历史
                     String uniqueUrlKey = emailData.getUrlKey() != null ? emailData.getUrlKey() : generateUniqueKey();
-                    saveEmailHistory(workflowDto, emailData, uniqueUrlKey);
+                    saveEmailHistory(workflowDto, emailData, uniqueUrlKey, companyId);
                 }
 
                 return CompletableFuture.completedFuture(true);
@@ -1197,7 +1197,8 @@ public class ProjectDocServiceImpl implements ProjectDocService {
      */
     private void saveEmailHistory(ProjectWorkflowDto projectWorkflow,
                                  EmailProjectPartiesWorkflowEntDto partyEmail,
-                                 String uniqueUrlKey) {
+                                 String uniqueUrlKey,
+                                 Integer companyId) {
         try {
             EmailHistory emailHistory = new EmailHistory();
             emailHistory.setProjectId(projectWorkflow.getProjectId());
@@ -1214,7 +1215,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             emailHistory.setPartyId(partyEmail.getPartyID());
             emailHistory.setUrlKey(uniqueUrlKey);
             emailHistory.setProjectStatus(projectWorkflow.getWorkflowStepId());
-            emailHistory.setCompanyId(1); // 默认值，后续可改进
+            emailHistory.setCompanyId(companyId != null ? companyId : 1);
 
             // 保存到数据库
             emailHistoryRepository.save(emailHistory);

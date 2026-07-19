@@ -198,6 +198,11 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public boolean saveEmailHistory(ProjectWorkflowDto projectWorkflow) {
+        return saveEmailHistory(projectWorkflow, null);
+    }
+
+    @Override
+    public boolean saveEmailHistory(ProjectWorkflowDto projectWorkflow, Integer companyId) {
         try {
             if (projectWorkflow == null) {
                 log.error("Cannot save email history: projectWorkflow is null");
@@ -262,9 +267,8 @@ public class EmailServiceImpl implements EmailService {
             emailHistory.setWorkflowStepId(projectWorkflow.getWorkflowStepId());
             emailHistory.setUrlKey(projectWorkflow.getRootURL());
 
-            // 设置公司ID（默认为1，因为ProjectWorkflowDto中没有companyId字段）
-            // 后续可以考虑通过项目ID查找项目并获取其公司ID
-            emailHistory.setCompanyId(1);
+            // Prefer authenticated company when available; fall back to 1 for legacy callers
+            emailHistory.setCompanyId(companyId != null ? companyId : 1);
 
             // 保存到数据库
             emailHistoryRepository.save(emailHistory);
@@ -342,7 +346,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             boolean emailSent = sendEmail(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getCc(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent());
             if (emailSent) {
-                saveEmailHistory(projectWorkflow);
+                saveEmailHistory(projectWorkflow, companyId);
                 log.info("Async email sent and history saved successfully for project: {}", projectWorkflow.getProjectId());
             } else {
                 log.warn("Async email sending failed for project: {}. History not saved.", projectWorkflow.getProjectId());
@@ -368,7 +372,7 @@ public class EmailServiceImpl implements EmailService {
 
             if (emailSent) {
                 // Only save history for the primary email, as per C# logic
-                saveEmailHistory(projectWorkflow);
+                saveEmailHistory(projectWorkflow, companyId);
                 log.info("Async step 8 email sent and history saved successfully for project: {}", projectWorkflow.getProjectId());
             } else {
                 log.warn("Async step 8 email sending failed for project: {}. History not saved.", projectWorkflow.getProjectId());
@@ -414,7 +418,7 @@ public class EmailServiceImpl implements EmailService {
                         historyDto.setPartyTypeId(party.getPartyTypeID());
                         historyDto.setUrlKey(urlKey);
 
-                        saveEmailHistory(historyDto);
+                        saveEmailHistory(historyDto, companyId);
                         log.info("Successfully sent step 9 email and saved history for partyId: {} on project: {}", party.getPartyID(), projectWorkflow.getProjectId());
                     } else {
                         log.warn("Failed to send step 9 email to partyId: {} on project: {}", party.getPartyID(), projectWorkflow.getProjectId());
@@ -480,7 +484,7 @@ public class EmailServiceImpl implements EmailService {
                 boolean emailSent = sendEmailWithByteArrayAttachment(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getCc(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent(), calendarFile, fileName);
                 if (emailSent) {
                     projectWorkflow.setFileName(fileName);
-                    saveEmailHistory(projectWorkflow);
+                    saveEmailHistory(projectWorkflow, companyId);
                     log.info("Successfully sent step 10 email with calendar invite for project: {}", projectWorkflow.getProjectId());
                 } else {
                      log.error("Failed to send step 10 email with calendar invite for project: {}", projectWorkflow.getProjectId());
@@ -498,7 +502,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             boolean emailSent = sendEmailWithAttachment(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getCc(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent(), file);
             if (emailSent) {
-                saveEmailHistory(projectWorkflow);
+                saveEmailHistory(projectWorkflow, companyId);
                 log.info("Successfully sent email with attachment and saved history for project ID: {}", projectWorkflow.getProjectId());
             } else {
                 log.error("Failed to send email with attachment for project ID: {}", projectWorkflow.getProjectId());

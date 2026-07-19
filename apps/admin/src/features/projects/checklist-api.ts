@@ -196,7 +196,7 @@ export function useDeleteProjectChecklist(projectId: number) {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('checklistPanel.toast.deleted'));
+      toast.success(t('checklistPanel.toast.deleted'));
     },
   });
 }
@@ -267,7 +267,7 @@ export function useDeleteProjectChecklistItem(projectId: number, checklistId: nu
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('checklistPanel.toast.itemDeleted'));
+      toast.success(t('checklistPanel.toast.itemDeleted'));
     },
   });
 }

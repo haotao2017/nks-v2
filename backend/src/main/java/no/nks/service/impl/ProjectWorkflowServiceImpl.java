@@ -267,7 +267,7 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
                 );
 
                 if (emailSent) {
-                    emailService.saveEmailHistory(projectWorkflow);
+                    emailService.saveEmailHistory(projectWorkflow, companyId);
                     saveWorkflowStepStatus(projectWorkflow);
                     result.setSuccess(true);
                     result.setMessage("Project status updated, email Sent successfully!");
@@ -387,7 +387,7 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
                 );
 
                 if (emailSent) {
-                    emailService.saveEmailHistory(projectWorkflow);
+                    emailService.saveEmailHistory(projectWorkflow, companyId);
                     saveWorkflowStepStatus(projectWorkflow);
                     result.setSuccess(true);
                     result.setMessage("Project status updated, email Sent successfully!");

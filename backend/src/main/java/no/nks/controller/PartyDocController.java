@@ -204,7 +204,7 @@ public class PartyDocController {
      * @return 上传结果
      */
     @PostMapping("/UploadChecklistItemImageInspectinDataFromParty")
-    @CacheEvict(value = "checklistItemInspectionData", allEntries = true)
+    @CacheEvict(value = {"checklistItemInspectionData", "projectChecklistsCache", "projectChecklists"}, allEntries = true)
     public ResponseEntity<?> uploadChecklistItemImageInspectinDataFromParty(
             @RequestParam("request") String requestJson,
             @RequestParam(value = "files", required = false) List<MultipartFile> files)

@@ -11,7 +11,7 @@ import java.util.List;
 public class CreateChecklistFromTemplateRequest {
 
     // 检查清单名称（同时也是项目标题）- 必填
-    @NotBlank(message = "检查清单名称不能为空")
+    @NotBlank(message = "Sjekklistenavn mangler")
     private String checklistName;
 
     // 可选：选择的模板ID数组

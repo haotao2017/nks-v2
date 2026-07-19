@@ -43,12 +43,21 @@ public class ServiceServiceImpl implements ServiceService {
     @Autowired
     private ServiceWorkflowCategoryRepository serviceWorkflowCategoryRepository;
 
-    // 公司信息，对应C#中的DataCompany属性
-    private RequestResponse.CompanyInfo dataCompany;
+    // ThreadLocal avoids race when concurrent requests share this singleton bean
+    private static final ThreadLocal<RequestResponse.CompanyInfo> dataCompany = new ThreadLocal<>();
 
     @Override
-    public void setDataCompany(RequestResponse.CompanyInfo dataCompany) {
-        this.dataCompany = dataCompany;
+    public void setDataCompany(RequestResponse.CompanyInfo companyInfo) {
+        dataCompany.set(companyInfo);
+    }
+
+    @Override
+    public void clearDataCompany() {
+        dataCompany.remove();
+    }
+
+    private RequestResponse.CompanyInfo getDataCompany() {
+        return dataCompany.get();
     }
 
     /**
@@ -60,7 +69,7 @@ public class ServiceServiceImpl implements ServiceService {
         log.info("获取ID为{}的服务", id);
 
         Service service = serviceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("服务不存在: " + id));
+                .orElseThrow(() -> new RuntimeException("Tjenesten finnes ikke: " + id));
 
         List<ServicePerSlab> slabs = servicePerSlabRepository.findByServiceId(id);
         List<ServiceWorkflowCategory> categories = serviceWorkflowCategoryRepository.findByServiceId(id);
@@ -80,9 +89,9 @@ public class ServiceServiceImpl implements ServiceService {
         try {
             log.info("获取服务列表，页码：{}，名称：{}，描述：{}", pageNo, searchByName, searchByDescription);
 
-            Integer companyId = dataCompany != null ? dataCompany.getCompanyID() : null;
+            Integer companyId = getDataCompany() != null ? getDataCompany().getCompanyID() : null;
             if (companyId == null) {
-                throw new BusinessException("公司ID未设置");
+                throw new BusinessException("Firma-ID er ikke satt");
             }
 
             // 使用数据库分页和筛选，避免加载所有数据到内存
@@ -151,7 +160,7 @@ public class ServiceServiceImpl implements ServiceService {
                         serviceToCategories.computeIfAbsent(category.getServiceId(), k -> new ArrayList<>()).add(category);
                     }
                 } catch (InterruptedException | ExecutionException e) {
-                    log.error("获取关联数据时发生错误", e);
+                    log.error("获取关联数据时En feil oppstod", e);
                     // 出错时回退到串行查询
                     List<ServicePerSlab> allSlabs = servicePerSlabRepository.findByServiceIdIn(serviceIds);
                     for (ServicePerSlab slab : allSlabs) {
@@ -184,8 +193,8 @@ public class ServiceServiceImpl implements ServiceService {
             throw e;
         } catch (Exception e) {
             // 记录详细错误并转换为业务异常
-            log.error("获取服务列表时发生错误", e);
-            throw new BusinessException("获取服务列表失败: " + e.getMessage(), e);
+            log.error("获取服务列表时En feil oppstod", e);
+            throw new BusinessException("Kunne ikke hente tjenester: " + e.getMessage(), e);
         }
     }
 
@@ -212,7 +221,7 @@ public class ServiceServiceImpl implements ServiceService {
 
         // 保存服务基本信息
         final Service service = serviceRepository.findById(serviceDto.getId())
-                .orElseThrow(() -> new RuntimeException("服务不存在: " + serviceDto.getId()));
+                .orElseThrow(() -> new RuntimeException("Tjenesten finnes ikke: " + serviceDto.getId()));
 
         service.setName(serviceDto.getName());
         service.setDescription(serviceDto.getDescription());
@@ -253,11 +262,11 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     @Transactional
     public WrapperService createSingleService(ServiceDto serviceDto, String serviceName) {
-        log.info("Creating a new service for company with id: {}", dataCompany.getCompanyID());
+        log.info("Creating a new service for company with id: {}", getDataCompany() != null ? getDataCompany().getCompanyID() : null);
 
-        Integer companyId = dataCompany != null ? dataCompany.getCompanyID() : null;
+        Integer companyId = getDataCompany() != null ? getDataCompany().getCompanyID() : null;
         if (companyId == null) {
-            throw new RuntimeException("公司ID未设置");
+            throw new RuntimeException("Firma-ID er ikke satt");
         }
 
         // 创建新服务
@@ -331,7 +340,7 @@ public class ServiceServiceImpl implements ServiceService {
             response.setMessage("Record deleted");
 
         } catch (Exception ex) {
-            log.error("删除服务{}时发生错误: {}", id, ex.getMessage(), ex);
+            log.error("删除服务{}时En feil oppstod: {}", id, ex.getMessage(), ex);
             response.setSuccess(false);
             response.setMessage(ex.getMessage());
         }

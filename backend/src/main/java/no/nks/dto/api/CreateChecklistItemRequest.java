@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 @NoArgsConstructor
 public class CreateChecklistItemRequest {
     
-    @NotBlank(message = "检查项标题不能为空")
+    @NotBlank(message = "Sjekklistepunkt-tittel mangler")
     private String title;
     
     private Integer sortOrder;

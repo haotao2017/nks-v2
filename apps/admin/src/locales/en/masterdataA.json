@@ -114,7 +114,8 @@
       "updated": "Service updated",
       "updateError": "Could not update service",
       "deleted": "Service deleted",
-      "deleteBlocked": "The service cannot be deleted"
+      "deleteBlocked": "The service cannot be deleted",
+      "bulkDeleted": "{{count}} services deleted"
     },
     "validation": {
       "nameRequired": "Name is required",
@@ -156,7 +157,8 @@
       "updated": "Party type updated",
       "updateError": "Could not update party type",
       "deleted": "Party type deleted",
-      "deleteBlocked": "The party type cannot be deleted"
+      "deleteBlocked": "The party type cannot be deleted",
+      "bulkDeleted": "{{count}} party types deleted"
     },
     "validation": {
       "nameRequired": "Name is required"
@@ -183,7 +185,8 @@
       "required": "Required",
       "requiredDescription": "Must the document be submitted?",
       "partyType": "Party type",
-      "partyTypePlaceholder": "Select party type"
+      "partyTypePlaceholder": "Select party type",
+      "partyTypeNone": "None"
     },
     "delete": {
       "title": "Delete document type?",
@@ -195,7 +198,8 @@
       "createError": "Could not create document type",
       "updated": "Document type updated",
       "updateError": "Could not update document type",
-      "deleted": "Document type deleted"
+      "deleted": "Document type deleted",
+      "bulkDeleted": "{{count}} document types deleted"
     },
     "validation": {
       "nameRequired": "Name is required",

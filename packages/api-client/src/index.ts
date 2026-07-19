@@ -133,21 +133,29 @@ export class NksClient {
 
     let res: Response;
     try {
-      res = await this.fetchImpl(url, { method, headers, body: payload, signal: controller.signal });
+      res = await this.fetchImpl(url, {
+        method,
+        headers,
+        body: payload,
+        signal: controller.signal,
+        // Mutating GETs (e.g. ArchiveProject) and list GETs must never be browser-cached,
+        // or invalidateQueries can refetch stale snapshots for minutes.
+        cache: 'no-store',
+      });
     } finally {
       clearTimeout(timeout);
     }
 
     if (res.status === 401) {
       this.onUnauthorized?.();
-      throw new NksApiError(401, '认证失败,请重新登录', await safeBody(res));
+      throw new NksApiError(401, 'Unauthorized. Please sign in again.', await safeBody(res));
     }
 
     if (!res.ok) {
       const errBody = await safeBody(res);
       const msg =
         (typeof errBody === 'object' && errBody && 'message' in errBody && (errBody as ApiErrorBody).message) ||
-        `请求失败(${res.status})`;
+        `Request failed (${res.status})`;
       throw new NksApiError(res.status, String(msg), errBody);
     }
 

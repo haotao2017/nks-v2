@@ -33,6 +33,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLoadActiveProject } from '@/features/active-project/hooks';
 import { useUpdateChecklistItem } from '@/features/active-project/hooks';
 import type { ChecklistStatus } from '@/features/active-project/status';
+import {
+  shouldClearStatusAfterAllImagesRemoved,
+  shouldDeferStatusForPhoto,
+} from '@/features/active-project/status';
 import type { LocalChecklistItem } from '@/store/active-project-slice';
 
 const STATUS_OPTIONS: {
@@ -185,13 +189,13 @@ const ItemCard = React.memo(function ItemCard({
         return;
       }
       // OK / Dev:已有图 → 直接写状态;无图 → 暂存并强制拍照(取消则不落状态)
-      if (item.itemImageUrls.length > 0) {
-        setPendingStatus(null);
-        onUpdate(item.checklistItemId, { status: value });
+      if (shouldDeferStatusForPhoto(value, item.itemImageUrls.length)) {
+        setPendingStatus(value);
+        promptAddPhoto();
         return;
       }
-      setPendingStatus(value);
-      promptAddPhoto();
+      setPendingStatus(null);
+      onUpdate(item.checklistItemId, { status: value });
     },
     [
       item.status,
@@ -207,10 +211,7 @@ const ItemCard = React.memo(function ItemCard({
     (index: number) => {
       const next = item.itemImageUrls.filter((_, i) => i !== index);
       // 删光图片且状态为 OK/Dev → 清除状态(与强制拍照规则一致)
-      if (
-        next.length === 0 &&
-        (item.status === 'OK' || item.status === 'Dev')
-      ) {
+      if (shouldClearStatusAfterAllImagesRemoved(item.status, next.length)) {
         onUpdate(item.checklistItemId, {
           itemImageUrls: next,
           status: null,

@@ -62,6 +62,7 @@ import {
   usePartyTypes,
   useProjectParties,
 } from './party-api';
+import { filterPartyTypesForForetak } from './party-type-filter';
 
 /** 选项 label:`Name (CompanyName)`,公司名为空时只显示 Name(对齐 contact-select)。 */
 function contactLabel(c: ContactDto): string {
@@ -85,6 +86,12 @@ export function ProjectPartiesPanel({ projectId }: { projectId: number }) {
     });
     return map;
   }, [parties]);
+
+  // 对齐旧 Wf1S7:已绑定全显示;未绑定仅 workflowCategoryID === 1。
+  const visiblePartyTypes = React.useMemo(
+    () => filterPartyTypesForForetak(partyTypes, new Set(partyByTypeId.keys())),
+    [partyTypes, partyByTypeId],
+  );
 
   const [target, setTarget] = React.useState<PartyTypeDto | null>(null);
 
@@ -117,8 +124,8 @@ export function ProjectPartiesPanel({ projectId }: { projectId: number }) {
                     ))}
                   </TableRow>
                 ))
-              ) : partyTypes.length ? (
-                partyTypes.map((pt) => {
+              ) : visiblePartyTypes.length ? (
+                visiblePartyTypes.map((pt) => {
                   const bound = pt.id != null ? partyByTypeId.get(pt.id) : undefined;
                   return (
                     <TableRow key={pt.id}>

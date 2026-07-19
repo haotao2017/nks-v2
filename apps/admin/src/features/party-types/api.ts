@@ -132,7 +132,34 @@ export function useDeletePartyType() {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('partyTypes.toast.deleted'));
+      toast.success(t('partyTypes.toast.deleted'));
+    },
+  });
+}
+
+/** 批量删除参与方类型。 */
+export function useBulkDeletePartyTypes() {
+  const { t } = useTranslation();
+  return useApiMutation<{ deleted: number }, number[]>({
+    mutationFn: async (ids) => {
+      let deleted = 0;
+      for (const PartyTypeID of ids) {
+        const res = await getApiClient().delete<MessageSuccessResponse>(
+          endpoints.partyType.delete.path,
+          { params: { PartyTypeID } },
+        );
+        if (res?.success === false) {
+          throw new Error(res.message || t('partyTypes.toast.deleteBlocked'));
+        }
+        deleted += 1;
+      }
+      return { deleted };
+    },
+    invalidateKeys: [partyTypeKeys.list()],
+    successMessage: false,
+    errorMessage: false,
+    onSuccess: (data) => {
+      toast.success(t('partyTypes.toast.bulkDeleted', { count: data.deleted }));
     },
   });
 }

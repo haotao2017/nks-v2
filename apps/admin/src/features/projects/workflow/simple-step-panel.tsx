@@ -20,6 +20,8 @@ import { ProjectLeaderSection } from './project-leader-section';
 import { useReminderDate } from './project-leader-api';
 import type { WorkflowStepDef } from './workflow-steps';
 import { useExecuteStepJson } from './workflow-api';
+import { ProjectChecklistsPanel } from '../checklists-panel';
+import { ProjectPartiesPanel } from '../parties-panel';
 
 interface SimpleStepPanelProps {
   projectId: number;
@@ -27,32 +29,34 @@ interface SimpleStepPanelProps {
   disabled?: boolean;
 }
 
-/** 今天的 date 输入字符串 YYYY-MM-DD。 */
-function todayLocal(): string {
-  const d = new Date();
+/** datetime-local 字符串 YYYY-MM-DDTHH:mm（默认 09:00，对齐旧 DateTimePicker）。 */
+function toDateTimeLocal(d: Date, hour = 9, minute = 0): string {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(hour)}:${pad(minute)}`;
 }
 
-/** 加 N 个月的 date 输入字符串。 */
+/** 今天的 datetime-local 输入字符串（09:00）。 */
+function todayLocal(): string {
+  return toDateTimeLocal(new Date());
+}
+
+/** 加 N 个月的 datetime-local 输入字符串（09:00）。 */
 function plusMonths(n: number): string {
   const d = new Date();
   d.setMonth(d.getMonth() + n);
-  const pad = (x: number) => String(x).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return toDateTimeLocal(d);
 }
 
-/** ISO/任意日期串 → YYYY-MM-DD；无效则 today。 */
-function toDateInput(value?: string | null): string {
+/** ISO/任意日期串 → datetime-local；无效则 today；已过期改今天 09:00。 */
+function toDateTimeInput(value?: string | null): string {
   if (!value) return todayLocal();
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return todayLocal();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  // 旧系统:若已存日期早于今天,改用今天
-  const use = d < today ? today : d;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${use.getFullYear()}-${pad(use.getMonth() + 1)}-${pad(use.getDate())}`;
+  // 旧系统:若已存日期早于今天,改用今天 09:00
+  if (d < today) return todayLocal();
+  return toDateTimeLocal(d, d.getHours(), d.getMinutes());
 }
 
 export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelProps) {
@@ -65,7 +69,7 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
   React.useEffect(() => {
     if (!step.dateField || dateHydrated || reminderQuery.isPending) return;
     if (reminderQuery.data?.contactCustomerDate) {
-      setDate(toDateInput(reminderQuery.data.contactCustomerDate));
+      setDate(toDateTimeInput(reminderQuery.data.contactCustomerDate));
     }
     setDateHydrated(true);
   }, [step.dateField, reminderQuery.data, reminderQuery.isPending, dateHydrated]);
@@ -73,9 +77,11 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
   function handleSubmit() {
     const extra: Partial<ProjectWorkflowDto> = { isTransfer: false };
     if (step.dateField) {
-      // 旧系统发 ISO;后端 LocalDateTime 可解析带时间。此处用日末午夜本地→ISO。
+      // 旧系统发 ISO;后端 LocalDateTime 可解析带时间（datetime-local → Date → ISO）。
       const iso =
-        date.length === 10 ? new Date(`${date}T12:00:00`).toISOString() : date;
+        date.length === 10
+          ? new Date(`${date}T09:00:00`).toISOString()
+          : new Date(date).toISOString();
       extra.contactCustomerDate = iso;
     }
     if (step.approve) extra.isApprovedInspReport = true;
@@ -88,6 +94,11 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
         <p className="text-muted-foreground text-sm">{t(step.descriptionKey)}</p>
       )}
 
+      {step.key === 'opprett-sjekklister' && (
+        <ProjectChecklistsPanel projectId={projectId} />
+      )}
+      {step.key === 'la-til-foretak' && <ProjectPartiesPanel projectId={projectId} />}
+
       {step.projectLeader && (
         <ProjectLeaderSection projectId={projectId} disabled={disabled} />
       )}
@@ -98,7 +109,7 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
             <Label htmlFor="wf-reminder-date">{t('workflow.panel.reminderDate')}</Label>
             <Input
               id="wf-reminder-date"
-              type="date"
+              type="datetime-local"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               disabled={disabled}

@@ -84,7 +84,7 @@ public class PdfServiceImpl implements PdfService {
         // Fill services grid
         int i = 1;
         for (no.nks.entity.Service service : data.services) {
-            if (service.getServiceTypeId() != 3) {
+            if (service.getServiceTypeId() != null && service.getServiceTypeId() != 3) {
                 if (i <= 12) { // PDF has limited rows
                     form.setField("NedtrekkslisteRow" + i, "kontroll");
                     form.setField("Beskrivelse av ansvarsområdetRow" + i, service.getName());

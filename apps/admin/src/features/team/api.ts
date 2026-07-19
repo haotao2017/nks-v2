@@ -160,7 +160,7 @@ export function useDeleteUser() {
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
-      toast.success(data?.message || t('team.toast.userDeleted'));
+      toast.success(t('team.toast.userDeleted'));
     },
   });
 }
@@ -264,4 +264,31 @@ export const USER_TYPE_OPTIONS: { value: number; label: string }[] = [
 
 export function userTypeLabel(userTypeId?: number): string {
   return USER_TYPE_OPTIONS.find((o) => o.value === userTypeId)?.label ?? '—';
+}
+
+/** 批量删除用户。 */
+export function useBulkDeleteUsers() {
+  const { t } = useTranslation();
+  return useApiMutation<{ deleted: number }, number[]>({
+    mutationFn: async (ids) => {
+      let deleted = 0;
+      for (const UserProfileID of ids) {
+        const res = await getApiClient().delete<MessageSuccessResponse>(
+          endpoints.userProfile.delete.path,
+          { params: { UserProfileID } },
+        );
+        if (res?.success === false) {
+          throw new Error(res.message || t('team.toast.userDeleteBlocked'));
+        }
+        deleted += 1;
+      }
+      return { deleted };
+    },
+    invalidateKeys: [teamKeys.users()],
+    successMessage: false,
+    errorMessage: false,
+    onSuccess: (data) => {
+      toast.success(t('team.toast.usersBulkDeleted', { count: data.deleted }));
+    },
+  });
 }

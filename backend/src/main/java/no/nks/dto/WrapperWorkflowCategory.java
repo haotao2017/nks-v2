@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class WrapperWorkflowCategory {
 
-    @NotNull(message = "工作流类别不能为空")
+    @NotNull(message = "Arbeidsflytkategori mangler")
     @Valid
     private WorkflowCategoryDto workflowCategory;
 }

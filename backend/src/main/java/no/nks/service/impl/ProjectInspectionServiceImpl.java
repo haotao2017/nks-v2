@@ -60,20 +60,20 @@ public class ProjectInspectionServiceImpl implements IProjectInspectionService {
         log.debug("Updating project checklist item inspection data for item ID: {} in company: {}", checklistItemDto.getId(), companyId);
 
         if (checklistItemDto.getId() == null) {
-            throw new IllegalArgumentException("检查单项目ID不能为空");
+            throw new IllegalArgumentException("Sjekklistepunkt-ID mangler");
         }
 
         // 查找检查单项目
         ChecklistItem checklistItem = checklistItemRepository.findById(checklistItemDto.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("检查单项目未找到，ID: " + checklistItemDto.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Sjekklistepunkt ble ikke funnet, ID: " + checklistItemDto.getId()));
 
         // 检查项目所属权限
         ProjectChecklist checklist = projectChecklistRepository.findById(checklistItem.getChecklistId())
-                .orElseThrow(() -> new ResourceNotFoundException("检查单未找到，ID: " + checklistItem.getChecklistId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Sjekkliste ble ikke funnet, ID: " + checklistItem.getChecklistId()));
 
         // 验证项目是否存在并属于指定公司
         if (!projectRepository.existsByIdAndCompanyId(checklist.getProjectId(), companyId)) {
-            throw new ResourceNotFoundException("无权访问此项目的检查单项目");
+            throw new ResourceNotFoundException("Du har ikke tilgang til dette prosjektet的检查单项目");
         }
 
         // 更新检查单项目字段
@@ -203,26 +203,26 @@ public class ProjectInspectionServiceImpl implements IProjectInspectionService {
         try {
             // 查询要删除的图片记录
             ChecklistItemImage image = checklistItemImageRepository.findById(projectChecklistItemImageId)
-                .orElseThrow(() -> new ResourceNotFoundException("图片记录未找到，ID: " + projectChecklistItemImageId));
+                .orElseThrow(() -> new ResourceNotFoundException("Bilderegistrering ble ikke funnet, ID: " + projectChecklistItemImageId));
 
             // 优化查询层级，减少数据库交互
             Integer checklistItemId = image.getChecklistItemId();
 
             // 获取检查清单项
             ChecklistItem checklistItem = checklistItemRepository.findById(checklistItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("检查清单项未找到，ID: " + checklistItemId));
+                .orElseThrow(() -> new ResourceNotFoundException("Sjekklistepunkt ble ikke funnet, ID: " + checklistItemId));
 
             // 获取检查清单
             Integer checklistId = checklistItem.getChecklistId();
             ProjectChecklist checklist = projectChecklistRepository.findById(checklistId)
-                .orElseThrow(() -> new ResourceNotFoundException("检查清单未找到，ID: " + checklistId));
+                .orElseThrow(() -> new ResourceNotFoundException("Sjekkliste ble ikke funnet, ID: " + checklistId));
 
             Integer projectId = checklist.getProjectId();
 
             // 验证项目是否属于当前公司
             if (!projectRepository.existsByIdAndCompanyId(projectId, companyId)) {
                 log.warn("无权删除图片，图片ID: {}，公司ID: {}", projectChecklistItemImageId, companyId);
-                return RequestResponse.failure("无权删除此图片");
+                return RequestResponse.failure("Du har ikke tilgang til å slette dette bildet");
             }
 
             // 保存图片名称，用于后续删除S3文件
@@ -250,13 +250,13 @@ public class ProjectInspectionServiceImpl implements IProjectInspectionService {
                 });
             }
 
-            return RequestResponse.success("图片已成功删除");
+            return RequestResponse.success("Bildet er slettet");
         } catch (ResourceNotFoundException e) {
-            log.error("删除图片失败: {}", e.getMessage());
+            log.error("Kunne ikke slette bildet: {}", e.getMessage());
             return RequestResponse.failure(e.getMessage());
         } catch (Exception e) {
-            log.error("删除图片时发生错误: {}", e.getMessage(), e);
-            return RequestResponse.failure("删除图片失败: " + e.getMessage());
+            log.error("删除图片时En feil oppstod: {}", e.getMessage(), e);
+            return RequestResponse.failure("Kunne ikke slette bildet: " + e.getMessage());
         }
     }
 
@@ -270,7 +270,7 @@ public class ProjectInspectionServiceImpl implements IProjectInspectionService {
 
         // 验证项目是否存在并且属于指定的公司
         if (!projectRepository.existsByIdAndCompanyId(projectId, companyId)) {
-            throw new ResourceNotFoundException("项目未找到，ID: " + projectId);
+            throw new ResourceNotFoundException("Prosjektet ble ikke funnet, ID: " + projectId);
         }
 
         // 使用并行处理和异步查询提高性能
@@ -505,26 +505,26 @@ public class ProjectInspectionServiceImpl implements IProjectInspectionService {
         ProjectChecklistItemsInspDataDto checklistItemDto = param.getProjectChecklistItemInspData();
 
         if (checklistItemDto == null || checklistItemDto.getId() == null) {
-            throw new IllegalArgumentException("检查单项目数据不能为空且ID必须存在");
+            throw new IllegalArgumentException("Sjekklistepunktdata mangler eller ID er ugyldig");
         }
 
         log.debug("Updating checklist item with ID: {}", checklistItemDto.getId());
 
         // 使用单一查询获取检查单项目和验证权限
         ChecklistItem checklistItem = checklistItemRepository.findById(checklistItemDto.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("检查单项目未找到，ID: " + checklistItemDto.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Sjekklistepunkt ble ikke funnet, ID: " + checklistItemDto.getId()));
 
         // 检查项目所属权限
         Integer checklistId = checklistItem.getChecklistId();
 
         // 批量查询与验证，减少数据库交互
         ProjectChecklist checklist = projectChecklistRepository.findById(checklistId)
-                .orElseThrow(() -> new ResourceNotFoundException("检查单未找到，ID: " + checklistId));
+                .orElseThrow(() -> new ResourceNotFoundException("Sjekkliste ble ikke funnet, ID: " + checklistId));
 
         // 验证项目是否存在并属于指定公司
         Integer projectId = checklist.getProjectId();
         if (!projectRepository.existsByIdAndCompanyId(projectId, companyId)) {
-            throw new ResourceNotFoundException("无权访问此项目的检查单项目");
+            throw new ResourceNotFoundException("Du har ikke tilgang til dette prosjektet的检查单项目");
         }
 
         // 使用选择性更新，只更新变化的字段

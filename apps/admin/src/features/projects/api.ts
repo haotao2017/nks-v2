@@ -152,7 +152,7 @@ export function useCreateProject() {
       );
       return res?.project;
     },
-    invalidateKeys: [projectKeys.list('active'), projectKeys.count()],
+    invalidateKeys: [projectKeys.all],
     successMessage: t('projects.toast.created'),
     errorMessage: t('projects.toast.createError'),
   });
@@ -197,16 +197,12 @@ export function useDeleteProject() {
       return res;
     },
     invalidateKeys: [
-      projectKeys.list('active'),
-      projectKeys.list('deleted'),
-      projectKeys.count(),
+      projectKeys.all, // active + archived + deleted + count + detail
     ],
     successMessage: false,
     errorMessage: false,
-    onSuccess: (data, { isDelete }) => {
-      toast.success(
-        data?.message || t(isDelete ? 'projects.toast.deleted' : 'projects.toast.restored'),
-      );
+    onSuccess: (_data, { isDelete }) => {
+      toast.success(t(isDelete ? 'projects.toast.deleted' : 'projects.toast.restored'));
     },
   });
 }
@@ -231,17 +227,11 @@ export function useArchiveProject() {
       }
       return res;
     },
-    invalidateKeys: [
-      projectKeys.list('active'),
-      projectKeys.list('archived'),
-      projectKeys.count(),
-    ],
+    invalidateKeys: [projectKeys.all],
     successMessage: false,
     errorMessage: false,
-    onSuccess: (data, { isArchive }) => {
-      toast.success(
-        data?.message || t(isArchive ? 'projects.toast.archived' : 'projects.toast.unarchived'),
-      );
+    onSuccess: (_data, { isArchive }) => {
+      toast.success(t(isArchive ? 'projects.toast.archived' : 'projects.toast.unarchived'));
     },
   });
 }
@@ -263,11 +253,7 @@ export function useBulkArchiveProjects() {
       );
       return projectIds.length;
     },
-    invalidateKeys: [
-      projectKeys.list('active'),
-      projectKeys.list('archived'),
-      projectKeys.count(),
-    ],
+    invalidateKeys: [projectKeys.all],
     successMessage: false,
     errorMessage: t('projects.toast.actionFailed'),
     onSuccess: (count, { isArchive }) => {
@@ -295,11 +281,7 @@ export function useBulkDeleteProjects() {
       );
       return projectIds.length;
     },
-    invalidateKeys: [
-      projectKeys.list('active'),
-      projectKeys.list('deleted'),
-      projectKeys.count(),
-    ],
+    invalidateKeys: [projectKeys.all],
     successMessage: false,
     errorMessage: t('projects.toast.actionFailed'),
     onSuccess: (count, { isDelete }) => {
@@ -328,11 +310,8 @@ export function useDeleteProjectService() {
       );
     },
     invalidateKeys: [projectKeys.all],
-    successMessage: false,
+    successMessage: t('projects.toast.serviceDeleted'),
     errorMessage: t('projects.toast.updateError'),
-    onSuccess: (data) => {
-      if (data?.message) toast.success(data.message);
-    },
   });
 }
 

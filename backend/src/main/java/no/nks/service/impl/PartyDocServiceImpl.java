@@ -14,6 +14,8 @@ import no.nks.service.IS3Service;
 import no.nks.service.PartyDocService;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,6 +42,7 @@ public class PartyDocServiceImpl implements PartyDocService {
     private final ChecklistItemRepository checklistItemRepository;
     private final ChecklistItemImageRepository checklistItemImageRepository;
     private final IS3Service s3Service;
+    private final CacheManager cacheManager;
 
     @Qualifier("dbCallbackExecutor")
     private final ExecutorService dbCallbackExecutor;
@@ -91,7 +94,7 @@ public class PartyDocServiceImpl implements PartyDocService {
     public no.nks.dto.RequestResponse uploadDocumentFromParty(WrapperProjectPartyDocsSingle request, List<MultipartFile> files) {
         assertPartyUrlKeyValid(request.getWorkflowId(), request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getUrlKey());
         if (files == null || files.isEmpty()) {
-            return no.nks.dto.RequestResponse.failure("没有文件被上传");
+            return no.nks.dto.RequestResponse.failure("Ingen filer ble lastet opp");
         }
 
         try {
@@ -121,10 +124,10 @@ public class PartyDocServiceImpl implements PartyDocService {
                 docRepository.save(doc);
             });
 
-            return no.nks.dto.RequestResponse.success("文档已成功上传");
+            return no.nks.dto.RequestResponse.success("Dokumentet er lastet opp");
         } catch (Exception e) {
             log.error("上传文档失败", e);
-            return no.nks.dto.RequestResponse.failure("上传文档失败: " + e.getMessage());
+            return no.nks.dto.RequestResponse.failure("Opplasting av dokument mislyktes: " + e.getMessage());
         }
     }
 
@@ -298,7 +301,7 @@ public class PartyDocServiceImpl implements PartyDocService {
     public no.nks.dto.RequestResponse uploadChecklistItemImageInspectinDataFromParty(WrapperProjectPartyDocsInspection request, List<MultipartFile> files) {
         assertPartyUrlKeyValid(request.getWorkflowId(), request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getUrlKey());
         if (files == null || files.isEmpty()) {
-            return no.nks.dto.RequestResponse.failure("没有文件被上传");
+            return no.nks.dto.RequestResponse.failure("Ingen filer ble lastet opp");
         }
 
         try {
@@ -316,15 +319,15 @@ public class PartyDocServiceImpl implements PartyDocService {
                     .collect(Collectors.toList());
 
             if (checklistItemIdList.isEmpty()) {
-                log.warn("在解析后，没有提供有效的检查清单项目ID。原始输入: {}", request.getChecklistItemIdCommaSeperated());
-                return no.nks.dto.RequestResponse.failure("没有提供有效的检查清单项目ID");
+                log.warn("在解析后，Ingen gyldige sjekklistepunkt-IDer ble oppgitt。原始输入: {}", request.getChecklistItemIdCommaSeperated());
+                return no.nks.dto.RequestResponse.failure("Ingen gyldige sjekklistepunkt-IDer ble oppgitt");
             }
             log.info("开始处理检查清单项目ID列表: {} (共 {} 个有效ID)", checklistItemIdList, checklistItemIdList.size());
 
             List<ChecklistItem> checklistItems = checklistItemRepository.findByIdIn(checklistItemIdList);
             if (checklistItems.isEmpty()) {
                 log.warn("根据提供的ID列表 {} 未找到任何检查清单项目实体.", checklistItemIdList);
-                return no.nks.dto.RequestResponse.failure("未找到指定的检查清单项目");
+                return no.nks.dto.RequestResponse.failure("Fant ikke angitte sjekklistepunkter");
             }
             log.info("找到了 {} 个匹配的检查清单项目实体.", checklistItems.size());
 
@@ -387,11 +390,24 @@ public class PartyDocServiceImpl implements PartyDocService {
             }
 
             log.info("所有图片上传任务已分派到后台处理 (处理了 {} 个文件，对应 {} 个检查清单项).", files.size(), checklistItems.size());
-            return no.nks.dto.RequestResponse.success("图片上传请求已接受，正在后台处理。");
+            evictProjectChecklistCaches(request.getProjectID());
+            return no.nks.dto.RequestResponse.success("Bildeopplasting er mottatt og behandles i bakgrunnen.");
 
         } catch (Exception e) {
-            log.error("在安排图片上传任务的同步阶段发生错误: {}", e.getMessage(), e);
-            return no.nks.dto.RequestResponse.failure("图片上传请求初始化失败: " + e.getMessage());
+            log.error("在安排图片上传任务的同步阶段En feil oppstod: {}", e.getMessage(), e);
+            return no.nks.dto.RequestResponse.failure("Kunne ikke starte bildeopplasting: " + e.getMessage());
+        }
+    }
+
+    private void evictProjectChecklistCaches(Integer projectId) {
+        Cache projectChecklists = cacheManager.getCache("projectChecklists");
+        if (projectChecklists != null && projectId != null) {
+            projectChecklists.evict("project_" + projectId);
+        }
+        Cache projectChecklistsCache = cacheManager.getCache("projectChecklistsCache");
+        if (projectChecklistsCache != null) {
+            // Party upload has projectId but not companyId; clear whole cache to stay correct
+            projectChecklistsCache.clear();
         }
     }
 }

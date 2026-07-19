@@ -51,11 +51,14 @@ import { usePartyTypes } from '@/features/party-types/api';
 
 import { useCreateDocType, useUpdateDocType } from './api';
 
+/** 「不关联」哨兵值(radix Select 不允许空字符串 item)。 */
+const NONE = 'none';
+
 /** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
 type DocTypeFormValues = {
   docName: string;
   isRequired: boolean;
-  partyTypeId?: string;
+  partyTypeId: string;
 };
 
 export interface DocTypeFormDialogProps {
@@ -80,15 +83,15 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
       z.object({
         docName: z.string().trim().min(1, t('docTypes.validation.nameRequired')),
         isRequired: z.boolean(),
-        // partyTypeId(Ansvarsområde):下拉选中的 party type id(字符串),可选。
-        partyTypeId: z.string().optional(),
+        // partyTypeId(Ansvarsområde):下拉选中的 party type id(字符串);NONE = 不关联。
+        partyTypeId: z.string(),
       }),
     [t],
   );
 
   const form = useForm<DocTypeFormValues>({
     resolver: zodResolver(docTypeSchema),
-    defaultValues: { docName: '', isRequired: false, partyTypeId: '' },
+    defaultValues: { docName: '', isRequired: false, partyTypeId: NONE },
   });
 
   // 每次打开时同步表单值(新建清空 / 编辑回填)。
@@ -100,7 +103,7 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
         partyTypeId:
           docType?.partyTypeId !== undefined && docType?.partyTypeId !== null
             ? String(docType.partyTypeId)
-            : '',
+            : NONE,
       });
     }
   }, [open, docType, form]);
@@ -110,7 +113,7 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
       ...(docType?.id ? { id: docType.id } : {}),
       docName: values.docName,
       isRequired: values.isRequired,
-      partyTypeId: values.partyTypeId ? Number(values.partyTypeId) : undefined,
+      partyTypeId: values.partyTypeId === NONE ? undefined : Number(values.partyTypeId),
     };
 
     const mutation = isEdit ? updateMutation : createMutation;
@@ -167,13 +170,14 @@ export function DocTypeFormDialog({ open, onOpenChange, docType }: DocTypeFormDi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('docTypes.form.partyType')}</FormLabel>
-                  <Select value={field.value || ''} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder={t('docTypes.form.partyTypePlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value={NONE}>{t('docTypes.form.partyTypeNone')}</SelectItem>
                       {partyTypes.map((p) => (
                         <SelectItem key={p.id} value={String(p.id)}>
                           {p.name}

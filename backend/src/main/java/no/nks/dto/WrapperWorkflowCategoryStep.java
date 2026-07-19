@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class WrapperWorkflowCategoryStep {
 
-    @NotNull(message = "工作流类别步骤不能为空")
+    @NotNull(message = "Arbeidsflytsteg mangler")
     @Valid
     private WorkflowCategoryStepDto workflowCategoryStep;
 }
