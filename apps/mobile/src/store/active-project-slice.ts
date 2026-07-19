@@ -15,8 +15,12 @@
  */
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-/** 清单项三态(挪威语业务值,照旧客户端)。 */
-export type ChecklistStatus = 'OK' | 'Avvik' | 'IA';
+import {
+  normalizeChecklistStatus,
+  type ChecklistStatus,
+} from '@/features/active-project/status';
+
+export type { ChecklistStatus };
 
 export interface LocalContact {
   name: string;
@@ -101,10 +105,16 @@ const activeProjectSlice = createSlice({
       state.status = 'loading';
       state.error = null;
     },
-    /** 组装完成:写入本地副本(视为与后端一致,清同步标志)。 */
+    /** 组装完成:写入本地副本(视为与后端一致,清同步标志)。顺带归一历史状态别名。 */
     loadSucceeded(state, action: PayloadAction<LocalProjectDetail>) {
-      state.detail = action.payload;
-      state.projectId = action.payload.projectID;
+      const detail = action.payload;
+      for (const cl of detail.checklists) {
+        for (const item of cl.checkItems) {
+          item.status = normalizeChecklistStatus(item.status);
+        }
+      }
+      state.detail = detail;
+      state.projectId = detail.projectID;
       state.status = 'ready';
       state.error = null;
     },
@@ -135,7 +145,9 @@ const activeProjectSlice = createSlice({
         .find((c) => c.checklistId === checklistId)
         ?.checkItems.find((i) => i.checklistItemId === checklistItemId);
       if (!item) return;
-      if (patch.status !== undefined) item.status = patch.status;
+      if (patch.status !== undefined) {
+        item.status = normalizeChecklistStatus(patch.status);
+      }
       if (patch.comment !== undefined) item.comment = patch.comment;
       if (patch.itemImageUrls !== undefined) item.itemImageUrls = patch.itemImageUrls;
       item.updated = false;

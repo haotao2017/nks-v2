@@ -2,12 +2,12 @@
  * 单清单填写屏 —— 现场检验核心。参考旧 SingleCheckList.tsx + NBKCamera。
  *
  * 每个检查项:
- *  - 三态单选 OK(Godkjent) / Avvik / IA(I/A)。状态值为离线层 ChecklistStatus
- *    ('OK' | 'Avvik' | 'IA'),原样传给后端(见 buildChecklistUpdateForm)。
- *  - 选 OK/Avvik 且尚无图片 → 强制拍照(自动弹拍照/相册);至少一张。
- *  - 选 IA → 清空该项图片。
+ *  - 三态单选 Godkjent(OK) / Avvik(Dev) / I/A(NA)。wire 值为离线层 ChecklistStatus
+ *    ('OK' | 'Dev' | 'NA'),与旧客户端及后端落库一致(见 buildChecklistUpdateForm)。
+ *  - 选 OK/Dev 且尚无图片 → 强制拍照;有图后才写入状态(取消拍照则不落状态)。
+ *  - 选 NA → 清空该项图片并立即写入。
  *  - 备注(失焦提交)。
- *  - 已拍图片九宫格缩略图 + 单张删除。
+ *  - 已拍图片九宫格缩略图 + 单张删除(删光 OK/Dev 图时清状态)。
  *  - 状态/备注/图片任一变化即调 useUpdateChecklistItem().update(离线优先,
  *    本地写 + 联网同步 + updated 去重);离线也能编辑,恢复联网补传。
  *  - 角标显示同步状态(updated=true 已同步 / false 待同步)。
@@ -32,10 +32,8 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { useLoadActiveProject } from '@/features/active-project/hooks';
 import { useUpdateChecklistItem } from '@/features/active-project/hooks';
-import type {
-  ChecklistStatus,
-  LocalChecklistItem,
-} from '@/store/active-project-slice';
+import type { ChecklistStatus } from '@/features/active-project/status';
+import type { LocalChecklistItem } from '@/store/active-project-slice';
 
 const STATUS_OPTIONS: {
   value: ChecklistStatus;
@@ -43,8 +41,8 @@ const STATUS_OPTIONS: {
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
   { value: 'OK', label: 'Godkjent', icon: 'checkmark-circle-outline' },
-  { value: 'Avvik', label: 'Avvik', icon: 'alert-circle-outline' },
-  { value: 'IA', label: 'I/A', icon: 'remove-circle-outline' },
+  { value: 'Dev', label: 'Avvik', icon: 'alert-circle-outline' },
+  { value: 'NA', label: 'I/A', icon: 'remove-circle-outline' },
 ];
 
 /** 三态单选按钮的选中/未选中配色。 */
@@ -55,9 +53,9 @@ function statusClasses(value: ChecklistStatus, selected: boolean): string {
   switch (value) {
     case 'OK':
       return 'border-green-600 bg-green-600';
-    case 'Avvik':
+    case 'Dev':
       return 'border-red-600 bg-red-600';
-    case 'IA':
+    case 'NA':
       return 'border-neutral-500 bg-neutral-500';
   }
 }
@@ -67,9 +65,9 @@ function statusTextColor(value: ChecklistStatus, selected: boolean): string {
   switch (value) {
     case 'OK':
       return '#16a34a';
-    case 'Avvik':
+    case 'Dev':
       return '#dc2626';
-    case 'IA':
+    case 'NA':
       return '#737373';
   }
 }
@@ -96,20 +94,38 @@ const ItemCard = React.memo(function ItemCard({
   ) => void;
 }) {
   const [commentDraft, setCommentDraft] = React.useState(item.comment ?? '');
+  /** OK/Dev 且尚无图时暂存目标状态:有图后才写入(对齐旧 SingleCheckList)。 */
+  const [pendingStatus, setPendingStatus] = React.useState<ChecklistStatus | null>(
+    null,
+  );
 
   // 项/内容变化时同步草稿(切项目或远端刷新)
   React.useEffect(() => {
     setCommentDraft(item.comment ?? '');
   }, [item.checklistItemId, item.comment]);
 
+  // 换项时清暂存状态
+  React.useEffect(() => {
+    setPendingStatus(null);
+  }, [item.checklistItemId]);
+
   const appendImages = React.useCallback(
     (uris: string[]) => {
       if (uris.length === 0) return;
+      // 有 pendingStatus → 与图片一并落盘(旧客户端:先拍照再写 status)
+      if (pendingStatus) {
+        onUpdate(item.checklistItemId, {
+          status: pendingStatus,
+          itemImageUrls: [...item.itemImageUrls, ...uris],
+        });
+        setPendingStatus(null);
+        return;
+      }
       onUpdate(item.checklistItemId, {
         itemImageUrls: [...item.itemImageUrls, ...uris],
       });
     },
-    [item.checklistItemId, item.itemImageUrls, onUpdate],
+    [item.checklistItemId, item.itemImageUrls, onUpdate, pendingStatus],
   );
 
   const takePhoto = React.useCallback(async () => {
@@ -119,10 +135,15 @@ const ItemCard = React.memo(function ItemCard({
       quality: 1,
       cameraType: ImagePicker.CameraType.back,
     });
-    if (!res.canceled) {
-      appendImages(res.assets.map((a) => a.uri));
+    if (res.canceled) {
+      // 取消拍照且尚无图 → 丢弃 pending,避免无图状态
+      if (pendingStatus && item.itemImageUrls.length === 0) {
+        setPendingStatus(null);
+      }
+      return;
     }
-  }, [appendImages]);
+    appendImages(res.assets.map((a) => a.uri));
+  }, [appendImages, pendingStatus, item.itemImageUrls.length]);
 
   const pickFromLibrary = React.useCallback(async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -130,42 +151,75 @@ const ItemCard = React.memo(function ItemCard({
       quality: 1,
       allowsMultipleSelection: true,
     });
-    if (!res.canceled) {
-      appendImages(res.assets.map((a) => a.uri));
+    if (res.canceled) {
+      if (pendingStatus && item.itemImageUrls.length === 0) {
+        setPendingStatus(null);
+      }
+      return;
     }
-  }, [appendImages]);
+    appendImages(res.assets.map((a) => a.uri));
+  }, [appendImages, pendingStatus, item.itemImageUrls.length]);
 
   const promptAddPhoto = React.useCallback(() => {
     Alert.alert('Legg til bilde', undefined, [
       { text: 'Ta bilde', onPress: () => void takePhoto() },
       { text: 'Velg fra galleri', onPress: () => void pickFromLibrary() },
-      { text: 'Avbryt', style: 'cancel' },
+      {
+        text: 'Avbryt',
+        style: 'cancel',
+        onPress: () => {
+          if (pendingStatus && item.itemImageUrls.length === 0) {
+            setPendingStatus(null);
+          }
+        },
+      },
     ]);
-  }, [takePhoto, pickFromLibrary]);
+  }, [takePhoto, pickFromLibrary, pendingStatus, item.itemImageUrls.length]);
 
   const onSelectStatus = React.useCallback(
     (value: ChecklistStatus) => {
-      if (value === item.status) return;
-      if (value === 'IA') {
-        // IA:清空图片
-        onUpdate(item.checklistItemId, { status: 'IA', itemImageUrls: [] });
+      if (value === item.status && pendingStatus == null) return;
+      if (value === 'NA') {
+        setPendingStatus(null);
+        onUpdate(item.checklistItemId, { status: 'NA', itemImageUrls: [] });
         return;
       }
-      // OK / Avvik:强制拍照——先写状态,若还没有图片则立即弹拍照
-      onUpdate(item.checklistItemId, { status: value });
-      if (item.itemImageUrls.length === 0) {
-        promptAddPhoto();
+      // OK / Dev:已有图 → 直接写状态;无图 → 暂存并强制拍照(取消则不落状态)
+      if (item.itemImageUrls.length > 0) {
+        setPendingStatus(null);
+        onUpdate(item.checklistItemId, { status: value });
+        return;
       }
+      setPendingStatus(value);
+      promptAddPhoto();
     },
-    [item.status, item.checklistItemId, item.itemImageUrls.length, onUpdate, promptAddPhoto],
+    [
+      item.status,
+      item.checklistItemId,
+      item.itemImageUrls.length,
+      onUpdate,
+      promptAddPhoto,
+      pendingStatus,
+    ],
   );
 
   const removeImage = React.useCallback(
     (index: number) => {
       const next = item.itemImageUrls.filter((_, i) => i !== index);
+      // 删光图片且状态为 OK/Dev → 清除状态(与强制拍照规则一致)
+      if (
+        next.length === 0 &&
+        (item.status === 'OK' || item.status === 'Dev')
+      ) {
+        onUpdate(item.checklistItemId, {
+          itemImageUrls: next,
+          status: null,
+        });
+        return;
+      }
       onUpdate(item.checklistItemId, { itemImageUrls: next });
     },
-    [item.checklistItemId, item.itemImageUrls, onUpdate],
+    [item.checklistItemId, item.itemImageUrls, item.status, onUpdate],
   );
 
   const commitComment = React.useCallback(() => {
@@ -175,8 +229,9 @@ const ItemCard = React.memo(function ItemCard({
     }
   }, [commentDraft, item.comment, item.checklistItemId, onUpdate]);
 
+  const displayStatus = pendingStatus ?? item.status;
   const requiresPhoto =
-    (item.status === 'OK' || item.status === 'Avvik') &&
+    (displayStatus === 'OK' || displayStatus === 'Dev') &&
     item.itemImageUrls.length === 0;
 
   return (
@@ -203,7 +258,7 @@ const ItemCard = React.memo(function ItemCard({
       {/* 三态单选 */}
       <View className="flex-row gap-2">
         {STATUS_OPTIONS.map((opt) => {
-          const selected = item.status === opt.value;
+          const selected = displayStatus === opt.value;
           return (
             <Pressable
               key={opt.value}

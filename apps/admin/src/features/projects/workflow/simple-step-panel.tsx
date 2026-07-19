@@ -1,13 +1,10 @@
 'use client';
 
 /**
- * SimpleStepPanel —— 确认执行型步骤(WF5 sjekklister / WF6 foretak / WF7 påminnelse / WF11 gjennomgå rapport)。
+ * SimpleStepPanel —— 确认执行型步骤(WF5 sjekklister / WF6 foretak / WF7 påminnelse)。
  *
- * 大多只需点确认执行对应 ProjectWFxxx。两个特例:
- *  - step.dateField(WF7 påminnelse):附一个日期选择 → contactCustomerDate。
- *  - step.approve(WF11 gjennomgå rapport):执行时 isApprovedInspReport=true。
- * 注:旧 admin 里这些步骤(建清单/关联参与方/审阅清单项)有更丰富的管理界面,
- * 那些主数据操作在各自模块另有入口;此处按后端契约提供「触发 + 必要字段 + 结果」。
+ *  - step.dateField(WF7 påminnelse):项目负责人选择 + 日期 → contactCustomerDate。
+ *  - step.approve:执行时 isApprovedInspReport=true(现已由 inspect-report 接管,保留兼容)。
  */
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+import { ProjectLeaderSection } from './project-leader-section';
+import { useReminderDate } from './project-leader-api';
 import type { WorkflowStepDef } from './workflow-steps';
 import { useExecuteStepJson } from './workflow-api';
 
@@ -43,14 +42,42 @@ function plusMonths(n: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** ISO/任意日期串 → YYYY-MM-DD；无效则 today。 */
+function toDateInput(value?: string | null): string {
+  if (!value) return todayLocal();
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return todayLocal();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // 旧系统:若已存日期早于今天,改用今天
+  const use = d < today ? today : d;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${use.getFullYear()}-${pad(use.getMonth() + 1)}-${pad(use.getDate())}`;
+}
+
 export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelProps) {
   const { t } = useTranslation();
   const execMut = useExecuteStepJson(projectId, step, step.execute);
+  const reminderQuery = useReminderDate(step.dateField ? projectId : 0);
   const [date, setDate] = React.useState<string>(todayLocal());
+  const [dateHydrated, setDateHydrated] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!step.dateField || dateHydrated || reminderQuery.isPending) return;
+    if (reminderQuery.data?.contactCustomerDate) {
+      setDate(toDateInput(reminderQuery.data.contactCustomerDate));
+    }
+    setDateHydrated(true);
+  }, [step.dateField, reminderQuery.data, reminderQuery.isPending, dateHydrated]);
 
   function handleSubmit() {
     const extra: Partial<ProjectWorkflowDto> = { isTransfer: false };
-    if (step.dateField) extra.contactCustomerDate = date || undefined;
+    if (step.dateField) {
+      // 旧系统发 ISO;后端 LocalDateTime 可解析带时间。此处用日末午夜本地→ISO。
+      const iso =
+        date.length === 10 ? new Date(`${date}T12:00:00`).toISOString() : date;
+      extra.contactCustomerDate = iso;
+    }
     if (step.approve) extra.isApprovedInspReport = true;
     execMut.mutate(extra as ProjectWorkflowDto);
   }
@@ -59,6 +86,10 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
     <div className="space-y-4">
       {step.descriptionKey && (
         <p className="text-muted-foreground text-sm">{t(step.descriptionKey)}</p>
+      )}
+
+      {step.projectLeader && (
+        <ProjectLeaderSection projectId={projectId} disabled={disabled} />
       )}
 
       {step.dateField && (

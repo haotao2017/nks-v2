@@ -34,7 +34,7 @@ public class User implements UserDetails {
     @Column(name = "Email", length = 500)
     private String email;
 
-    @Column(name = "Password", length = 50)
+    @Column(name = "Password", length = 255)
     private String password;
 
     @Column(name = "UserTypeID")

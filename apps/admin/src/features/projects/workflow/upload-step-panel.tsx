@@ -110,7 +110,11 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
       {/* Filopplasting */}
       <div className="space-y-1.5">
         <Label htmlFor="wf-up-files">
-          {step.multiFile ? t('workflow.panel.uploadFilesLabel') : t('workflow.panel.uploadFileLabel')}
+          {hasEmail
+            ? t('workflow.panel.attachmentsLabel')
+            : step.multiFile
+              ? t('workflow.panel.uploadFilesLabel')
+              : t('workflow.panel.uploadFileLabel')}
           {hasEmail && (
             <span className="text-muted-foreground font-normal"> {t('workflow.panel.optional')}</span>
           )}
@@ -118,7 +122,7 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
         <Input
           id="wf-up-files"
           type="file"
-          multiple={step.multiFile}
+          multiple={step.multiFile || hasEmail}
           disabled={disabled}
           onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
         />

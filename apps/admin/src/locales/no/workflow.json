@@ -54,7 +54,7 @@
       "epost-kommende-kontroll": "Varsle parter om kommende kontroll — eller overfør uten å sende.",
       "innhenting-av-dokumentasjon": "Send forespørsel om dokumentasjon per part — eller overfør uten å sende.",
       "kontroll-dato": "Sett kontrolldato og tildel inspektør — eller overfør uten kontroll.",
-      "gjennomgaa-rapport": "Godkjenn gjennomgått kontrollrapport.",
+      "gjennomgaa-rapport": "Se gjennom avvik og sjekklister. Send valgte avvik til foretak, eller godkjenn når ingen avvik gjenstår.",
       "send-rapport-dialog": "Send rapport/avvik til part (WF12).",
       "send-faktura": "Utløs faktura i Tripletex.",
       "kontrollerklaering": "Generer kontrollerklæring (PDF) og send til parter.",
@@ -79,6 +79,7 @@
       "noRecipients": "Ingen mottakere valgt. Legg til minst én for å sende.",
       "uploadFilesLabel": "Last opp filer",
       "uploadFileLabel": "Last opp fil",
+      "attachmentsLabel": "Vedlegg",
       "templateAttachment": "Vis mal-vedlegg (PDF)",
       "removeFile": "Fjern fil",
       "skipInspection": "Hopp over kontroll",
@@ -108,6 +109,52 @@
         "plus3": "+3 mnd",
         "plus6": "+6 mnd",
         "plus9": "+9 mnd"
+      }
+    },
+    "inspect": {
+      "loading": "Laster inspeksjonsdata…",
+      "loadError": "Kunne ikke hente inspeksjonsdata.",
+      "tabDeviations": "Avvik",
+      "tabChecklists": "Sjekklister",
+      "noDeviations": "Ingen avvik funnet.",
+      "noChecklists": "Ingen sjekklister på prosjektet.",
+      "unnamedChecklist": "Uten navn",
+      "selectAll": "Velg alle",
+      "sendSelected": "Send valgte",
+      "addToEmail": "Legg til e-post",
+      "status": "Status",
+      "comment": "Kommentar",
+      "editItem": "Rediger sjekkpunkt",
+      "statusOk": "Godkjent",
+      "statusDev": "Avvik",
+      "statusNa": "I/A",
+      "toast": {
+        "itemSaved": "Sjekkpunkt lagret",
+        "imageDeleted": "Bilde slettet"
+      }
+    },
+    "wf2": {
+      "cardHint": "UK lufttetthet — fyll inn måleverdier og avvik.",
+      "description": "Registrer UK lufttetthet og eventuelle avvik for denne tjenesten.",
+      "loading": "Laster lufttetthet-data…",
+      "loadError": "Kunne ikke hente lufttetthet-data.",
+      "lufttetthet": "UK lufttetthet",
+      "avvik": "Avvik",
+      "avvikSendtKommune": "Åpne avvik sendt kommunen",
+      "yes": "Ja",
+      "no": "Nei",
+      "toast": {
+        "saved": "Lufttetthet lagret"
+      }
+    },
+    "leader": {
+      "label": "Prosjektleder",
+      "loading": "Laster prosjektleder…",
+      "save": "Lagre prosjektleder",
+      "copyToLeader": "Kopier til prosjektleder",
+      "noLeaderEmail": "ingen e-post i mal",
+      "toast": {
+        "saved": "Prosjektleder lagret"
       }
     },
     "actions": {

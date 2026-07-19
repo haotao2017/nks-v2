@@ -30,13 +30,24 @@
       "confirmPrefix": "Are you sure you want to delete",
       "confirmSuffix": "? This action cannot be undone."
     },
+    "bulk": {
+      "selected": "{{count}} selected",
+      "clear": "Clear selection",
+      "selectAll": "Select all",
+      "selectRow": "Select row"
+    },
+    "bulkDeleteDialog": {
+      "title": "Delete {{count}} contacts?",
+      "description": "Are you sure you want to delete {{count}} contacts? This action cannot be undone."
+    },
     "toast": {
       "created": "Contact created",
       "createError": "Could not create contact",
       "updated": "Contact updated",
       "updateError": "Could not update contact",
       "deleted": "Contact deleted",
-      "deleteBlocked": "The contact cannot be deleted"
+      "deleteBlocked": "The contact cannot be deleted",
+      "bulkDeleted": "{{count}} contacts deleted"
     },
     "validation": {
       "nameRequired": "Name is required",

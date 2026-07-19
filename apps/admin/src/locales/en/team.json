@@ -104,6 +104,7 @@
         "orgNumber": "Organization number",
         "owner": "Owner",
         "postCode": "Postal code",
+        "postSted": "City",
         "address": "Address",
         "telephone": "Telephone",
         "mobile": "Mobile"

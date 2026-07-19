@@ -16,6 +16,7 @@ import { Mail, Eye, Send, FastForward, Loader2, X, Plus } from 'lucide-react';
 import type { EmailProjectPartiesWorkflowEntDto, ProjectWorkflowDto } from '@nks/api-types';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RichTextEditor } from '@/features/email-templates/rich-text-editor';
@@ -28,6 +29,7 @@ import {
   useSendEmail,
   useTransferStep,
 } from './workflow-api';
+import { ProjectLeaderSection } from './project-leader-section';
 
 interface EmailStepPanelProps {
   projectId: number;
@@ -54,6 +56,9 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
   const [parties, setParties] = React.useState<EmailProjectPartiesWorkflowEntDto[]>([]);
   // multiRecipient(WF9):被移除(排除发送)的参与方索引;仅保留者提交 sendEmail:true。
   const [excluded, setExcluded] = React.useState<Set<number>>(new Set());
+  // WF8:Kopier til prosjektleder → 发信时带 projectLeaderEmailTo。
+  const [ccProjectLeader, setCcProjectLeader] = React.useState(false);
+  const [projectLeaderEmailTo, setProjectLeaderEmailTo] = React.useState('');
   // 无预览步骤直接视为已加载;组件按 step.key 重挂载,故初值即等价于旧的进入时重置。
   const [loaded, setLoaded] = React.useState(!step.preview);
 
@@ -70,6 +75,8 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
         setEmailContent(pw?.emailContent ?? '');
         setParties(pw?.emailProjectParties?.emailProjectPartiesWorkflowList ?? []);
         setExcluded(new Set());
+        setProjectLeaderEmailTo(pw?.projectLeaderEmailTo ?? '');
+        setCcProjectLeader(false);
         setLoaded(true);
       },
       onError: () => setLoaded(true),
@@ -125,6 +132,9 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
       emailSubject,
       emailContent,
     };
+    if (step.projectLeaderCc && ccProjectLeader && projectLeaderEmailTo) {
+      extra.projectLeaderEmailTo = projectLeaderEmailTo;
+    }
     if (useSend) sendMut.mutate(extra as ProjectWorkflowDto);
     else execMut.mutate(extra as ProjectWorkflowDto);
   }
@@ -135,8 +145,27 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
 
   return (
     <div className="space-y-4">
+      {step.projectLeader && (
+        <ProjectLeaderSection projectId={projectId} disabled={disabled} />
+      )}
+
       {!isMulti ? (
         <>
+          {step.projectLeaderCc && (
+            <label className="flex items-center justify-end gap-2 text-sm">
+              <Checkbox
+                checked={ccProjectLeader}
+                onCheckedChange={(v) => setCcProjectLeader(v === true)}
+                disabled={disabled || !projectLeaderEmailTo}
+              />
+              {t('workflow.leader.copyToLeader')}
+              {!projectLeaderEmailTo ? (
+                <span className="text-muted-foreground text-xs">
+                  ({t('workflow.leader.noLeaderEmail')})
+                </span>
+              ) : null}
+            </label>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="wf-email-from">{t('workflow.panel.from')}</Label>

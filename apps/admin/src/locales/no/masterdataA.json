@@ -30,13 +30,24 @@
       "confirmPrefix": "Er du sikker på at du vil slette",
       "confirmSuffix": "? Denne handlingen kan ikke angres."
     },
+    "bulk": {
+      "selected": "{{count}} valgt",
+      "clear": "Fjern valg",
+      "selectAll": "Velg alle",
+      "selectRow": "Velg rad"
+    },
+    "bulkDeleteDialog": {
+      "title": "Slette {{count}} kontakter?",
+      "description": "Er du sikker på at du vil slette {{count}} kontakter? Denne handlingen kan ikke angres."
+    },
     "toast": {
       "created": "Kontakt opprettet",
       "createError": "Kunne ikke opprette kontakt",
       "updated": "Kontakt oppdatert",
       "updateError": "Kunne ikke oppdatere kontakt",
       "deleted": "Kontakt slettet",
-      "deleteBlocked": "Kontakten kan ikke slettes"
+      "deleteBlocked": "Kontakten kan ikke slettes",
+      "bulkDeleted": "{{count}} kontakter slettet"
     },
     "validation": {
       "nameRequired": "Navn er påkrevd",

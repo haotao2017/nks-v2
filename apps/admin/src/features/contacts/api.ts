@@ -112,3 +112,30 @@ export function useDeleteContact() {
     },
   });
 }
+
+/** 批量删除联系人(逐个调用 DeleteContact;任一失败则抛错中止后续)。 */
+export function useBulkDeleteContacts() {
+  const { t } = useTranslation();
+  return useApiMutation<{ deleted: number }, number[]>({
+    mutationFn: async (ids) => {
+      let deleted = 0;
+      for (const contactId of ids) {
+        const res = await getApiClient().delete<DeleteContactResponseDto>(
+          endpoints.contact.delete.path,
+          { params: { contactId } },
+        );
+        if (res?.success === false) {
+          throw new Error(res.message || t('contacts.toast.deleteBlocked'));
+        }
+        deleted += 1;
+      }
+      return { deleted };
+    },
+    invalidateKeys: [contactKeys.list()],
+    successMessage: false,
+    errorMessage: false,
+    onSuccess: (data) => {
+      toast.success(t('contacts.toast.bulkDeleted', { count: data.deleted }));
+    },
+  });
+}

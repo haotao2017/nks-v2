@@ -216,8 +216,12 @@ export function useExecuteStepMultipart(
       if (files?.length) {
         if (step.multiFile) {
           for (const f of files) form.append('files', f);
-        } else {
+        } else if (files.length === 1) {
           form.append('file', files[0]);
+        } else {
+          // Ansvarsrett e-post tab: flere vedlegg → file / file0…(Spring binder `file`)
+          form.append('file', files[0]);
+          for (let i = 1; i < files.length; i++) form.append(`file${i}`, files[i]);
         }
       }
       const res = await getApiClient().postForm<RequestResponse>(endpoint.path, form);

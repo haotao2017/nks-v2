@@ -49,17 +49,24 @@ import { DateInspectorStepPanel } from './date-inspector-step-panel';
 import { InvoiceStepPanel } from './invoice-step-panel';
 import { PdfStepPanel } from './pdf-step-panel';
 import { SimpleStepPanel } from './simple-step-panel';
+import { InspectReportStepPanel } from './inspect-report-step-panel';
+import { Wf2StepOnePanel } from './wf2-step-panel';
+
+/** Workflow 2(UK lufttetthet)类别 ID。 */
+export const WORKFLOW_CATEGORY_LUFTTETHET = 2;
 
 /** 按 type 分派到对应面板。disabled=true 为只读(Done 项)。 */
 function StepPanel({
   projectId,
   project,
   step,
+  serviceWorkflowCategoryId,
   disabled,
 }: {
   projectId: number;
   project: ProjectDto;
   step: WorkflowStepDef;
+  serviceWorkflowCategoryId?: number;
   disabled?: boolean;
 }) {
   switch (step.type) {
@@ -73,6 +80,15 @@ function StepPanel({
       return <InvoiceStepPanel projectId={projectId} project={project} step={step} disabled={disabled} />;
     case 'pdf':
       return <PdfStepPanel projectId={projectId} step={step} disabled={disabled} />;
+    case 'inspect-report':
+      return (
+        <InspectReportStepPanel
+          projectId={projectId}
+          step={step}
+          serviceWorkflowCategoryId={serviceWorkflowCategoryId}
+          disabled={disabled}
+        />
+      );
     case 'simple':
       return <SimpleStepPanel projectId={projectId} step={step} disabled={disabled} />;
     default:
@@ -92,6 +108,7 @@ export function ProjectWorkflow({
   const projectId = Number(project.id);
 
   const workflowCategoryId = instance.workflowCategoryId ?? WORKFLOW_ID;
+  const isWf2 = workflowCategoryId === WORKFLOW_CATEGORY_LUFTTETHET;
 
   const progress = useWorkflowProgress(projectId, workflowCategoryId);
 
@@ -143,65 +160,79 @@ export function ProjectWorkflow({
           {t('workflow.card.title')}
         </CardTitle>
         <CardDescription className="mt-1">
-          {progress.isPending
-            ? t('workflow.card.loading')
-            : t('workflow.card.progress', {
-                done: doneRows.length,
-                total: visibleSteps.length,
-                projectId,
-              })}
+          {isWf2
+            ? t('workflow.wf2.cardHint')
+            : progress.isPending
+              ? t('workflow.card.loading')
+              : t('workflow.card.progress', {
+                  done: doneRows.length,
+                  total: visibleSteps.length,
+                  projectId,
+                })}
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        {progress.isError && (
-          <p className="text-destructive mb-4 flex items-center gap-2 text-sm">
-            <AlertCircle className="size-4" /> {t('workflow.card.loadError')}
-          </p>
-        )}
-
-        {progress.isPending ? (
-          <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
-            <Loader2 className="size-4 animate-spin" /> {t('workflow.card.loadingShort')}
-          </div>
+        {isWf2 ? (
+          <Wf2StepOnePanel projectId={projectId} />
         ) : (
-          <Tabs defaultValue="todo">
-            <TabsList>
-              <TabsTrigger value="todo">
-                {t('workflow.tabs.todo')}
-                <Badge variant="secondary" className="ml-2">
-                  {todoRows.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="done">
-                {t('workflow.tabs.done')}
-                <Badge variant="secondary" className="ml-2">
-                  {doneRows.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
+          <>
+            {progress.isError && (
+              <p className="text-destructive mb-4 flex items-center gap-2 text-sm">
+                <AlertCircle className="size-4" /> {t('workflow.card.loadError')}
+              </p>
+            )}
 
-            <TabsContent value="todo" className="mt-4">
-              <TodoList
-                projectId={projectId}
-                rows={todoRows}
-                onOpen={openStep}
-                emptyLabel={t('workflow.tabs.todoEmpty')}
-              />
-            </TabsContent>
-            <TabsContent value="done" className="mt-4">
-              <DoneList
-                rows={doneRows}
-                onOpen={openStep}
-                emptyLabel={t('workflow.tabs.doneEmpty')}
-              />
-            </TabsContent>
-          </Tabs>
+            {progress.isPending ? (
+              <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
+                <Loader2 className="size-4 animate-spin" /> {t('workflow.card.loadingShort')}
+              </div>
+            ) : (
+              <Tabs defaultValue="todo">
+                <TabsList>
+                  <TabsTrigger value="todo">
+                    {t('workflow.tabs.todo')}
+                    <Badge variant="secondary" className="ml-2">
+                      {todoRows.length}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="done">
+                    {t('workflow.tabs.done')}
+                    <Badge variant="secondary" className="ml-2">
+                      {doneRows.length}
+                    </Badge>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="todo" className="mt-4">
+                  <TodoList
+                    projectId={projectId}
+                    rows={todoRows}
+                    onOpen={openStep}
+                    emptyLabel={t('workflow.tabs.todoEmpty')}
+                  />
+                </TabsContent>
+                <TabsContent value="done" className="mt-4">
+                  <DoneList
+                    rows={doneRows}
+                    onOpen={openStep}
+                    emptyLabel={t('workflow.tabs.doneEmpty')}
+                  />
+                </TabsContent>
+              </Tabs>
+            )}
+          </>
         )}
       </CardContent>
 
       <Dialog open={dialog !== null} onOpenChange={(o) => !o && closeDialog()}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent
+          className={
+            dialog?.step.type === 'inspect-report'
+              ? 'max-h-[90vh] overflow-y-auto sm:max-w-4xl'
+              : 'max-h-[85vh] overflow-y-auto sm:max-w-2xl'
+          }
+        >
           {dialog && (
             <>
               <DialogHeader>
@@ -222,6 +253,7 @@ export function ProjectWorkflow({
                 projectId={projectId}
                 project={project}
                 step={dialog.step}
+                serviceWorkflowCategoryId={instance.instanceId}
                 disabled={dialog.mode === 'view'}
               />
             </>

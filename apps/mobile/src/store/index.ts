@@ -12,6 +12,7 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import {
   persistReducer,
   persistStore,
+  createTransform,
   FLUSH,
   REHYDRATE,
   PAUSE,
@@ -21,7 +22,10 @@ import {
 } from 'redux-persist';
 
 import authReducer from './auth-slice';
-import activeProjectReducer from './active-project-slice';
+import activeProjectReducer, {
+  type LocalProjectDetail,
+} from './active-project-slice';
+import { normalizeChecklistStatus } from '@/features/active-project/status';
 
 const authPersistConfig = {
   key: 'auth',
@@ -29,12 +33,32 @@ const authPersistConfig = {
   whitelist: ['user'],
 };
 
+/** 冷启动时把历史 Avvik/IA 别名归一为 Dev/NA,避免选中态丢失。 */
+const detailStatusTransform = createTransform(
+  (inboundState: LocalProjectDetail | null) => inboundState,
+  (outboundState: LocalProjectDetail | null) => {
+    if (!outboundState) return outboundState;
+    return {
+      ...outboundState,
+      checklists: outboundState.checklists.map((cl) => ({
+        ...cl,
+        checkItems: cl.checkItems.map((it) => ({
+          ...it,
+          status: normalizeChecklistStatus(it.status),
+        })),
+      })),
+    };
+  },
+  { whitelist: ['detail'] },
+);
+
 // activeProject:持久化「当前打开项目」的本地可编辑副本(离线可用、冷启动即时渲染)。
 // 只落 projectId + detail(含各同步标志);status/error 为瞬态不持久化。
 const activeProjectPersistConfig = {
   key: 'activeProject',
   storage: AsyncStorage,
   whitelist: ['projectId', 'detail'],
+  transforms: [detailStatusTransform],
 };
 
 const rootReducer = combineReducers({

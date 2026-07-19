@@ -23,22 +23,21 @@ import { endpoints } from '@nks/api-types/endpoints';
 
 import { getApiClient } from '@/lib/api';
 import type {
-  ChecklistStatus,
   LocalChecklist,
   LocalProjectDetail,
 } from '@/store/active-project-slice';
 
 import { isLocalImageUri, uriToFormDataPart } from './image';
+import {
+  normalizeChecklistStatus,
+  type ChecklistStatus,
+} from './status';
 
 /** 列表项种子(用于补 inspectionDate / projectName,detail 端点不返回)。 */
 export type ProjectSeed = Pick<
   Login,
   'projectID' | 'projectName' | 'projectDetail' | 'inspectionDate'
 >;
-
-function normalizeStatus(s?: string): ChecklistStatus | null {
-  return s === 'OK' || s === 'Avvik' || s === 'IA' ? s : null;
-}
 
 /**
  * 打开项目:拉 ProjectDetail + 每张清单的 ChecklistItems,组装本地可编辑副本。
@@ -71,7 +70,7 @@ export async function assembleActiveProject(
         checkItems: items.map((it) => ({
           checklistItemId: String(it.checklistItemID ?? ''),
           question: it.question ?? '',
-          status: normalizeStatus(it.status),
+          status: normalizeChecklistStatus(it.status),
           comment: it.comment ?? null,
           itemImageUrls: it.itemImageUrls ?? [],
           updated: true,

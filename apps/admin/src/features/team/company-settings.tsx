@@ -39,6 +39,7 @@ import {
   useCompanyFolder,
   useUpdateCompanyFolder,
 } from './api';
+import { usePostCodes } from '@/features/misc/api';
 
 /* -------------------------------------------------------------------------- */
 /* 公司资料表单                                                               */
@@ -51,6 +52,7 @@ const makeCompanySchema = (t: TFunction) =>
   address: z.string().optional(),
   ownerName: z.string().optional(),
   postCode: z.string().optional(),
+  postSted: z.string().optional(),
   telephone: z.string().optional(),
   mobile: z.string().optional(),
   emailAddress: z.string().optional(),
@@ -68,6 +70,7 @@ type CompanyFormValues = z.infer<ReturnType<typeof makeCompanySchema>>;
 function CompanyProfileForm({ companyId }: { companyId?: number }) {
   const { t } = useTranslation();
   const { data: profile, isLoading } = useCompanyProfile(companyId);
+  const { data: postCodes = [] } = usePostCodes();
   const updateMutation = useUpdateCompanyProfile(companyId);
 
   const companySchema = React.useMemo(() => makeCompanySchema(t), [t]);
@@ -80,6 +83,7 @@ function CompanyProfileForm({ companyId }: { companyId?: number }) {
       address: '',
       ownerName: '',
       postCode: '',
+      postSted: '',
       telephone: '',
       mobile: '',
       emailAddress: '',
@@ -93,14 +97,30 @@ function CompanyProfileForm({ companyId }: { companyId?: number }) {
     },
   });
 
+  const watchedPostCode = form.watch('postCode');
+
+  /** 邮编 4 位时本地匹配回填 postSted(后端 CompanyProfile 无独立 postSted 字段,仅展示)。 */
+  React.useEffect(() => {
+    const code = (watchedPostCode ?? '').trim();
+    if (code.length !== 4 || postCodes.length === 0) return;
+    const found = postCodes.find((p) => p.postnummer === code);
+    form.setValue('postSted', found?.poststed ?? '', { shouldValidate: false });
+  }, [watchedPostCode, postCodes, form]);
+
   React.useEffect(() => {
     if (profile) {
+      const code = profile.postCode != null ? String(profile.postCode) : '';
+      const found =
+        code.length === 4
+          ? postCodes.find((p) => p.postnummer === code)
+          : undefined;
       form.reset({
         companyName: profile.companyName ?? '',
         organizationalNumber: profile.organizationalNumber ?? '',
         address: profile.address ?? '',
         ownerName: profile.ownerName ?? '',
-        postCode: profile.postCode != null ? String(profile.postCode) : '',
+        postCode: code,
+        postSted: found?.poststed ?? '',
         telephone: profile.telephone ?? '',
         mobile: profile.mobile ?? '',
         emailAddress: profile.emailAddress ?? '',
@@ -113,7 +133,7 @@ function CompanyProfileForm({ companyId }: { companyId?: number }) {
         compEmailDisplayName: profile.compEmailDisplayName ?? '',
       });
     }
-  }, [profile, form]);
+  }, [profile, form, postCodes]);
 
   const onSubmit = form.handleSubmit((values) => {
     if (!profile) return;
@@ -183,6 +203,19 @@ function CompanyProfileForm({ companyId }: { companyId?: number }) {
             {textField('organizationalNumber', t('team.company.fields.orgNumber'))}
             {textField('ownerName', t('team.company.fields.owner'))}
             {textField('postCode', t('team.company.fields.postCode'))}
+            <FormField
+              control={form.control}
+              name="postSted"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('team.company.fields.postSted')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} disabled readOnly />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="sm:col-span-2">
               {textField('address', t('team.company.fields.address'))}
             </div>

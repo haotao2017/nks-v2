@@ -54,7 +54,7 @@
       "epost-kommende-kontroll": "Notify parties of the upcoming inspection — or transfer without sending.",
       "innhenting-av-dokumentasjon": "Send a documentation request per party — or transfer without sending.",
       "kontroll-dato": "Set the inspection date and assign an inspector — or transfer without inspection.",
-      "gjennomgaa-rapport": "Approve the reviewed inspection report.",
+      "gjennomgaa-rapport": "Review deviations and checklists. Send selected deviations to parties, or approve when none remain.",
       "send-rapport-dialog": "Send report/deviations to the party (WF12).",
       "send-faktura": "Trigger the invoice in Tripletex.",
       "kontrollerklaering": "Generate the control declaration (PDF) and send it to the parties.",
@@ -79,6 +79,7 @@
       "noRecipients": "No recipients selected. Add at least one to send.",
       "uploadFilesLabel": "Upload files",
       "uploadFileLabel": "Upload file",
+      "attachmentsLabel": "Attachments",
       "templateAttachment": "View template attachment (PDF)",
       "removeFile": "Remove file",
       "skipInspection": "Skip inspection",
@@ -108,6 +109,52 @@
         "plus3": "+3 mo",
         "plus6": "+6 mo",
         "plus9": "+9 mo"
+      }
+    },
+    "inspect": {
+      "loading": "Loading inspection data…",
+      "loadError": "Could not load inspection data.",
+      "tabDeviations": "Deviations",
+      "tabChecklists": "Checklists",
+      "noDeviations": "No deviations found.",
+      "noChecklists": "No checklists on this project.",
+      "unnamedChecklist": "Untitled",
+      "selectAll": "Select all",
+      "sendSelected": "Send selected",
+      "addToEmail": "Add to email",
+      "status": "Status",
+      "comment": "Comment",
+      "editItem": "Edit checklist item",
+      "statusOk": "Approved",
+      "statusDev": "Deviation",
+      "statusNa": "N/A",
+      "toast": {
+        "itemSaved": "Checklist item saved",
+        "imageDeleted": "Image deleted"
+      }
+    },
+    "wf2": {
+      "cardHint": "UK airtightness — enter measured values and deviations.",
+      "description": "Register UK airtightness and any deviations for this service.",
+      "loading": "Loading airtightness data…",
+      "loadError": "Could not load airtightness data.",
+      "lufttetthet": "UK airtightness",
+      "avvik": "Deviation",
+      "avvikSendtKommune": "Open deviations sent to municipality",
+      "yes": "Yes",
+      "no": "No",
+      "toast": {
+        "saved": "Airtightness saved"
+      }
+    },
+    "leader": {
+      "label": "Project leader",
+      "loading": "Loading project leader…",
+      "save": "Save project leader",
+      "copyToLeader": "Copy to project leader",
+      "noLeaderEmail": "no email in template",
+      "toast": {
+        "saved": "Project leader saved"
       }
     },
     "actions": {

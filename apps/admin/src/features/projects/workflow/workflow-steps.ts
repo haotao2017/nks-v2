@@ -1,16 +1,17 @@
 /**
  * WORKFLOW_STEPS —— 项目工作流(Workflow 1)的「数据驱动步骤注册表」。
  *
- * 设计:后端有 15 个执行步骤(ProjectWFOne..ProjectWFFifteen),UI 展示为旧 admin 的 16 步。
+ * 设计:后端有 15 个执行步骤(ProjectWFOne..ProjectWFFifteen),UI 与旧 admin 对齐为 15 步
+ * (偏差发送合入 gjennomgå;旧端从未挂 ProjectWFTwelve 独立步)。
  * 每步声明 { seq, key, titleKey, descriptionKey, type, workflowId, workflowStepId, endpoints, flags }。
  * titleKey/descriptionKey 为 i18n key（workflow.steps.* / workflow.stepDescriptions.*），由渲染组件 t()。
  * project-workflow.tsx 的竖向 stepper 遍历本数组,按 type 选一个通用面板组件渲染,
- * 避免为 16 个几乎重复的步骤各写一个组件。
+ * 避免为几乎重复的步骤各写一个组件。
  *
  * workflowStepId 的取值来自旧 admin 各步组件里「硬编码」的后端步骤号(与 UI 序号有偏移):
  *  - S1..S3 与后端 1:1;S5 起因为旧 UI 无 S4,后端号 = UI 号 - 1;
- *  - 末尾三步(faktura/kontrollerklæring/sluttrapport/utført)顺序被打乱:
- *    S13→后端15(发票)、S14→后端13、S15→后端14、S16→后端14(仅 stepId=18 区分)。
+ *  - 末尾(faktura/kontrollerklæring/sluttrapport/utført)顺序被打乱:
+ *    faktura→后端15、kontrollerklæring→后端13、sluttrapport/utført→后端14(utført 用 stepId=18)。
  *
  * 请求体统一用 camelCase(对齐 @nks/api-types 的 ProjectWorkflowDto 字段名 = 后端 Java 字段名),
  * 外层包装键为 PascalCase `ProjectWorkflow`(后端 @JsonProperty)。见 workflow-api.ts。
@@ -24,6 +25,7 @@ export type WorkflowStepType =
   | 'date-inspector' // 定检验日期 + 指派检验员(WF10)
   | 'invoice' // 触发 Tripletex 发票(WF15)
   | 'pdf' // 生成/预览 PDF 报告 + 邮件发送(WF13/14,multipart)
+  | 'inspect-report' // 审检验报告:偏差/清单/发第三方邮件/批准(WF11)
   | 'simple'; // 确认执行(可选日期字段)
 
 /** 端点描述符(来自 endpoints.projectWorkflow.* / endpoints.project.*)。 */
@@ -35,7 +37,7 @@ export interface EndpointDescriptor {
 }
 
 export interface WorkflowStepDef {
-  /** UI 展示序号(1..16)。 */
+  /** UI 展示序号(1..15)。 */
   seq: number;
   /** 稳定 key(用于选中态与 React key)。 */
   key: string;
@@ -63,9 +65,13 @@ export interface WorkflowStepDef {
   multiFile?: boolean;
   /** simple 步骤附带一个日期字段(contactCustomerDate)。仅 S8 påminnelse。 */
   dateField?: boolean;
+  /** 需要选择/保存项目负责人(SelectContact)。WF7/WF8。 */
+  projectLeader?: boolean;
+  /** email 步骤可选「Kopier til prosjektleder」→ projectLeaderEmailTo。仅 WF8。 */
+  projectLeaderCc?: boolean;
   /** email 步骤为「多收件人/按参与方」模式(emailProjectParties)。仅 S10。 */
   multiRecipient?: boolean;
-  /** simple 步骤执行时置 isApprovedInspReport=true。仅 S12 gjennomgå rapport。 */
+  /** inspect-report / simple 步骤执行时置 isApprovedInspReport=true。仅 S12 gjennomgå rapport。 */
   approve?: boolean;
 }
 
@@ -156,6 +162,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     execute: pw.wfSeven,
     transfer: pw.wfSeven,
     dateField: true,
+    projectLeader: true,
   },
   {
     seq: 8,
@@ -168,6 +175,8 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     preview: pw.getWFEightEmailFormated,
     sendEmail: pw.wfEightSendEmail,
     transfer: pw.wfEightTransfer,
+    projectLeader: true,
+    projectLeaderCc: true,
   },
   {
     seq: 9,
@@ -198,26 +207,17 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     key: 'gjennomgaa-rapport',
     titleKey: 'workflow.steps.gjennomgaa-rapport',
     descriptionKey: 'workflow.stepDescriptions.gjennomgaa-rapport',
-    type: 'simple',
+    type: 'inspect-report',
     workflowId: WORKFLOW_ID,
     workflowStepId: 11,
     execute: pw.wfElevenDone,
     transfer: pw.wfElevenDone,
     approve: true,
   },
+  // 注意:旧 admin 无独立「Send rapport」步;偏差邮件在 gjennomgå(S12)内用 InspThirParty。
+  // 旧前端从未调用 ProjectWFTwelve,故不在此注册 send-rapport-dialog。
   {
     seq: 12,
-    key: 'send-rapport-dialog',
-    titleKey: 'workflow.steps.send-rapport-dialog',
-    descriptionKey: 'workflow.stepDescriptions.send-rapport-dialog',
-    type: 'email',
-    workflowId: WORKFLOW_ID,
-    workflowStepId: 12,
-    preview: pw.getWFTwelveEmailFormated,
-    execute: pw.wfTwelve,
-  },
-  {
-    seq: 13,
     key: 'send-faktura',
     titleKey: 'workflow.steps.send-faktura',
     descriptionKey: 'workflow.stepDescriptions.send-faktura',
@@ -229,7 +229,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     transfer: pw.wfFifteen,
   },
   {
-    seq: 14,
+    seq: 13,
     key: 'kontrollerklaering',
     titleKey: 'workflow.steps.kontrollerklaering',
     descriptionKey: 'workflow.stepDescriptions.kontrollerklaering',
@@ -240,7 +240,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     execute: pw.wfThirteen, // multipart, felt: file (én, valgfri)
   },
   {
-    seq: 15,
+    seq: 14,
     key: 'sluttrapport',
     titleKey: 'workflow.steps.sluttrapport',
     descriptionKey: 'workflow.stepDescriptions.sluttrapport',
@@ -251,7 +251,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     execute: pw.wfFourteen, // multipart, felt: file (én, valgfri)
   },
   {
-    seq: 16,
+    seq: 15,
     key: 'utfort',
     titleKey: 'workflow.steps.utfort',
     descriptionKey: 'workflow.stepDescriptions.utfort',

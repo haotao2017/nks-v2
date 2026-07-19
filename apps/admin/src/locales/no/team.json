@@ -104,6 +104,7 @@
         "orgNumber": "Organisasjonsnummer",
         "owner": "Eier",
         "postCode": "Postnummer",
+        "postSted": "Poststed",
         "address": "Adresse",
         "telephone": "Telefon",
         "mobile": "Mobil"
