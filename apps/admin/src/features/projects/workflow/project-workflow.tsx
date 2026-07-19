@@ -53,10 +53,12 @@ import { SimpleStepPanel } from './simple-step-panel';
 /** 按 type 分派到对应面板。disabled=true 为只读(Done 项)。 */
 function StepPanel({
   projectId,
+  project,
   step,
   disabled,
 }: {
   projectId: number;
+  project: ProjectDto;
   step: WorkflowStepDef;
   disabled?: boolean;
 }) {
@@ -68,7 +70,7 @@ function StepPanel({
     case 'date-inspector':
       return <DateInspectorStepPanel projectId={projectId} step={step} disabled={disabled} />;
     case 'invoice':
-      return <InvoiceStepPanel projectId={projectId} step={step} disabled={disabled} />;
+      return <InvoiceStepPanel projectId={projectId} project={project} step={step} disabled={disabled} />;
     case 'pdf':
       return <PdfStepPanel projectId={projectId} step={step} disabled={disabled} />;
     case 'simple':
@@ -218,6 +220,7 @@ export function ProjectWorkflow({
               <StepPanel
                 key={`${dialog.step.key}-${dialog.mode}`}
                 projectId={projectId}
+                project={project}
                 step={dialog.step}
                 disabled={dialog.mode === 'view'}
               />

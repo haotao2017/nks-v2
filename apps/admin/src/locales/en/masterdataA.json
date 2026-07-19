@@ -40,7 +40,9 @@
     },
     "validation": {
       "nameRequired": "Name is required",
-      "emailInvalid": "Invalid email address"
+      "emailInvalid": "Invalid email address",
+      "phoneRequired": "Phone number is required",
+      "emailRequired": "Email is required"
     }
   },
   "services": {
@@ -75,7 +77,20 @@
       "categoriesLabel": "Workflow categories",
       "categoriesEmpty": "No linked categories.",
       "categoryIdPlaceholder": "Category ID",
-      "categoryRemove": "Remove category"
+      "categoryRemove": "Remove category",
+      "serviceType": "Tiltaksklasse",
+      "serviceTypeOption1": "Tiltaksklasse 1",
+      "serviceTypeOption2": "Tiltaksklasse 2",
+      "serviceTypeNone": "None",
+      "checklistTemplate": "Checklist template",
+      "checklistTemplatePlaceholder": "Select template",
+      "checklistTemplateNone": "None",
+      "categoriesPlaceholder": "Select categories",
+      "categoriesSearch": "Search category…",
+      "categoriesNoResults": "No categories found.",
+      "chargedAsLabel": "Pricing of service",
+      "chargedAsPerUnit": "This service is charged per unit",
+      "chargedAsFixed": "This service has a fixed price"
     },
     "delete": {
       "title": "Delete service?",
@@ -91,7 +106,8 @@
       "deleteBlocked": "The service cannot be deleted"
     },
     "validation": {
-      "nameRequired": "Name is required"
+      "nameRequired": "Name is required",
+      "descriptionRequired": "Description is required"
     }
   },
   "partyTypes": {

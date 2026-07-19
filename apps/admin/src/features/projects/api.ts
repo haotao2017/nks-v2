@@ -247,6 +247,70 @@ export function useArchiveProject() {
 }
 
 /**
+ * 批量归档 / 取消归档。对齐旧系统 archiveProjects:逐个调用 ArchiveProject 端点(Promise.all),
+ * 全部完成后单条汇总 toast + 一次性失效重拉。variables: { projectIds, isArchive }。
+ */
+export function useBulkArchiveProjects() {
+  const { t } = useTranslation();
+  return useApiMutation<number, { projectIds: number[]; isArchive: boolean }>({
+    mutationFn: async ({ projectIds, isArchive }) => {
+      await Promise.all(
+        projectIds.map((projectId) =>
+          getApiClient().get<DeleteProjectResponseDto>(endpoints.project.archive.path, {
+            params: { ProjectID: projectId, isArchive },
+          }),
+        ),
+      );
+      return projectIds.length;
+    },
+    invalidateKeys: [
+      projectKeys.list('active'),
+      projectKeys.list('archived'),
+      projectKeys.count(),
+    ],
+    successMessage: false,
+    errorMessage: t('projects.toast.actionFailed'),
+    onSuccess: (count, { isArchive }) => {
+      toast.success(
+        t(isArchive ? 'projects.toast.archivedMany' : 'projects.toast.unarchivedMany', { count }),
+      );
+    },
+  });
+}
+
+/**
+ * 批量软删 / 恢复。对齐旧系统 removeProjects:逐个调用 DeleteProject 端点(Promise.all),
+ * 全部完成后单条汇总 toast + 一次性失效重拉。variables: { projectIds, isDelete }。
+ */
+export function useBulkDeleteProjects() {
+  const { t } = useTranslation();
+  return useApiMutation<number, { projectIds: number[]; isDelete: boolean }>({
+    mutationFn: async ({ projectIds, isDelete }) => {
+      await Promise.all(
+        projectIds.map((projectId) =>
+          getApiClient().delete<DeleteProjectResponseDto>(endpoints.project.delete.path, {
+            params: { ProjectID: projectId, isDelete },
+          }),
+        ),
+      );
+      return projectIds.length;
+    },
+    invalidateKeys: [
+      projectKeys.list('active'),
+      projectKeys.list('deleted'),
+      projectKeys.count(),
+    ],
+    successMessage: false,
+    errorMessage: t('projects.toast.actionFailed'),
+    onSuccess: (count, { isDelete }) => {
+      toast.success(
+        t(isDelete ? 'projects.toast.deletedMany' : 'projects.toast.restoredMany', { count }),
+      );
+    },
+  });
+}
+
+/**
  * 删除项目下已存在的某条服务。参数 ProjectID + ProjectServiceID(PascalCase,对齐旧系统 deleteServcie)。
  * 端点 DELETE /Project/DeleteProjectService。仅在编辑模式删除「有 id」的服务行时调用;
  * 新增行(无 id)由 UpdateProject 一并保存,不走此接口。

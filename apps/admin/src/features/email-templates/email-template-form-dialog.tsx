@@ -66,6 +66,7 @@ export function EmailTemplateFormDialog({
   const { data: hashtags = [], isLoading: hashtagsLoading } = useEmailHashtags();
 
   const [templateHtml, setTemplateHtml] = React.useState('');
+  const [htmlError, setHtmlError] = React.useState<string | null>(null);
 
   const templateSchema = React.useMemo(
     () =>
@@ -84,7 +85,10 @@ export function EmailTemplateFormDialog({
   const [prevOpen, setPrevOpen] = React.useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) setTemplateHtml(emailTemplate?.template ?? '');
+    if (open) {
+      setTemplateHtml(emailTemplate?.template ?? '');
+      setHtmlError(null);
+    }
   }
 
   // title 走 react-hook-form:reset 是 RHF 内部同步,放 effect(非本地 state 的级联 setState)。
@@ -93,6 +97,17 @@ export function EmailTemplateFormDialog({
   }, [open, emailTemplate, form]);
 
   const onSubmit = form.handleSubmit((values) => {
+    // 富文本正文必填:去掉 HTML 标签与 &nbsp; 后判空(RichTextEditor 空内容仍带标签)。
+    const plainText = templateHtml
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .trim();
+    if (!plainText) {
+      setHtmlError(t('emailTemplates.validation.contentRequired'));
+      return;
+    }
+    setHtmlError(null);
+
     const payload: EmailTemplateDto = {
       ...(emailTemplate?.id ? { id: emailTemplate.id } : {}),
       title: values.title,
@@ -139,11 +154,15 @@ export function EmailTemplateFormDialog({
               <Label>{t('emailTemplates.form.content')}</Label>
               <RichTextEditor
                 value={templateHtml}
-                onChange={setTemplateHtml}
+                onChange={(html) => {
+                  setTemplateHtml(html);
+                  if (htmlError) setHtmlError(null);
+                }}
                 hashtags={hashtags}
                 hashtagsLoading={hashtagsLoading}
                 disabled={isPending}
               />
+              {htmlError && <p className="text-destructive text-sm font-medium">{htmlError}</p>}
             </div>
 
             <DialogFooter>

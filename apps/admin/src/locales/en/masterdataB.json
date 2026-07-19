@@ -90,7 +90,8 @@
       "deleteBlocked": "The email template cannot be deleted"
     },
     "validation": {
-      "titleRequired": "Title is required"
+      "titleRequired": "Title is required",
+      "contentRequired": "Content is required"
     }
   },
   "workflowCategories": {
@@ -199,7 +200,8 @@
       "itemsLabel": "Checklist items",
       "itemsEmpty": "No checklist items yet. You can also add them later.",
       "itemPlaceholder": "Item {{index}}",
-      "itemRemove": "Remove"
+      "itemRemove": "Remove",
+      "useTemplate": "Use template"
     },
     "delete": {
       "title": "Delete checklist?",

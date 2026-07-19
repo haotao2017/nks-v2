@@ -45,6 +45,20 @@
       "title": "Slette prosjekt?",
       "description": "Vil du slette <strong>{{title}}</strong>? Prosjektet flyttes til slettede og kan gjenopprettes."
     },
+    "bulk": {
+      "selected": "{{count}} valgt",
+      "clear": "Fjern valg",
+      "selectAll": "Velg alle",
+      "selectRow": "Velg rad"
+    },
+    "bulkArchiveDialog": {
+      "title": "Arkivere {{count}} prosjekter?",
+      "description": "Vil du arkivere de {{count}} valgte prosjektene? Du kan gjenopprette dem fra arkivet senere."
+    },
+    "bulkDeleteDialog": {
+      "title": "Slette {{count}} prosjekter?",
+      "description": "Vil du slette de {{count}} valgte prosjektene? De flyttes til slettede og kan gjenopprettes."
+    },
     "tabs": {
       "steps": "Steg",
       "checklists": "Sjekklister",
@@ -96,6 +110,10 @@
       "unarchived": "Prosjekt gjenopprettet fra arkiv",
       "deleted": "Prosjekt slettet",
       "restored": "Prosjekt gjenopprettet",
+      "archivedMany": "{{count}} prosjekter arkivert",
+      "unarchivedMany": "{{count}} prosjekter gjenopprettet fra arkiv",
+      "deletedMany": "{{count}} prosjekter slettet",
+      "restoredMany": "{{count}} prosjekter gjenopprettet",
       "actionFailed": "Handlingen mislyktes"
     }
   },

@@ -163,18 +163,59 @@
     "dialog": {
       "title": "New company",
       "desc": "Create a new company in the system.",
+      "editTitle": "Edit company",
+      "editDesc": "Update the company details.",
       "companyName": "Company name",
       "orgNumber": "Organization number",
       "owner": "Owner",
       "address": "Address",
-      "email": "Email address"
+      "postCode": "Post code",
+      "telephone": "Telephone",
+      "mobile": "Mobile",
+      "email": "Email address",
+      "nameOnEmail": "Name on email address",
+      "senderEmail": "Sender email address",
+      "active": "Active",
+      "activeHint": "Inactive companies cannot log in or be used."
+    },
+    "rowActions": {
+      "createAdmin": "New administrator",
+      "folders": "Folder configuration"
+    },
+    "adminDialog": {
+      "title": "New administrator",
+      "desc": "Create an administrator user for {{company}}.",
+      "designation": "Designation",
+      "userName": "Username",
+      "password": "Password",
+      "validation": {
+        "userNameRequired": "Username is required",
+        "passwordRequired": "Password is required"
+      }
+    },
+    "folderDialog": {
+      "title": "Folder configuration",
+      "desc": "Configure the document folder for {{company}}.",
+      "folderName": "Folder name",
+      "folderPath": "Folder path",
+      "folderPathPlaceholder": "E.g. /foldername",
+      "validation": {
+        "folderNameRequired": "Folder name is required"
+      }
     },
     "validation": {
-      "companyNameRequired": "Company name is required"
+      "companyNameRequired": "Company name is required",
+      "postCodeNumber": "Post code must be a number"
     },
     "toast": {
       "created": "Company created",
       "createError": "Could not create company",
+      "updated": "Company updated",
+      "updateError": "Could not update company",
+      "adminCreated": "Administrator created",
+      "adminCreateError": "Could not create administrator",
+      "folderSaved": "Folder saved",
+      "folderSaveError": "Could not save folder",
       "bucketUpdated": "S3 bucket updated",
       "bucketUpdateError": "Could not update S3 bucket"
     }

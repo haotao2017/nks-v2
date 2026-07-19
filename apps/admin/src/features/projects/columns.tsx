@@ -4,13 +4,13 @@
  * Project 列表列定义 —— 工厂函数,按列表变体(active/archived/deleted)决定行操作。
  *
  * 行数据用共同的窄类型 ProjectRow 承接:活动列表是精简 ProjectListDto(仅 id/title/dated),
- * 归档/删除列表是全量 ProjectDto。缺失字段(address/projectStatus)回退 '—'。
+ * 归档/删除列表是全量 ProjectDto。列集合对齐旧系统三处统一:Title(Name)+ Dato(Created)+ 行操作。
+ * 活动列表端点不返回 address/projectStatus,故不再渲染这两列(旧系统亦如此)。
  */
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TFunction } from 'i18next';
 import { ArrowUpDown, MoreHorizontal, Archive, ArchiveRestore, Trash2, RotateCcw, ExternalLink } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -75,21 +75,6 @@ export function getProjectColumns(actions: ProjectColumnActions): ColumnDef<Proj
           {row.original.title || '—'}
         </button>
       ),
-    },
-    {
-      accessorKey: 'address',
-      header: t('projects.columns.address'),
-      cell: ({ row }) => row.original.address || '—',
-    },
-    {
-      accessorKey: 'projectStatus',
-      header: t('projects.columns.status'),
-      cell: ({ row }) =>
-        row.original.projectStatus ? (
-          <Badge variant="secondary">{row.original.projectStatus}</Badge>
-        ) : (
-          '—'
-        ),
     },
     {
       accessorKey: 'dated',

@@ -40,7 +40,9 @@
     },
     "validation": {
       "nameRequired": "Navn er påkrevd",
-      "emailInvalid": "Ugyldig e-postadresse"
+      "emailInvalid": "Ugyldig e-postadresse",
+      "phoneRequired": "Telefonnummer er påkrevd",
+      "emailRequired": "E-post er påkrevd"
     }
   },
   "services": {
@@ -75,7 +77,20 @@
       "categoriesLabel": "Arbeidsflytkategorier",
       "categoriesEmpty": "Ingen tilknyttede kategorier.",
       "categoryIdPlaceholder": "Kategori-ID",
-      "categoryRemove": "Fjern kategori"
+      "categoryRemove": "Fjern kategori",
+      "serviceType": "Tiltaksklasse",
+      "serviceTypeOption1": "Tiltaksklasse 1",
+      "serviceTypeOption2": "Tiltaksklasse 2",
+      "serviceTypeNone": "Ingen",
+      "checklistTemplate": "Sjekklistemal",
+      "checklistTemplatePlaceholder": "Velg mal",
+      "checklistTemplateNone": "Ingen",
+      "categoriesPlaceholder": "Velg kategorier",
+      "categoriesSearch": "Søk kategori…",
+      "categoriesNoResults": "Ingen kategorier funnet.",
+      "chargedAsLabel": "Prising av tjeneste",
+      "chargedAsPerUnit": "Denne tjenesten skal betales per enhet",
+      "chargedAsFixed": "Denne tjenesten har fastpris"
     },
     "delete": {
       "title": "Slette tjeneste?",
@@ -91,7 +106,8 @@
       "deleteBlocked": "Tjenesten kan ikke slettes"
     },
     "validation": {
-      "nameRequired": "Navn er påkrevd"
+      "nameRequired": "Navn er påkrevd",
+      "descriptionRequired": "Beskrivelse er påkrevd"
     }
   },
   "partyTypes": {

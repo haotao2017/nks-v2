@@ -98,11 +98,16 @@ export function ProjectOverview({ project }: { project: ProjectDto }) {
     return hit?.title || String(project.buildingSupplierId);
   }, [suppliers, project.buildingSupplierId]);
 
+  // 客户联系人对象(用于补公司名/电话/邮箱,对齐旧 ContactCard)。
+  const customer = React.useMemo(
+    () => (project.customerId == null ? undefined : contacts.find((c) => c.id === project.customerId)),
+    [contacts, project.customerId],
+  );
+
   const customerName = React.useMemo(() => {
     if (project.customerId == null) return '—';
-    const hit = contacts.find((c) => c.id === project.customerId);
-    return hit?.name || String(project.customerId);
-  }, [contacts, project.customerId]);
+    return customer?.name || String(project.customerId);
+  }, [customer, project.customerId]);
 
   const contactPersonName = React.useMemo(() => {
     if (project.contactPersonId == null) return '—';
@@ -231,6 +236,26 @@ export function ProjectOverview({ project }: { project: ProjectDto }) {
         <Section label={t('overviewPanel.customer')}>
           <div className="space-y-0.5 text-sm">
             <p>{customerName}</p>
+            {customer?.companyName ? (
+              <p className="text-muted-foreground">{customer.companyName}</p>
+            ) : null}
+            {customer?.contactNo ? (
+              <p>
+                <a href={`tel:${customer.contactNo}`} className="text-muted-foreground hover:underline">
+                  {customer.contactNo}
+                </a>
+              </p>
+            ) : null}
+            {customer?.email ? (
+              <p>
+                <a
+                  href={`mailto:${customer.email}`}
+                  className="text-muted-foreground hover:underline"
+                >
+                  {customer.email}
+                </a>
+              </p>
+            ) : null}
             <p className="text-muted-foreground">
               {t('overviewPanel.contactPerson')}: {contactPersonName}
             </p>
@@ -296,6 +321,9 @@ export function ProjectOverview({ project }: { project: ProjectDto }) {
                 <li key={p.id} className="space-y-0.5">
                   <p className="text-muted-foreground text-xs">{p.partyTypeName || '—'}</p>
                   <p>{p.partyName || '—'}</p>
+                  {p.contactNumber ? (
+                    <p className="text-muted-foreground text-xs">{p.contactNumber}</p>
+                  ) : null}
                   {p.email ? (
                     <p className="text-muted-foreground text-xs">{p.email}</p>
                   ) : null}

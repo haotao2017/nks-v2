@@ -43,8 +43,8 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 /** 校验消息随语言变化,故 schema 在组件内按 t 重建。 */
 type ContactFormValues = {
   name: string;
-  contactNo?: string;
-  email?: string;
+  contactNo: string;
+  email: string;
   companyName?: string;
 };
 
@@ -66,11 +66,12 @@ export function ContactFormDialog({ open, onOpenChange, contact }: ContactFormDi
     () =>
       z.object({
         name: z.string().trim().min(1, t('contacts.validation.nameRequired')),
-        contactNo: z.string().optional(),
+        contactNo: z.string().trim().min(1, t('contacts.validation.phoneRequired')),
         email: z
           .string()
-          .optional()
-          .refine((v) => !v || EMAIL_RE.test(v), t('contacts.validation.emailInvalid')),
+          .trim()
+          .min(1, t('contacts.validation.emailRequired'))
+          .refine((v) => EMAIL_RE.test(v), t('contacts.validation.emailInvalid')),
         companyName: z.string().optional(),
       }),
     [t],

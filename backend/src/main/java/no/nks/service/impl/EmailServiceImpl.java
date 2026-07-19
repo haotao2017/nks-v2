@@ -60,6 +60,10 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public boolean sendEmail(Integer companyId, String to, String subject, String content) {
+        return sendEmail(companyId, to, null, subject, content);
+    }
+
+    private boolean sendEmail(Integer companyId, String to, String cc, String subject, String content) {
         try {
             if (to == null || to.isBlank()) {
                 log.error("Unable to send email: recipient email address is empty");
@@ -73,6 +77,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(to);
+            applyCc(helper, cc);
             helper.setSubject(subject != null ? subject : "");
             helper.setText(content != null ? content : "", true); // true indicates HTML content
 
@@ -99,6 +104,10 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public boolean sendEmailWithAttachment(Integer companyId, String to, String subject, String content, MultipartFile file) {
+        return sendEmailWithAttachment(companyId, to, null, subject, content, file);
+    }
+
+    private boolean sendEmailWithAttachment(Integer companyId, String to, String cc, String subject, String content, MultipartFile file) {
         try {
             if (to == null || to.isBlank()) {
                 log.error("Unable to send email with attachment: recipient email address is empty");
@@ -111,6 +120,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(to);
+            applyCc(helper, cc);
             helper.setSubject(subject != null ? subject : "");
             helper.setText(content != null ? content : "", true); // true for HTML
             setFromAddress(helper, companyId);
@@ -138,6 +148,10 @@ public class EmailServiceImpl implements EmailService {
     }
 
     public boolean sendEmailWithAttachments(Integer companyId, String to, String subject, String content, List<MultipartFile> files) {
+        return sendEmailWithAttachments(companyId, to, null, subject, content, files);
+    }
+
+    private boolean sendEmailWithAttachments(Integer companyId, String to, String cc, String subject, String content, List<MultipartFile> files) {
         try {
             if (to == null || to.isBlank()) {
                 log.error("Unable to send email: recipient email address is empty");
@@ -151,6 +165,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(to);
+            applyCc(helper, cc);
             helper.setSubject(subject != null ? subject : "");
             helper.setText(content != null ? content : "", true); // true indicates HTML content
 
@@ -264,6 +279,22 @@ public class EmailServiceImpl implements EmailService {
     }
 
     /**
+     * 辅助方法：设置抄送(Cc)。cc 支持逗号/分号分隔的多个地址；为空则不设置。
+     */
+    private void applyCc(MimeMessageHelper helper, String cc) throws MessagingException {
+        if (cc == null || cc.isBlank()) {
+            return;
+        }
+        String[] ccAddresses = java.util.Arrays.stream(cc.split("[,;]"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+        if (ccAddresses.length > 0) {
+            helper.setCc(ccAddresses);
+        }
+    }
+
+    /**
      * 辅助方法：设置邮件发件人
      *
      * @param helper MimeMessageHelper实例
@@ -309,7 +340,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendEmailAndSaveHistoryAsync(ProjectWorkflowDto projectWorkflow, Integer companyId) {
         log.info("Asynchronously sending email and saving history for project: {}", projectWorkflow.getProjectId());
         try {
-            boolean emailSent = sendEmail(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent());
+            boolean emailSent = sendEmail(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getCc(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent());
             if (emailSent) {
                 saveEmailHistory(projectWorkflow);
                 log.info("Async email sent and history saved successfully for project: {}", projectWorkflow.getProjectId());
@@ -327,7 +358,7 @@ public class EmailServiceImpl implements EmailService {
         log.info("Asynchronously sending step 8 email for project: {}", projectWorkflow.getProjectId());
         try {
             // Send the primary email
-            boolean emailSent = sendEmail(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent());
+            boolean emailSent = sendEmail(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getCc(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent());
 
             // Also send to project leader if specified, replicating C# logic
             if (projectWorkflow.getProjectLeaderEmailTo() != null && !projectWorkflow.getProjectLeaderEmailTo().isEmpty()) {
@@ -366,7 +397,7 @@ public class EmailServiceImpl implements EmailService {
 
                     String emailContent = party.getContent().replace("@link", uploadLink);
 
-                    boolean emailSent = sendEmail(companyId, party.getEmailTo(), party.getTitle(), emailContent);
+                    boolean emailSent = sendEmail(companyId, party.getEmailTo(), projectWorkflow.getCc(), party.getTitle(), emailContent);
 
                     if (emailSent) {
                         // Create a specific DTO for this party's history
@@ -400,7 +431,7 @@ public class EmailServiceImpl implements EmailService {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
-    private boolean sendEmailWithByteArrayAttachment(Integer companyId, String to, String subject, String content, byte[] attachment, String attachmentName) {
+    private boolean sendEmailWithByteArrayAttachment(Integer companyId, String to, String cc, String subject, String content, byte[] attachment, String attachmentName) {
         try {
             if (to == null || to.isBlank()) {
                 log.error("Unable to send email with attachment: recipient email address is empty");
@@ -412,6 +443,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(to);
+            applyCc(helper, cc);
             helper.setSubject(subject != null ? subject : "");
             helper.setText(content != null ? content : "", true); // true for HTML
             setFromAddress(helper, companyId);
@@ -445,7 +477,7 @@ public class EmailServiceImpl implements EmailService {
 
             if (calendarFile != null) {
                 String fileName = "inspection_invite.ics";
-                boolean emailSent = sendEmailWithByteArrayAttachment(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent(), calendarFile, fileName);
+                boolean emailSent = sendEmailWithByteArrayAttachment(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getCc(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent(), calendarFile, fileName);
                 if (emailSent) {
                     projectWorkflow.setFileName(fileName);
                     saveEmailHistory(projectWorkflow);
@@ -464,7 +496,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendEmailWithAttachmentAndSaveHistoryAsync(ProjectWorkflowDto projectWorkflow, MultipartFile file, Integer companyId) {
         log.info("Asynchronously sending email with attachment for project ID: {}", projectWorkflow.getProjectId());
         try {
-            boolean emailSent = sendEmailWithAttachment(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent(), file);
+            boolean emailSent = sendEmailWithAttachment(companyId, projectWorkflow.getEmailTo(), projectWorkflow.getCc(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent(), file);
             if (emailSent) {
                 saveEmailHistory(projectWorkflow);
                 log.info("Successfully sent email with attachment and saved history for project ID: {}", projectWorkflow.getProjectId());

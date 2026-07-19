@@ -90,7 +90,8 @@
       "deleteBlocked": "E-postmalen kan ikke slettes"
     },
     "validation": {
-      "titleRequired": "Tittel er påkrevd"
+      "titleRequired": "Tittel er påkrevd",
+      "contentRequired": "Innhold er påkrevd"
     }
   },
   "workflowCategories": {
@@ -199,7 +200,8 @@
       "itemsLabel": "Sjekkpunkter",
       "itemsEmpty": "Ingen sjekkpunkter enda. Du kan også legge dem til senere.",
       "itemPlaceholder": "Sjekkpunkt {{index}}",
-      "itemRemove": "Fjern"
+      "itemRemove": "Fjern",
+      "useTemplate": "Bruk mal"
     },
     "delete": {
       "title": "Slette sjekkliste?",

@@ -10,11 +10,13 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type RowSelectionState,
   type SortingState,
 } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -38,6 +40,19 @@ export interface DataTableProps<TData, TValue> {
   emptyMessage?: string;
   /** Rows per page. Set to 0 to disable client pagination. */
   pageSize?: number;
+  /** Enable a leading checkbox column + select-all header for bulk actions. */
+  enableRowSelection?: boolean;
+  /** Stable row id used to preserve selection across sort/filter. */
+  getRowId?: (originalRow: TData, index: number) => string;
+  /** aria-label for the select-all header checkbox (i18n comes from the caller). */
+  selectAllAriaLabel?: string;
+  /** aria-label for the per-row checkbox. */
+  selectRowAriaLabel?: string;
+  /**
+   * Renders the bulk-actions toolbar when at least one row is selected.
+   * Receives the selected rows' original data and a `clearSelection` callback.
+   */
+  renderBulkActions?: (selectedRows: TData[], clearSelection: () => void) => React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -48,19 +63,59 @@ export function DataTable<TData, TValue>({
   searchPlaceholder,
   emptyMessage,
   pageSize = 10,
+  enableRowSelection = false,
+  getRowId,
+  selectAllAriaLabel,
+  selectRowAriaLabel,
+  renderBulkActions,
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
   const paginated = pageSize > 0;
 
+  // Prepend a checkbox column when selection is enabled. Memoized so the table
+  // isn't handed a fresh column array on every render.
+  const tableColumns = React.useMemo<ColumnDef<TData, TValue>[]>(() => {
+    if (!enableRowSelection) return columns;
+    const selectColumn: ColumnDef<TData, TValue> = {
+      id: 'select',
+      enableSorting: false,
+      header: ({ table: t2 }) => (
+        <Checkbox
+          checked={
+            t2.getIsAllPageRowsSelected()
+              ? true
+              : t2.getIsSomePageRowsSelected()
+                ? 'indeterminate'
+                : false
+          }
+          onCheckedChange={(value) => t2.toggleAllPageRowsSelected(value)}
+          aria-label={selectAllAriaLabel}
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(value)}
+          aria-label={selectRowAriaLabel}
+        />
+      ),
+    };
+    return [selectColumn, ...columns];
+  }, [columns, enableRowSelection, selectAllAriaLabel, selectRowAriaLabel]);
+
   const table = useReactTable({
     data,
-    columns,
-    state: { sorting, globalFilter },
+    columns: tableColumns,
+    state: { sorting, globalFilter, rowSelection },
+    enableRowSelection,
+    getRowId,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -77,10 +132,20 @@ export function DataTable<TData, TValue>({
       : 'includesString',
   });
 
-  const colCount = columns.length;
+  const colCount = tableColumns.length;
+
+  const selectedRows = enableRowSelection
+    ? table.getSelectedRowModel().rows.map((r) => r.original)
+    : [];
 
   return (
     <div className="space-y-4">
+      {enableRowSelection && renderBulkActions && selectedRows.length > 0 && (
+        <div className="bg-muted/50 flex items-center gap-2 rounded-md border px-3 py-2">
+          {renderBulkActions(selectedRows, () => table.resetRowSelection())}
+        </div>
+      )}
+
       {searchColumn && (
         <div className="relative max-w-sm">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />

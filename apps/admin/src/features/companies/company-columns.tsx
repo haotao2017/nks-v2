@@ -1,18 +1,39 @@
 'use client';
 
 /**
- * 公司列定义 —— 超级管理面板只读列表。字段取自 CompanyProfile(GetAllProfiles 返回)。
+ * 公司列定义 —— 超级管理面板列表。字段取自 CompanyProfile(GetAllProfiles 返回)。
+ * 行操作:编辑公司 / 新建管理员 / 文件夹配置。
  */
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TFunction } from 'i18next';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, FolderCog, MoreHorizontal, Pencil, UserPlus } from 'lucide-react';
 
 import type { CompanyProfile } from '@nks/api-types';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-export function getCompanyColumns(t: TFunction): ColumnDef<CompanyProfile>[] {
+export interface CompanyColumnActions {
+  onEdit: (company: CompanyProfile) => void;
+  onCreateAdmin: (company: CompanyProfile) => void;
+  onFolders: (company: CompanyProfile) => void;
+  t: TFunction;
+}
+
+export function getCompanyColumns({
+  onEdit,
+  onCreateAdmin,
+  onFolders,
+  t,
+}: CompanyColumnActions): ColumnDef<CompanyProfile>[] {
   return [
     {
       accessorKey: 'companyName',
@@ -62,6 +83,42 @@ export function getCompanyColumns(t: TFunction): ColumnDef<CompanyProfile>[] {
         ) : (
           <Badge variant="outline">{t('companies.badges.inactive')}</Badge>
         ),
+    },
+    {
+      id: 'actions',
+      header: () => <span className="sr-only">{t('common.actions')}</span>,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const company = row.original;
+        return (
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8">
+                  <MoreHorizontal className="size-4" />
+                  <span className="sr-only">{t('common.openMenu')}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onEdit(company)}>
+                  <Pencil className="size-4" />
+                  {t('common.edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onCreateAdmin(company)}>
+                  <UserPlus className="size-4" />
+                  {t('companies.rowActions.createAdmin')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onFolders(company)}>
+                  <FolderCog className="size-4" />
+                  {t('companies.rowActions.folders')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
     },
   ];
 }

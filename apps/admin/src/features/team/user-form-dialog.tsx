@@ -59,7 +59,7 @@ import { useCreateUser, useUpdateUser, USER_TYPE_OPTIONS } from './api';
 const makeUserSchema = (t: TFunction) =>
   z
     .object({
-      fullName: z.string().trim().min(1, t('team.users.validation.nameRequired')),
+      fullName: z.string().trim().optional(),
       userName: z.string().trim().min(1, t('team.users.validation.userNameRequired')),
       designation: z.string().optional(),
       contactId: z.string().optional(),

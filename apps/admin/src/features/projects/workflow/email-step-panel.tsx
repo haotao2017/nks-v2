@@ -11,7 +11,7 @@
  */
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Mail, Eye, Send, FastForward, Loader2 } from 'lucide-react';
+import { Mail, Eye, Send, FastForward, Loader2, X, Plus } from 'lucide-react';
 
 import type { EmailProjectPartiesWorkflowEntDto, ProjectWorkflowDto } from '@nks/api-types';
 
@@ -48,9 +48,12 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
 
   const [emailFrom, setEmailFrom] = React.useState('');
   const [emailTo, setEmailTo] = React.useState('');
+  const [cc, setCc] = React.useState('');
   const [emailSubject, setEmailSubject] = React.useState('');
   const [emailContent, setEmailContent] = React.useState('');
   const [parties, setParties] = React.useState<EmailProjectPartiesWorkflowEntDto[]>([]);
+  // multiRecipient(WF9):被移除(排除发送)的参与方索引;仅保留者提交 sendEmail:true。
+  const [excluded, setExcluded] = React.useState<Set<number>>(new Set());
   // 无预览步骤直接视为已加载;组件按 step.key 重挂载,故初值即等价于旧的进入时重置。
   const [loaded, setLoaded] = React.useState(!step.preview);
 
@@ -62,9 +65,11 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
       onSuccess: (pw?: ProjectWorkflowDto) => {
         setEmailFrom(pw?.emailFrom ?? '');
         setEmailTo(pw?.emailTo ?? '');
+        setCc(pw?.cc ?? '');
         setEmailSubject(pw?.emailSubject ?? '');
         setEmailContent(pw?.emailContent ?? '');
         setParties(pw?.emailProjectParties?.emailProjectPartiesWorkflowList ?? []);
+        setExcluded(new Set());
         setLoaded(true);
       },
       onError: () => setLoaded(true),
@@ -73,16 +78,32 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
   }, [projectId, step.key]);
 
   const isMulti = step.multiRecipient && parties.length > 0;
+  const keptCount = parties.length - excluded.size;
   const busy = sendMut.isPending || execMut.isPending || transferMut.isPending;
 
   function updateParty(idx: number, patch: Partial<EmailProjectPartiesWorkflowEntDto>) {
     setParties((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
   }
 
+  // 移除/重新加入某收件人(WF9):被移除者不进入待发集合。
+  function excludeParty(idx: number) {
+    setExcluded((prev) => new Set(prev).add(idx));
+  }
+  function reincludeParty(idx: number) {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      next.delete(idx);
+      return next;
+    });
+  }
+
   function handleSend() {
     const useSend = Boolean(step.sendEmail);
     if (isMulti) {
-      const list = parties.map((p) => ({ ...p, sendEmail: true }));
+      // 仅保留(未被移除)的参与方进入列表并置 sendEmail:true(对齐旧 Wf1S10 toSendIds 语义)。
+      const list = parties
+        .filter((_, i) => !excluded.has(i))
+        .map((p) => ({ ...p, sendEmail: true }));
       const extra: Partial<ProjectWorkflowDto> = {
         isTransfer: false,
         emailContent: '',
@@ -100,6 +121,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
       isTransfer: false,
       emailFrom,
       emailTo,
+      cc: cc.trim() || undefined,
       emailSubject,
       emailContent,
     };
@@ -136,6 +158,16 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
             </div>
           </div>
           <div className="space-y-1.5">
+            <Label htmlFor="wf-email-cc">{t('workflow.panel.cc')}</Label>
+            <Input
+              id="wf-email-cc"
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              placeholder={t('workflow.panel.ccPlaceholder')}
+              disabled={disabled}
+            />
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="wf-email-subject">{t('workflow.panel.subject')}</Label>
             <Input
               id="wf-email-subject"
@@ -152,12 +184,55 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
       ) : (
         <div className="space-y-4">
           <p className="text-muted-foreground text-sm">{t('workflow.panel.multiHint')}</p>
-          {parties.map((p, idx) => (
+          {excluded.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-2">
+              <span className="text-muted-foreground text-xs font-medium">
+                {t('workflow.panel.addRecipient')}
+              </span>
+              {parties.map((p, idx) =>
+                excluded.has(idx) ? (
+                  <Button
+                    key={`re-${p.partyTypeID ?? idx}`}
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 gap-1 px-2"
+                    disabled={disabled}
+                    onClick={() => reincludeParty(idx)}
+                  >
+                    <Plus className="size-3.5" />
+                    {p.partyTypeName ||
+                      p.partyName ||
+                      t('workflow.panel.partFallback', { n: idx + 1 })}
+                  </Button>
+                ) : null,
+              )}
+            </div>
+          )}
+          {keptCount === 0 && (
+            <p className="text-muted-foreground text-sm">{t('workflow.panel.noRecipients')}</p>
+          )}
+          {parties.map((p, idx) =>
+            excluded.has(idx) ? null : (
             <div key={`${p.partyTypeID ?? idx}`} className="rounded-md border p-3">
-              <p className="mb-2 flex items-center gap-2 text-sm font-medium">
-                <Mail className="text-muted-foreground size-4" />
-                {p.partyTypeName || p.partyName || t('workflow.panel.partFallback', { n: idx + 1 })}
-              </p>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <Mail className="text-muted-foreground size-4" />
+                  {p.partyTypeName || p.partyName || t('workflow.panel.partFallback', { n: idx + 1 })}
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-2"
+                  disabled={disabled}
+                  onClick={() => excludeParty(idx)}
+                  title={t('workflow.panel.removeRecipient')}
+                >
+                  <X className="size-3.5" />
+                  <span className="sr-only">{t('workflow.panel.removeRecipient')}</span>
+                </Button>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor={`wf-party-to-${idx}`}>{t('workflow.panel.to')}</Label>
                 <Input
@@ -185,7 +260,8 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
                 />
               </div>
             </div>
-          ))}
+            ),
+          )}
         </div>
       )}
 
@@ -204,9 +280,11 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
                 onSuccess: (pw?: ProjectWorkflowDto) => {
                   setEmailFrom(pw?.emailFrom ?? '');
                   setEmailTo(pw?.emailTo ?? '');
+                  setCc(pw?.cc ?? '');
                   setEmailSubject(pw?.emailSubject ?? '');
                   setEmailContent(pw?.emailContent ?? '');
                   setParties(pw?.emailProjectParties?.emailProjectPartiesWorkflowList ?? []);
+                  setExcluded(new Set());
                 },
               })
             }
@@ -215,7 +293,11 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
             {t('workflow.actions.updatePreview')}
           </Button>
         )}
-        <Button type="button" disabled={disabled || busy} onClick={handleSend}>
+        <Button
+          type="button"
+          disabled={disabled || busy || (isMulti && keptCount === 0)}
+          onClick={handleSend}
+        >
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
           {step.sendEmail ? t('workflow.actions.sendEmail') : t('workflow.actions.completeStep')}
         </Button>

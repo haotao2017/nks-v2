@@ -12,6 +12,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Trans, useTranslation } from 'react-i18next';
+import { Archive, ArchiveRestore, RotateCcw, Trash2 } from 'lucide-react';
 
 import {
   AlertDialog,
@@ -24,6 +25,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/data-table';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +36,8 @@ import {
   useProjectsCount,
   useArchiveProject,
   useDeleteProject,
+  useBulkArchiveProjects,
+  useBulkDeleteProjects,
 } from './api';
 import { getProjectColumns, type ProjectListVariant, type ProjectRow } from './columns';
 
@@ -63,10 +67,19 @@ export function ProjectsList({ variant }: ProjectsListProps) {
   const { data: count } = useProjectsCount();
   const archiveMutation = useArchiveProject();
   const deleteMutation = useDeleteProject();
+  const bulkArchiveMutation = useBulkArchiveProjects();
+  const bulkDeleteMutation = useBulkDeleteProjects();
 
   // 待确认目标(仅 active 变体使用确认弹窗)。
   const [archiveTarget, setArchiveTarget] = React.useState<ProjectRow | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<ProjectRow | null>(null);
+
+  // 批量确认目标:archive(归档)/ delete(软删),携带选中 ids 与清空选择回调。
+  const [bulkConfirm, setBulkConfirm] = React.useState<{
+    kind: 'archive' | 'delete';
+    ids: number[];
+    clear: () => void;
+  } | null>(null);
 
   const openWorkplace = (row: ProjectRow) => {
     if (row.id) router.push(`/projects/${row.id}`);
@@ -114,6 +127,115 @@ export function ProjectsList({ variant }: ProjectsListProps) {
     );
   };
 
+  const rowIds = (rows: ProjectRow[]) =>
+    rows.map((r) => r.id).filter((id): id is number => typeof id === 'number');
+
+  const bulkPending = bulkArchiveMutation.isPending || bulkDeleteMutation.isPending;
+
+  const confirmBulk = () => {
+    if (!bulkConfirm) return;
+    const { kind, ids, clear } = bulkConfirm;
+    const onDone = {
+      onSuccess: () => {
+        clear();
+        setBulkConfirm(null);
+      },
+    };
+    if (kind === 'archive') {
+      bulkArchiveMutation.mutate({ projectIds: ids, isArchive: true }, onDone);
+    } else {
+      bulkDeleteMutation.mutate({ projectIds: ids, isDelete: true }, onDone);
+    }
+  };
+
+  // 批量操作工具条:按变体决定动作。归档/软删走确认弹窗;取消归档/恢复为直接操作(与行操作一致)。
+  const renderBulkActions = (rows: ProjectRow[], clear: () => void) => {
+    const ids = rowIds(rows);
+    if (ids.length === 0) return null;
+    return (
+      <>
+        <span className="text-sm font-medium">
+          {t('projects.bulk.selected', { count: ids.length })}
+        </span>
+        <div className="ml-auto flex items-center gap-2">
+          {variant === 'active' && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={bulkPending}
+                onClick={() => setBulkConfirm({ kind: 'archive', ids, clear })}
+              >
+                <Archive className="size-4" />
+                {t('projects.actions.archive')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={bulkPending}
+                onClick={() => setBulkConfirm({ kind: 'delete', ids, clear })}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
+                {t('common.delete')}
+              </Button>
+            </>
+          )}
+
+          {variant === 'archived' && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={bulkPending}
+                onClick={() =>
+                  bulkArchiveMutation.mutate(
+                    { projectIds: ids, isArchive: false },
+                    { onSuccess: clear },
+                  )
+                }
+              >
+                <ArchiveRestore className="size-4" />
+                {t('projects.actions.unarchive')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={bulkPending}
+                onClick={() => setBulkConfirm({ kind: 'delete', ids, clear })}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
+                {t('common.delete')}
+              </Button>
+            </>
+          )}
+
+          {variant === 'deleted' && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={bulkPending}
+              onClick={() =>
+                bulkDeleteMutation.mutate(
+                  { projectIds: ids, isDelete: false },
+                  { onSuccess: clear },
+                )
+              }
+            >
+              <RotateCcw className="size-4" />
+              {t('projects.actions.restore')}
+            </Button>
+          )}
+
+          <Button variant="ghost" size="sm" onClick={clear} disabled={bulkPending}>
+            {t('projects.bulk.clear')}
+          </Button>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {/* 子导航:活动 / 归档 / 删除 */}
@@ -149,6 +271,11 @@ export function ProjectsList({ variant }: ProjectsListProps) {
         isLoading={query.isLoading}
         searchColumn="title"
         searchPlaceholder={t('projects.searchPlaceholder')}
+        enableRowSelection
+        getRowId={(row, index) => (row.id != null ? String(row.id) : `row-${index}`)}
+        selectAllAriaLabel={t('projects.bulk.selectAll')}
+        selectRowAriaLabel={t('projects.bulk.selectRow')}
+        renderBulkActions={renderBulkActions}
         emptyMessage={
           variant === 'active'
             ? t('projects.empty.active')
@@ -220,6 +347,47 @@ export function ProjectsList({ variant }: ProjectsListProps) {
               className="bg-destructive text-white hover:bg-destructive/90"
             >
               {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 批量归档 / 软删确认 */}
+      <AlertDialog open={bulkConfirm !== null} onOpenChange={(open) => !open && setBulkConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkConfirm?.kind === 'archive'
+                ? t('projects.bulkArchiveDialog.title', { count: bulkConfirm?.ids.length ?? 0 })
+                : t('projects.bulkDeleteDialog.title', { count: bulkConfirm?.ids.length ?? 0 })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkConfirm?.kind === 'archive'
+                ? t('projects.bulkArchiveDialog.description', {
+                    count: bulkConfirm?.ids.length ?? 0,
+                  })
+                : t('projects.bulkDeleteDialog.description', {
+                    count: bulkConfirm?.ids.length ?? 0,
+                  })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkPending}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmBulk();
+              }}
+              disabled={bulkPending}
+              className={
+                bulkConfirm?.kind === 'delete'
+                  ? 'bg-destructive text-white hover:bg-destructive/90'
+                  : undefined
+              }
+            >
+              {bulkConfirm?.kind === 'archive'
+                ? t('projects.actions.archive')
+                : t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

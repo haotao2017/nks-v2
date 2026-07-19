@@ -13,7 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Lock, Plus } from 'lucide-react';
 
-import type { S3Bucket } from '@nks/api-types';
+import type { CompanyProfile, S3Bucket } from '@nks/api-types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,8 @@ import {
 } from './api';
 import { getCompanyColumns } from './company-columns';
 import { CompanyFormDialog } from './company-form-dialog';
+import { CreateAdminUserDialog } from './create-admin-user-dialog';
+import { CompanyFolderDialog } from './company-folder-dialog';
 
 /* -------------------------------------------------------------------------- */
 /* S3 存储桶设置卡片                                                          */
@@ -139,10 +141,23 @@ export function CompaniesPanel() {
   const { t } = useTranslation();
   const { data: isSystemOwner, isLoading } = useSystemOwnerStatus();
   const [createOpen, setCreateOpen] = React.useState(false);
+  // 编辑 / 新建管理员 / 文件夹配置各自的目标公司(null 表示关闭)。
+  const [editCompany, setEditCompany] = React.useState<CompanyProfile | null>(null);
+  const [adminCompany, setAdminCompany] = React.useState<CompanyProfile | null>(null);
+  const [folderCompany, setFolderCompany] = React.useState<CompanyProfile | null>(null);
 
   const enabled = isSystemOwner === true;
   const { data: companies = [], isLoading: companiesLoading } = useAllCompanyProfiles(enabled);
-  const columns = React.useMemo(() => getCompanyColumns(t), [t]);
+  const columns = React.useMemo(
+    () =>
+      getCompanyColumns({
+        t,
+        onEdit: setEditCompany,
+        onCreateAdmin: setAdminCompany,
+        onFolders: setFolderCompany,
+      }),
+    [t],
+  );
 
   if (isLoading) {
     return <Skeleton className="h-40 w-full max-w-2xl" />;
@@ -182,7 +197,29 @@ export function CompaniesPanel() {
 
       <BucketCard />
 
+      {/* 新建公司 */}
       <CompanyFormDialog open={createOpen} onOpenChange={setCreateOpen} />
+
+      {/* 编辑公司 */}
+      <CompanyFormDialog
+        open={editCompany !== null}
+        onOpenChange={(open) => !open && setEditCompany(null)}
+        company={editCompany ?? undefined}
+      />
+
+      {/* 新建管理员 */}
+      <CreateAdminUserDialog
+        open={adminCompany !== null}
+        onOpenChange={(open) => !open && setAdminCompany(null)}
+        company={adminCompany ?? undefined}
+      />
+
+      {/* 每公司文件夹配置 */}
+      <CompanyFolderDialog
+        open={folderCompany !== null}
+        onOpenChange={(open) => !open && setFolderCompany(null)}
+        company={folderCompany ?? undefined}
+      />
     </div>
   );
 }

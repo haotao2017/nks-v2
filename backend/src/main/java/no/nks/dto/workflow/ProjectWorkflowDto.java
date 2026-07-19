@@ -29,6 +29,7 @@ public class ProjectWorkflowDto {
     private String emailContent;
     private String emailSubject;
     private String emailTo;
+    private String cc;
     private String projectLeaderEmailTo;
     private String emailFrom;
     private String attachmentURL;

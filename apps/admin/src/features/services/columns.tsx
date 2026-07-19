@@ -59,7 +59,9 @@ export function getServiceColumns({
     {
       accessorKey: 'rate',
       header: t('services.columns.rate'),
-      cell: ({ row }) => row.original.rate || '—',
+      // 固定价(serviceChargedAs===2)按阶梯计价,单一 rate 不适用,对齐旧版显示 "?"。
+      cell: ({ row }) =>
+        row.original.serviceChargedAs === 2 ? '?' : row.original.rate || '—',
     },
     {
       id: 'actions',

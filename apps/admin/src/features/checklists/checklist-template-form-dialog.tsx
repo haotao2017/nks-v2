@@ -13,7 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { z } from 'zod';
-import { Loader2, Plus, X } from 'lucide-react';
+import { FileText, Loader2, Plus, X } from 'lucide-react';
 
 import type { ChecklistTemplateDto } from '@nks/api-types';
 
@@ -50,6 +50,32 @@ const makeTemplateSchema = (t: TFunction) =>
   });
 
 type TemplateFormValues = z.infer<ReturnType<typeof makeTemplateSchema>>;
+
+/** 「使用模板」预填内容 —— 照抄旧系统 templateOne(Våtrom 湿室检查清单,9 条)。 */
+const VATROM_TEMPLATE_TITLE = 'Våtrom';
+const VATROM_TEMPLATE_ITEMS: { title: string }[] = [
+  { title: 'Hvilket stadie er våtrommet på?' },
+  { title: 'Sjekk at hovedsluk er plassert i plan og høyde som prosjektert. ' },
+  {
+    title:
+      'Er produktene som er blitt benyttet de samme som det er mottatt produktdokumentasjon på?',
+  },
+  {
+    title:
+      'Foreta en visuell kontroll om produktene membran, slukmansjett og slik er benyttet korrekt i henhold til produktdokumentasjon.',
+  },
+  {
+    title:
+      'Er det laget avrenning fra innebygd sisterne eller benyttet godkjent bagløsning?',
+  },
+  { title: 'Framstår arbeidene som er utført uten åpenbare avvik?' },
+  {
+    title:
+      'Sjekk at det er samsvar mellom produksjonsunderlaget på byggeplass og mottatte tegningslister. (stikkprøve)',
+  },
+  { title: 'Godkjent fall til sluk?' },
+  { title: 'Eventuelle kommentarer?' },
+];
 
 export interface ChecklistTemplateFormDialogProps {
   open: boolean;
@@ -144,15 +170,31 @@ export function ChecklistTemplateFormDialog({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <FormLabel>{t('checklists.form.itemsLabel')}</FormLabel>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ title: '' })}
-                  >
-                    <Plus className="size-4" />
-                    {t('common.add')}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        form.reset({
+                          title: VATROM_TEMPLATE_TITLE,
+                          items: VATROM_TEMPLATE_ITEMS.map((item) => ({ title: item.title })),
+                        })
+                      }
+                    >
+                      <FileText className="size-4" />
+                      {t('checklists.form.useTemplate')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({ title: '' })}
+                    >
+                      <Plus className="size-4" />
+                      {t('common.add')}
+                    </Button>
+                  </div>
                 </div>
 
                 {fields.length === 0 ? (

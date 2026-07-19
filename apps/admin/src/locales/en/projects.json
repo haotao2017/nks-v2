@@ -45,6 +45,20 @@
       "title": "Delete project?",
       "description": "Do you want to delete <strong>{{title}}</strong>? The project will be moved to deleted and can be restored."
     },
+    "bulk": {
+      "selected": "{{count}} selected",
+      "clear": "Clear selection",
+      "selectAll": "Select all",
+      "selectRow": "Select row"
+    },
+    "bulkArchiveDialog": {
+      "title": "Archive {{count}} projects?",
+      "description": "Do you want to archive the {{count}} selected projects? You can restore them from the archive later."
+    },
+    "bulkDeleteDialog": {
+      "title": "Delete {{count}} projects?",
+      "description": "Do you want to delete the {{count}} selected projects? They will be moved to deleted and can be restored."
+    },
     "tabs": {
       "steps": "Steps",
       "checklists": "Checklists",
@@ -96,6 +110,10 @@
       "unarchived": "Project restored from archive",
       "deleted": "Project deleted",
       "restored": "Project restored",
+      "archivedMany": "{{count}} projects archived",
+      "unarchivedMany": "{{count}} projects restored from archive",
+      "deletedMany": "{{count}} projects deleted",
+      "restoredMany": "{{count}} projects restored",
       "actionFailed": "The action failed"
     }
   },

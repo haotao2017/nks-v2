@@ -127,6 +127,11 @@ export function ProjectPartiesPanel({ projectId }: { projectId: number }) {
                         {bound?.partyName ? (
                           <div className="flex flex-col">
                             <span>{bound.partyName}</span>
+                            {bound.contactNumber ? (
+                              <span className="text-muted-foreground text-sm">
+                                {bound.contactNumber}
+                              </span>
+                            ) : null}
                             {bound.email ? (
                               <span className="text-muted-foreground text-sm">{bound.email}</span>
                             ) : null}

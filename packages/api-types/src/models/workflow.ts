@@ -48,6 +48,7 @@ export interface ProjectWorkflowDto {
   emailContent?: string;
   emailSubject?: string;
   emailTo?: string;
+  cc?: string;
   projectLeaderEmailTo?: string;
   emailFrom?: string;
   attachmentURL?: string;

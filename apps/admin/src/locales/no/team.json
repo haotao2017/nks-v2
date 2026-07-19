@@ -163,18 +163,59 @@
     "dialog": {
       "title": "Nytt selskap",
       "desc": "Opprett et nytt selskap i systemet.",
+      "editTitle": "Rediger selskap",
+      "editDesc": "Oppdater selskapets opplysninger.",
       "companyName": "Selskapsnavn",
       "orgNumber": "Organisasjonsnummer",
       "owner": "Eier",
       "address": "Adresse",
-      "email": "E-postadresse"
+      "postCode": "Postnummer",
+      "telephone": "Telefon",
+      "mobile": "Mobil",
+      "email": "E-postadresse",
+      "nameOnEmail": "Navn på e-postadresse",
+      "senderEmail": "Avsender e-postadresse",
+      "active": "Aktiv",
+      "activeHint": "Inaktive selskaper kan ikke logge inn eller brukes."
+    },
+    "rowActions": {
+      "createAdmin": "Ny administrator",
+      "folders": "Mappekonfigurasjon"
+    },
+    "adminDialog": {
+      "title": "Ny administrator",
+      "desc": "Opprett en administratorbruker for {{company}}.",
+      "designation": "Stilling",
+      "userName": "Brukernavn",
+      "password": "Passord",
+      "validation": {
+        "userNameRequired": "Brukernavn er påkrevd",
+        "passwordRequired": "Passord er påkrevd"
+      }
+    },
+    "folderDialog": {
+      "title": "Mappekonfigurasjon",
+      "desc": "Konfigurer dokumentmappen for {{company}}.",
+      "folderName": "Mappenavn",
+      "folderPath": "Mappesti",
+      "folderPathPlaceholder": "F.eks. /mappenavn",
+      "validation": {
+        "folderNameRequired": "Mappenavn er påkrevd"
+      }
     },
     "validation": {
-      "companyNameRequired": "Selskapsnavn er påkrevd"
+      "companyNameRequired": "Selskapsnavn er påkrevd",
+      "postCodeNumber": "Postnummer må være et tall"
     },
     "toast": {
       "created": "Selskap opprettet",
       "createError": "Kunne ikke opprette selskap",
+      "updated": "Selskap oppdatert",
+      "updateError": "Kunne ikke oppdatere selskap",
+      "adminCreated": "Administrator opprettet",
+      "adminCreateError": "Kunne ikke opprette administrator",
+      "folderSaved": "Mappe lagret",
+      "folderSaveError": "Kunne ikke lagre mappe",
       "bucketUpdated": "S3-bøtte oppdatert",
       "bucketUpdateError": "Kunne ikke oppdatere S3-bøtte"
     }

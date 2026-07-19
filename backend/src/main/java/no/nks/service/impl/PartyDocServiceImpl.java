@@ -58,8 +58,19 @@ public class PartyDocServiceImpl implements PartyDocService {
         }
     }
 
+    /**
+     * 外部参与方端点门禁：UrlKey 必须匹配已发出的邮件记录，否则拒绝访问（401）。
+     * 这些端点免登录（无 JWT），UrlKey 是唯一凭证，必须在每个入口显式校验。
+     */
+    private void assertPartyUrlKeyValid(Integer workflowId, Integer projectId, Integer partyId, Integer partyTypeId, String urlKey) {
+        if (!authenticateThirdPartyDocRequiredRequest(workflowId, projectId, partyId, partyTypeId, urlKey)) {
+            throw new no.nks.exception.AuthenticationException("Ugyldig eller utløpt lenke.");
+        }
+    }
+
     @Override
     public WrapperProjectPartyDocsMulti getProjectPartyDocsList(WrapperProjectPartyDocsMulti request) {
+        assertPartyUrlKeyValid(request.getWorkflowId(), request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getUrlKey());
         // 获取该参与方类型的所有文档类型
         List<DocType> docTypes = docTypeRepository.findByPartyTypeIdOrderBySortOrder(request.getPartyTypeID());
 
@@ -78,6 +89,7 @@ public class PartyDocServiceImpl implements PartyDocService {
 
     @Override
     public no.nks.dto.RequestResponse uploadDocumentFromParty(WrapperProjectPartyDocsSingle request, List<MultipartFile> files) {
+        assertPartyUrlKeyValid(request.getWorkflowId(), request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getUrlKey());
         if (files == null || files.isEmpty()) {
             return no.nks.dto.RequestResponse.failure("没有文件被上传");
         }
@@ -118,6 +130,7 @@ public class PartyDocServiceImpl implements PartyDocService {
 
     @Override
     public CountProjectPartyDocsUploaded getDocumentsListCountUploadByParty(WrapperProjectPartyDocsMulti request) {
+        assertPartyUrlKeyValid(request.getWorkflowId(), request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getUrlKey());
         CountProjectPartyDocsUploaded result = new CountProjectPartyDocsUploaded();
         result.setWorkflowId(request.getWorkflowId());
         result.setProjectID(request.getProjectID());
@@ -152,6 +165,7 @@ public class PartyDocServiceImpl implements PartyDocService {
 
     @Override
     public WrapperProjectSinglePartyDocsUploadedFileList getProjectSinglePartyDocsUploadedFileList(WrapperProjectSinglePartyDocsUploadedFileList request) {
+        assertPartyUrlKeyValid(request.getWorkflowId(), request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getUrlKey());
         // 获取已上传的文档
         List<Doc> docs = docRepository.findByProjectIdAndPartyIdAndPartyTypeIdAndWorkflowId(
                 request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getWorkflowId());
@@ -173,6 +187,7 @@ public class PartyDocServiceImpl implements PartyDocService {
 
     @Override
     public WrapperProjectPartyDocsInspection getProjectChecklistsItemPartyData(WrapperProjectPartyDocsInspection request) {
+        assertPartyUrlKeyValid(request.getWorkflowId(), request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getUrlKey());
         // 解析检查清单项目ID列表
         String[] checklistItemIds = request.getChecklistItemIdCommaSeperated().split(",");
         List<Integer> checklistItemIdList = Arrays.stream(checklistItemIds)
@@ -281,6 +296,7 @@ public class PartyDocServiceImpl implements PartyDocService {
 
     @Override
     public no.nks.dto.RequestResponse uploadChecklistItemImageInspectinDataFromParty(WrapperProjectPartyDocsInspection request, List<MultipartFile> files) {
+        assertPartyUrlKeyValid(request.getWorkflowId(), request.getProjectID(), request.getPartyID(), request.getPartyTypeID(), request.getUrlKey());
         if (files == null || files.isEmpty()) {
             return no.nks.dto.RequestResponse.failure("没有文件被上传");
         }

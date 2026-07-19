@@ -16,9 +16,8 @@
  *    真正的原因在 `requestResponse.message`(顶层无 message,api-client 无法自动取到),
  *    因此在 mutationFn 里捕获 NksApiError、抽取 requestResponse.message 后重新抛出,
  *    交由 useApiMutation.onError 统一 toast(参考 Contact 的删除软失败模式)。
- *  - sortOrder:实体上标注 @JsonIgnore,线上响应不含该字段,BuildingSupplierDto 类型也没有它。
- *    表单里仍提供 sortOrder 输入(任务要求),用本地扩展类型 BuildingSupplierPayload 承接、
- *    随请求体一并发送;若后端确实忽略则无副作用(见页面末尾存疑点)。
+ *  - sortOrder:实体上标注 @JsonIgnore,线上响应不含该字段,BuildingSupplierDto 类型也没有它;
+ *    后端会忽略请求体里的 sortOrder,故表单与请求体均不再携带该字段。
  */
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -35,9 +34,6 @@ import { NksApiError } from '@nks/api-client';
 
 import { getApiClient } from '@/lib/api';
 import { useApiMutation } from '@/lib/query';
-
-/** 本地扩展:携带线上契约未声明的 sortOrder(不改动 @nks/api-types 包)。 */
-export type BuildingSupplierPayload = BuildingSupplierDto & { sortOrder?: number };
 
 /** 统一的查询 key —— 复用于失效重拉。 */
 export const buildingSupplierKeys = {
@@ -61,7 +57,7 @@ export function useBuildingSuppliers() {
 /** 创建建材供应商。body 根键小写 buildingSupplier;返回 res.buildingSupplier。 */
 export function useCreateBuildingSupplier() {
   const { t } = useTranslation();
-  return useApiMutation<BuildingSupplierDto | undefined, BuildingSupplierPayload>({
+  return useApiMutation<BuildingSupplierDto | undefined, BuildingSupplierDto>({
     mutationFn: async (buildingSupplier) => {
       const body: WrapperBuildingSupplier = { buildingSupplier };
       const res = await getApiClient().post<WrapperBuildingSupplier>(
@@ -79,7 +75,7 @@ export function useCreateBuildingSupplier() {
 /** 更新建材供应商。body 根键小写 buildingSupplier;返回 res.buildingSupplier。 */
 export function useUpdateBuildingSupplier() {
   const { t } = useTranslation();
-  return useApiMutation<BuildingSupplierDto | undefined, BuildingSupplierPayload>({
+  return useApiMutation<BuildingSupplierDto | undefined, BuildingSupplierDto>({
     mutationFn: async (buildingSupplier) => {
       const body: WrapperBuildingSupplier = { buildingSupplier };
       const res = await getApiClient().put<WrapperBuildingSupplier>(
