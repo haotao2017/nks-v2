@@ -54,13 +54,15 @@ export default function ProjectsPage() {
             <DialogTitle>{t('projects.newProject')}</DialogTitle>
             <DialogDescription>{t('projects.createDescription')}</DialogDescription>
           </DialogHeader>
-          <ProjectWizard
-            onCancel={() => setCreateOpen(false)}
-            onDone={(project) => {
-              setCreateOpen(false);
-              if (project?.id) router.push(`/projects/${project.id}`);
-            }}
-          />
+          {createOpen && (
+            <ProjectWizard
+              onCancel={() => setCreateOpen(false)}
+              onDone={(project) => {
+                setCreateOpen(false);
+                if (project?.id) router.push(`/projects/${project.id}`);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

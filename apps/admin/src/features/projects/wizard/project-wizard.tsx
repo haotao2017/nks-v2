@@ -6,7 +6,7 @@
  * 三步(顺序对齐旧系统 projectConfig 的 tab 顺序:Contact → Project → Services):
  *  1. Kontaktinfo   —— 客户(customerId)与 kontaktperson(contactPersonId),下拉取自 Contact 列表。
  *  2. Prosjektinfo  —— Husleverandør(buildingSupplierId,下拉+加号新建)、地址、gårdsnr/bruksnummer、
- *                       postnr(邮编联动回填 poststed/kommune)、beskrivelse、经纬度、kommentarer。
+ *                       postnr(4 位匹配时联动回填 poststed/kommune,两字段只读)、beskrivelse、经纬度、kommentarer。
  *  3. Priser        —— 选服务并定价:serviceId + quantity + price(可多行,来自 Service 列表)。
  *
  * 与旧系统对齐要点:
@@ -105,7 +105,8 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
   const [step, setStep] = React.useState(0);
 
   const { data: services = [] } = useServices();
-  const { data: postCodes = [] } = usePostCodes();
+  // 仅在 Prosjektinfo(step===1)拉邮编,避免弹窗一开就请求、进第二步 Network 里「看不到」
+  const { data: postCodes = [] } = usePostCodes({ enabled: step === 1 });
 
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject();
@@ -167,17 +168,41 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
 
-  /** postnr 变化 → 4 位时本地匹配邮编,回填 poststed / kommune(旧系统 findPostcodeInfo)。 */
+  /**
+   * 匹配邮编:API/DB 可能返回 "150" 或 "0150",输入也是 4 位字符串。
+   * 两侧都按数值 + padStart(4) 比较,避免 leading-zero 对不上。
+   */
+  const findPostCode = React.useCallback(
+    (value: string) => {
+      if (!/^\d{4}$/.test(value) || postCodes.length === 0) return undefined;
+      const padded = value.padStart(4, '0');
+      const asNum = String(Number(value));
+      return postCodes.find((p) => {
+        const raw = (p.postnummer ?? '').trim();
+        return raw === value || raw === padded || raw === asNum || raw.padStart(4, '0') === padded;
+      });
+    },
+    [postCodes],
+  );
+
+  /** postnr 变化 → 4 位时本地匹配邮编,回填 poststed / kommune。 */
   const handlePostNoChange = (value: string) => {
     form.setValue('postNo', value, { shouldValidate: true });
-    if (/^\d{4}$/.test(value)) {
-      const found = postCodes.find((p) => p.postnummer === value);
-      if (found) {
-        form.setValue('poststed', found.poststed ?? '', { shouldValidate: true });
-        form.setValue('kommune', found.kommunenavn ?? '', { shouldValidate: true });
-      }
+    const found = findPostCode(value);
+    if (found) {
+      form.setValue('poststed', found.poststed ?? '', { shouldValidate: true });
+      form.setValue('kommune', found.kommunenavn ?? '', { shouldValidate: true });
     }
   };
+
+  // 邮编表异步到达后,若当前已是 4 位邮编则补一次回填(避免先输入后才 loaded)。
+  const watchedPostNo = form.watch('postNo');
+  React.useEffect(() => {
+    const found = findPostCode(watchedPostNo ?? '');
+    if (!found) return;
+    form.setValue('poststed', found.poststed ?? '', { shouldValidate: true });
+    form.setValue('kommune', found.kommunenavn ?? '', { shouldValidate: true });
+  }, [watchedPostNo, findPostCode, form]);
 
   /** 选服务 → 写回 serviceId,数量置 1,并算初始价(旧系统 selectService)。 */
   const handleServiceSelect = (index: number, serviceIdStr: string) => {
@@ -393,7 +418,7 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
                 </FormItem>
               )}
             />
-            {/* poststed:只读,由邮编联动回填(对齐旧系统 disabled 字段) */}
+            {/* poststed:只读,由邮编联动回填(对齐旧系统 disabled) */}
             <FormField
               control={form.control}
               name="poststed"

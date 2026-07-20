@@ -24,12 +24,15 @@ export const miscKeys = {
   postCodes: () => [...miscKeys.all, 'post-codes'] as const,
 };
 
-/** 邮编全表。解包 res.postCodes,空时回退 []。列表较大但为静态主数据,长时间缓存。 */
-export function usePostCodes() {
+/** 邮编全表。解包 res.postCodes,空时回退 []。
+ * 列表较大;默认仅在调用方 enabled 时请求(向导在 Prosjektinfo 步再拉)。
+ * staleTime 1h:避免 Infinity 导致空结果永久占缓存、再也看不到请求。
+ */
+export function usePostCodes(options?: { enabled?: boolean }) {
   return useQuery<PostCodeDto[]>({
     queryKey: miscKeys.postCodes(),
-    staleTime: Infinity,
-    gcTime: Infinity,
+    enabled: options?.enabled ?? true,
+    staleTime: 60 * 60 * 1000,
     queryFn: async () => {
       const res = await getApiClient().get<WrapperPostCodeDto>(
         endpoints.miscellaneous.getPostCodes.path,

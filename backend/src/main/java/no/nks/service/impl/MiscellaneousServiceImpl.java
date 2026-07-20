@@ -54,7 +54,8 @@ public class MiscellaneousServiceImpl implements MiscellaneousService {
     private PostCodeDto convertToDto(PostNumber entity) {
         PostCodeDto dto = new PostCodeDto();
         dto.setId(entity.getPostnummer()); // 使用 postnummer 作为 ID
-        dto.setPostnummer(entity.getPostnummer().toString());
+        // DB 存 INT(0150→150);对外统一补成 4 位字符串,与前端 Postnr 输入一致。
+        dto.setPostnummer(String.format("%04d", entity.getPostnummer()));
         dto.setPoststed(entity.getPoststed());
         dto.setKommunenummer(entity.getKommunenummer() != null ? entity.getKommunenummer().toString() : null);
         dto.setKommunenavn(entity.getKommunenavn());
