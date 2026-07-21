@@ -4,21 +4,27 @@
  */
 import * as React from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
   Text,
   View,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, ErrorText } from '@/components/ui';
+import { Card } from '@/components/ui';
+import {
+  ScreenEmpty,
+  ScreenError,
+  ScreenLoading,
+} from '@/components/screen-states';
 import { getErrorMessage } from '@/lib/query';
 import { deleteToken } from '@/lib/secure-token';
 import {
+  clearProjectListCache,
   useProjectList,
   type MobileProjectListItem,
 } from '@/features/projects/api';
@@ -27,8 +33,15 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 function ProjectCard({ item }: { item: MobileProjectListItem }) {
   const id = item.projectID ?? '';
+  if (!id) return null;
   return (
-    <Link href={`/(app)/projects/${id}`} asChild>
+    <Link
+      href={{
+        pathname: '/(app)/projects/[id]/(tabs)',
+        params: { id },
+      }}
+      asChild
+    >
       <Pressable>
         <Card>
           <Text className="text-base font-semibold text-neutral-900">
@@ -50,13 +63,24 @@ function ProjectCard({ item }: { item: MobileProjectListItem }) {
 
 export default function ProjectsScreen() {
   const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
+  const status = useAppSelector((s) => s.auth.status);
   const user = useAppSelector((s) => s.auth.user);
   const { data, isLoading, isError, error, refetch, isRefetching } = useProjectList();
 
+  // 从后台切回 App / 再次进入列表时强制拉最新(后台可能刚指派检验员)。
+  useFocusEffect(
+    React.useCallback(() => {
+      if (status !== 'authenticated') return;
+      void refetch();
+    }, [refetch, status]),
+  );
+
   const onLogout = React.useCallback(async () => {
     await deleteToken();
+    clearProjectListCache(queryClient);
     dispatch(setUnauthenticated());
-  }, [dispatch]);
+  }, [dispatch, queryClient]);
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-50" edges={['top', 'left', 'right']}>
@@ -77,27 +101,31 @@ export default function ProjectsScreen() {
       </View>
 
       {isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator />
-        </View>
+        <ScreenLoading embedded label="Laster prosjekter…" />
       ) : isError ? (
-        <View className="flex-1 items-center justify-center px-6">
-          <ErrorText>{getErrorMessage(error)}</ErrorText>
-        </View>
+        <ScreenError
+          embedded
+          message={getErrorMessage(error)}
+          onRetry={() => void refetch()}
+        />
       ) : (
         <FlatList
           data={data}
           keyExtractor={(item, i) => String(item.projectID ?? i)}
           renderItem={({ item }) => <ProjectCard item={item} />}
-          contentContainerClassName="gap-3 px-4 pb-8"
-          ItemSeparatorComponent={null}
+          contentContainerClassName={
+            data && data.length > 0 ? 'gap-3 px-4 pb-8' : 'flex-grow px-4'
+          }
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
           }
           ListEmptyComponent={
-            <View className="items-center justify-center py-20">
-              <Text className="text-neutral-400">Ingen prosjekter</Text>
-            </View>
+            <ScreenEmpty
+              embedded
+              icon="briefcase-outline"
+              title="Ingen prosjekter"
+              hint="Prosjekter vises her når de er tildelt deg i admin (WF10)."
+            />
           }
         />
       )}

@@ -11,17 +11,20 @@
  */
 import * as React from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Pdf from 'react-native-pdf';
 
+import {
+  ProjectLoadGate,
+  ScreenEmpty,
+} from '@/components/screen-states';
 import { useLoadActiveProject } from '@/features/active-project/hooks';
+import { useProjectRouteId } from '@/lib/use-project-route-id';
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 3;
@@ -50,8 +53,8 @@ function ToolButton({
 }
 
 export default function PlantegningTab() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { detail, status, error } = useLoadActiveProject(id);
+  const id = useProjectRouteId();
+  const { detail, status, error, reload } = useLoadActiveProject(id);
   const { width, height } = useWindowDimensions();
 
   const [page, setPage] = React.useState(1);
@@ -62,15 +65,14 @@ export default function PlantegningTab() {
 
   if (!detail) {
     return (
-      <View className="flex-1 items-center justify-center bg-white px-6 dark:bg-neutral-950">
-        {status === 'error' ? (
-          <Text className="text-center text-sm text-red-600">
-            {error ?? 'Kunne ikke laste prosjektet'}
-          </Text>
-        ) : (
-          <ActivityIndicator />
-        )}
-      </View>
+      <ProjectLoadGate
+        detail={detail}
+        status={status}
+        error={error}
+        onRetry={() => void reload()}
+      >
+        {null}
+      </ProjectLoadGate>
     );
   }
 
@@ -78,12 +80,12 @@ export default function PlantegningTab() {
 
   if (!url) {
     return (
-      <View className="flex-1 items-center justify-center gap-3 bg-neutral-50 px-6 dark:bg-neutral-950">
-        <Ionicons name="document-outline" size={56} color="#a3a3a3" />
-        <Text className="text-center text-base font-medium text-neutral-500 dark:text-neutral-400">
-          Ingen plantegning tilgjengelig
-        </Text>
-      </View>
+      <ScreenEmpty
+        embedded
+        icon="document-outline"
+        title="Ingen plantegning tilgjengelig"
+        hint="Last opp plantegning i admin for å se den her."
+      />
     );
   }
 
@@ -102,6 +104,15 @@ export default function PlantegningTab() {
           <View className="items-center gap-3 px-6">
             <Ionicons name="alert-circle-outline" size={48} color="#f87171" />
             <Text className="text-center text-sm text-red-400">{pdfError}</Text>
+            <Pressable
+              onPress={() => {
+                setPdfError(null);
+                void reload();
+              }}
+              className="rounded-lg bg-white/20 px-4 py-2"
+            >
+              <Text className="text-sm font-semibold text-white">Prøv igjen</Text>
+            </Pressable>
           </View>
         ) : (
           <Pdf

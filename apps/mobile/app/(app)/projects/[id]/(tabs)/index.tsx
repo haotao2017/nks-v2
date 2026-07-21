@@ -9,7 +9,6 @@
  */
 import * as React from 'react';
 import {
-  ActivityIndicator,
   Linking,
   Modal,
   Platform,
@@ -19,17 +18,18 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 
+import { ProjectLoadGate } from '@/components/screen-states';
 import {
   useLoadActiveProject,
   useSyncProjectUpdate,
 } from '@/features/active-project/hooks';
+import { useProjectRouteId } from '@/lib/use-project-route-id';
 
 /** 检验日期展示:可解析则 dd.mm.yyyy,否则原样。 */
 function formatDate(value: string): string {
@@ -108,8 +108,8 @@ function MenuItem({
 }
 
 export default function ProjectInfoTab() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { detail, status, error, online } = useLoadActiveProject(id);
+  const id = useProjectRouteId();
+  const { detail, status, error, online, reload } = useLoadActiveProject(id);
   const { updateProject } = useSyncProjectUpdate();
 
   const [showDatePicker, setShowDatePicker] = React.useState(false);
@@ -123,15 +123,14 @@ export default function ProjectInfoTab() {
 
   if (!detail) {
     return (
-      <View className="flex-1 items-center justify-center bg-white px-6 dark:bg-neutral-950">
-        {status === 'error' ? (
-          <Text className="text-center text-sm text-red-600">
-            {error ?? 'Kunne ikke laste prosjektet'}
-          </Text>
-        ) : (
-          <ActivityIndicator />
-        )}
-      </View>
+      <ProjectLoadGate
+        detail={detail}
+        status={status}
+        error={error}
+        onRetry={() => void reload()}
+      >
+        {null}
+      </ProjectLoadGate>
     );
   }
 

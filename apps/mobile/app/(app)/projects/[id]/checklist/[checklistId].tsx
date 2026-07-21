@@ -5,7 +5,7 @@
  *  - 三态单选 Godkjent(OK) / Avvik(Dev) / I/A(NA)。wire 值为离线层 ChecklistStatus
  *    ('OK' | 'Dev' | 'NA'),与旧客户端及后端落库一致(见 buildChecklistUpdateForm)。
  *  - 选 OK/Dev 且尚无图片 → 强制拍照;有图后才写入状态(取消拍照则不落状态)。
- *  - 选 NA → 清空该项图片并立即写入。
+ *  - 选 NA → 立即写入,保留已有图片(不要求拍照,也不清空图)。
  *  - 备注(失焦提交)。
  *  - 已拍图片九宫格缩略图 + 单张删除(删光 OK/Dev 图时清状态)。
  *  - 状态/备注/图片任一变化即调 useUpdateChecklistItem().update(离线优先,
@@ -17,7 +17,6 @@
  */
 import * as React from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Pressable,
@@ -26,10 +25,15 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useGlobalSearchParams, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  ProjectLoadGate,
+  ScreenEmpty,
+} from '@/components/screen-states';
 import { useLoadActiveProject } from '@/features/active-project/hooks';
 import { useUpdateChecklistItem } from '@/features/active-project/hooks';
 import type { ChecklistStatus } from '@/features/active-project/status';
@@ -38,6 +42,20 @@ import {
   shouldDeferStatusForPhoto,
 } from '@/features/active-project/status';
 import type { LocalChecklistItem } from '@/store/active-project-slice';
+import { store } from '@/store';
+import { normalizeRouteParam } from '@/lib/route-params';
+import { useProjectRouteId } from '@/lib/use-project-route-id';
+
+/** 从 store 读最新检查项,避免闭包里的 itemImageUrls 过期覆盖已上传图。 */
+function readLatestItem(
+  checklistId: string,
+  checklistItemId: string,
+): LocalChecklistItem | undefined {
+  return store
+    .getState()
+    .activeProject.detail?.checklists.find((c) => c.checklistId === checklistId)
+    ?.checkItems.find((i) => i.checklistItemId === checklistItemId);
+}
 
 const STATUS_OPTIONS: {
   value: ChecklistStatus;
@@ -86,9 +104,11 @@ async function ensureCameraPermission(): Promise<boolean> {
 
 /** 单个检查项卡片(memo:大量项时避免整表重渲染)。 */
 const ItemCard = React.memo(function ItemCard({
+  checklistId,
   item,
   onUpdate,
 }: {
+  checklistId: string;
   item: LocalChecklistItem;
   onUpdate: (
     itemId: string,
@@ -102,6 +122,10 @@ const ItemCard = React.memo(function ItemCard({
   const [pendingStatus, setPendingStatus] = React.useState<ChecklistStatus | null>(
     null,
   );
+  /** 防止连续点状态按钮叠出多个选图弹窗。 */
+  const pickingRef = React.useRef(false);
+  const commentDraftRef = React.useRef(commentDraft);
+  commentDraftRef.current = commentDraft;
 
   // 项/内容变化时同步草稿(切项目或远端刷新)
   React.useEffect(() => {
@@ -111,60 +135,121 @@ const ItemCard = React.memo(function ItemCard({
   // 换项时清暂存状态
   React.useEffect(() => {
     setPendingStatus(null);
+    pickingRef.current = false;
   }, [item.checklistItemId]);
+
+  const commitComment = React.useCallback(
+    (nextText?: string) => {
+      const trimmed = (nextText ?? commentDraftRef.current) ?? '';
+      const latest = readLatestItem(checklistId, item.checklistItemId);
+      const saved = latest?.comment ?? item.comment ?? '';
+      if (trimmed !== saved) {
+        onUpdate(item.checklistItemId, { comment: trimmed });
+      }
+    },
+    [checklistId, item.checklistItemId, item.comment, onUpdate],
+  );
+
+  // 输入时防抖落盘(旧端靠 Submit;新端用防抖+失焦,避免 iOS 不触发 blur 丢字)
+  React.useEffect(() => {
+    const handle = setTimeout(() => {
+      commitComment(commentDraft);
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [commentDraft, commitComment]);
+
+  // 卸载时再冲一次,防止离开页时定时器被清掉
+  React.useEffect(() => {
+    return () => {
+      commitComment();
+    };
+  }, [commitComment]);
 
   const appendImages = React.useCallback(
     (uris: string[]) => {
       if (uris.length === 0) return;
+      const latest = readLatestItem(checklistId, item.checklistItemId);
+      const currentUrls = latest?.itemImageUrls ?? item.itemImageUrls;
+      const nextUrls = [...currentUrls, ...uris];
       // 有 pendingStatus → 与图片一并落盘(旧客户端:先拍照再写 status)
       if (pendingStatus) {
         onUpdate(item.checklistItemId, {
           status: pendingStatus,
-          itemImageUrls: [...item.itemImageUrls, ...uris],
+          itemImageUrls: nextUrls,
         });
         setPendingStatus(null);
         return;
       }
       onUpdate(item.checklistItemId, {
-        itemImageUrls: [...item.itemImageUrls, ...uris],
+        itemImageUrls: nextUrls,
       });
     },
-    [item.checklistItemId, item.itemImageUrls, onUpdate, pendingStatus],
+    [checklistId, item.checklistItemId, item.itemImageUrls, onUpdate, pendingStatus],
   );
 
   const takePhoto = React.useCallback(async () => {
-    if (!(await ensureCameraPermission())) return;
-    const res = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-      cameraType: ImagePicker.CameraType.back,
-    });
-    if (res.canceled) {
-      // 取消拍照且尚无图 → 丢弃 pending,避免无图状态
-      if (pendingStatus && item.itemImageUrls.length === 0) {
-        setPendingStatus(null);
+    if (pickingRef.current) return;
+    pickingRef.current = true;
+    try {
+      if (!(await ensureCameraPermission())) return;
+      const res = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 1,
+        cameraType: ImagePicker.CameraType.back,
+      });
+      if (res.canceled) {
+        const latest = readLatestItem(checklistId, item.checklistItemId);
+        const imageCount =
+          latest?.itemImageUrls.length ?? item.itemImageUrls.length;
+        if (pendingStatus && imageCount === 0) {
+          setPendingStatus(null);
+        }
+        return;
       }
-      return;
+      appendImages(res.assets.map((a) => a.uri));
+    } finally {
+      pickingRef.current = false;
     }
-    appendImages(res.assets.map((a) => a.uri));
-  }, [appendImages, pendingStatus, item.itemImageUrls.length]);
+  }, [
+    appendImages,
+    checklistId,
+    item.checklistItemId,
+    item.itemImageUrls.length,
+    pendingStatus,
+  ]);
 
   const pickFromLibrary = React.useCallback(async () => {
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-      allowsMultipleSelection: true,
-    });
-    if (res.canceled) {
-      if (pendingStatus && item.itemImageUrls.length === 0) {
-        setPendingStatus(null);
+    if (pickingRef.current) return;
+    pickingRef.current = true;
+    try {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 1,
+        allowsMultipleSelection: true,
+      });
+      if (res.canceled) {
+        const latest = readLatestItem(checklistId, item.checklistItemId);
+        const imageCount =
+          latest?.itemImageUrls.length ?? item.itemImageUrls.length;
+        if (pendingStatus && imageCount === 0) {
+          setPendingStatus(null);
+        }
+        return;
       }
-      return;
+      appendImages(res.assets.map((a) => a.uri));
+    } finally {
+      pickingRef.current = false;
     }
-    appendImages(res.assets.map((a) => a.uri));
-  }, [appendImages, pendingStatus, item.itemImageUrls.length]);
+  }, [
+    appendImages,
+    checklistId,
+    item.checklistItemId,
+    item.itemImageUrls.length,
+    pendingStatus,
+  ]);
 
   const promptAddPhoto = React.useCallback(() => {
+    if (pickingRef.current) return;
     Alert.alert('Legg til bilde', undefined, [
       { text: 'Ta bilde', onPress: () => void takePhoto() },
       { text: 'Velg fra galleri', onPress: () => void pickFromLibrary() },
@@ -172,24 +257,43 @@ const ItemCard = React.memo(function ItemCard({
         text: 'Avbryt',
         style: 'cancel',
         onPress: () => {
-          if (pendingStatus && item.itemImageUrls.length === 0) {
+          const latest = readLatestItem(checklistId, item.checklistItemId);
+          const imageCount =
+            latest?.itemImageUrls.length ?? item.itemImageUrls.length;
+          if (pendingStatus && imageCount === 0) {
             setPendingStatus(null);
           }
         },
       },
     ]);
-  }, [takePhoto, pickFromLibrary, pendingStatus, item.itemImageUrls.length]);
+  }, [
+    takePhoto,
+    pickFromLibrary,
+    pendingStatus,
+    checklistId,
+    item.checklistItemId,
+    item.itemImageUrls.length,
+  ]);
 
   const onSelectStatus = React.useCallback(
     (value: ChecklistStatus) => {
-      if (value === item.status && pendingStatus == null) return;
+      if (pickingRef.current) return;
+      const latest = readLatestItem(checklistId, item.checklistItemId);
+      const currentStatus = latest?.status ?? item.status;
+      const imageCount =
+        latest?.itemImageUrls.length ?? item.itemImageUrls.length;
+
+      if (value === currentStatus && pendingStatus == null) return;
+
       if (value === 'NA') {
+        // NA 不要求照片,也不清空已有图(避免切换三态时误删)。
         setPendingStatus(null);
-        onUpdate(item.checklistItemId, { status: 'NA', itemImageUrls: [] });
+        onUpdate(item.checklistItemId, { status: 'NA' });
         return;
       }
+
       // OK / Dev:已有图 → 直接写状态;无图 → 暂存并强制拍照(取消则不落状态)
-      if (shouldDeferStatusForPhoto(value, item.itemImageUrls.length)) {
+      if (shouldDeferStatusForPhoto(value, imageCount)) {
         setPendingStatus(value);
         promptAddPhoto();
         return;
@@ -198,6 +302,7 @@ const ItemCard = React.memo(function ItemCard({
       onUpdate(item.checklistItemId, { status: value });
     },
     [
+      checklistId,
       item.status,
       item.checklistItemId,
       item.itemImageUrls.length,
@@ -209,9 +314,12 @@ const ItemCard = React.memo(function ItemCard({
 
   const removeImage = React.useCallback(
     (index: number) => {
-      const next = item.itemImageUrls.filter((_, i) => i !== index);
+      const latest = readLatestItem(checklistId, item.checklistItemId);
+      const urls = latest?.itemImageUrls ?? item.itemImageUrls;
+      const status = latest?.status ?? item.status;
+      const next = urls.filter((_, i) => i !== index);
       // 删光图片且状态为 OK/Dev → 清除状态(与强制拍照规则一致)
-      if (shouldClearStatusAfterAllImagesRemoved(item.status, next.length)) {
+      if (shouldClearStatusAfterAllImagesRemoved(status, next.length)) {
         onUpdate(item.checklistItemId, {
           itemImageUrls: next,
           status: null,
@@ -220,15 +328,8 @@ const ItemCard = React.memo(function ItemCard({
       }
       onUpdate(item.checklistItemId, { itemImageUrls: next });
     },
-    [item.checklistItemId, item.itemImageUrls, item.status, onUpdate],
+    [checklistId, item.checklistItemId, item.itemImageUrls, item.status, onUpdate],
   );
-
-  const commitComment = React.useCallback(() => {
-    const trimmed = commentDraft;
-    if (trimmed !== (item.comment ?? '')) {
-      onUpdate(item.checklistItemId, { comment: trimmed });
-    }
-  }, [commentDraft, item.comment, item.checklistItemId, onUpdate]);
 
   const displayStatus = pendingStatus ?? item.status;
   const requiresPhoto =
@@ -291,13 +392,13 @@ const ItemCard = React.memo(function ItemCard({
         </Text>
       ) : null}
 
-      {/* 备注 */}
+      {/* 备注:防抖自动保存 + 失焦再冲一次(旧端是点 Submit 才保存) */}
       <TextInput
         multiline
         value={commentDraft}
         onChangeText={setCommentDraft}
-        onEndEditing={commitComment}
-        onBlur={commitComment}
+        onEndEditing={() => commitComment()}
+        onBlur={() => commitComment()}
         placeholder="Kommentar…"
         placeholderTextColor="#a3a3a3"
         className="min-h-12 rounded-xl border border-neutral-300 bg-white p-3 text-base text-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
@@ -339,12 +440,21 @@ const ItemCard = React.memo(function ItemCard({
 });
 
 export default function SingleChecklistScreen() {
-  const { id, checklistId } = useLocalSearchParams<{
-    id: string;
-    checklistId: string;
+  const local = useLocalSearchParams<{
+    id?: string | string[];
+    checklistId?: string | string[];
   }>();
+  const global = useGlobalSearchParams<{
+    id?: string | string[];
+    checklistId?: string | string[];
+  }>();
+  const id = useProjectRouteId();
+  const checklistId =
+    normalizeRouteParam(local.checklistId) ??
+    normalizeRouteParam(global.checklistId) ??
+    '';
   const router = useRouter();
-  const { detail, status, error } = useLoadActiveProject(id);
+  const { detail, status, error, reload } = useLoadActiveProject(id);
   const { update } = useUpdateChecklistItem();
 
   const handleUpdate = React.useCallback(
@@ -368,26 +478,43 @@ export default function SingleChecklistScreen() {
     [checklist],
   );
 
-  if (!detail || !checklist) {
+  if (!detail) {
     return (
-      <View className="flex-1 items-center justify-center bg-white px-6 dark:bg-neutral-950">
-        {status === 'error' ? (
-          <Text className="text-center text-sm text-red-600">
-            {error ?? 'Kunne ikke laste sjekklisten'}
-          </Text>
-        ) : status === 'ready' && detail ? (
-          <Text className="text-center text-sm text-neutral-500">
-            Fant ikke sjekklisten
-          </Text>
-        ) : (
-          <ActivityIndicator />
-        )}
-      </View>
+      <ProjectLoadGate
+        detail={detail}
+        status={status}
+        error={error}
+        onRetry={() => void reload()}
+      >
+        {null}
+      </ProjectLoadGate>
+    );
+  }
+
+  if (!checklist) {
+    return (
+      <SafeAreaView className="flex-1 bg-neutral-50" edges={['top', 'left', 'right']}>
+        <View className="flex-row items-center gap-2 border-b border-neutral-200 bg-white px-2 py-3">
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            className="h-9 w-9 items-center justify-center rounded-full active:bg-neutral-100"
+          >
+            <Ionicons name="chevron-back" size={24} color="#1d4ed8" />
+          </Pressable>
+          <Text className="text-lg font-bold text-neutral-900">Sjekkliste</Text>
+        </View>
+        <ScreenEmpty
+          embedded
+          title="Fant ikke sjekklisten"
+          hint="Gå tilbake og åpne sjekklisten på nytt."
+        />
+      </SafeAreaView>
     );
   }
 
   return (
-    <View className="flex-1 bg-neutral-50 dark:bg-neutral-950">
+    <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-neutral-950" edges={['top', 'left', 'right']}>
       {/* 顶栏:返回 + 清单名 + 同步状态 */}
       <View className="flex-row items-center gap-2 border-b border-neutral-200 bg-white px-2 py-3 dark:border-neutral-800 dark:bg-neutral-900">
         <Pressable
@@ -415,19 +542,29 @@ export default function SingleChecklistScreen() {
         </View>
       </View>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="gap-3 p-4 pb-16"
-        keyboardShouldPersistTaps="handled"
-      >
-        {checklist.checkItems.map((item) => (
-          <ItemCard
-            key={item.checklistItemId}
-            item={item}
-            onUpdate={handleUpdate}
-          />
-        ))}
-      </ScrollView>
-    </View>
+      {checklist.checkItems.length === 0 ? (
+        <ScreenEmpty
+          embedded
+          icon="list-outline"
+          title="Ingen kontrollpunkter"
+          hint="Denne sjekklisten har ingen punkter ennå."
+        />
+      ) : (
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-3 p-4 pb-16"
+          keyboardShouldPersistTaps="handled"
+        >
+          {checklist.checkItems.map((item) => (
+            <ItemCard
+              key={item.checklistItemId}
+              checklistId={checklist.checklistId}
+              item={item}
+              onUpdate={handleUpdate}
+            />
+          ))}
+        </ScrollView>
+      )}
+    </SafeAreaView>
   );
 }

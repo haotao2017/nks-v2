@@ -83,7 +83,7 @@ export default function LoginScreen() {
               label="Passord"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntryToggle
               autoCapitalize="none"
               autoComplete="password"
               textContentType="password"

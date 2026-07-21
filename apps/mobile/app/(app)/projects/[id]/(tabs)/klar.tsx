@@ -16,7 +16,7 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -25,19 +25,33 @@ import {
   ToastAndroid,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import SignatureScreen, {
   type SignatureViewRef,
 } from 'react-native-signature-canvas';
 
+import {
+  FullscreenModal,
+  ProjectLoadGate,
+} from '@/components/screen-states';
 import { useLoadActiveProject } from '@/features/active-project/hooks';
 import { fetchLastSubmitted, postProjectSubmit } from '@/features/active-project/api';
 import { resyncPending } from '@/features/active-project/sync';
 import { projectKeys } from '@/features/projects/api';
+import { useProjectRouteId } from '@/lib/use-project-route-id';
 import { clearActiveProject } from '@/store/active-project-slice';
 import { useAppDispatch } from '@/store/hooks';
+
+/** Signature WebView 必须占满父级高度;NativeWind className 对 WebView 无效。 */
+const SIGNATURE_WEB_STYLE = `
+  .m-signature-pad { box-shadow: none; margin: 0; border: none; width: 100%; height: 100%; }
+  .m-signature-pad--body { border: none; height: 100%; }
+  .m-signature-pad--footer { display: none; margin: 0; }
+  body,html { width: 100%; height: 100%; margin: 0; padding: 0; }
+  .m-signature-pad--body canvas { width: 100% !important; height: 100% !important; }
+`;
 
 function toast(message: string) {
   if (Platform.OS === 'android') {
@@ -48,8 +62,9 @@ function toast(message: string) {
 }
 
 export default function KlarTab() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { detail, status, error, online } = useLoadActiveProject(id);
+  const id = useProjectRouteId();
+  const { detail, status, error, online, projectId, reload } =
+    useLoadActiveProject(id);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const qc = useQueryClient();
@@ -57,15 +72,22 @@ export default function KlarTab() {
   const [comment, setComment] = React.useState('');
   const [signature, setSignature] = React.useState('');
   const [showSignPad, setShowSignPad] = React.useState(false);
+  /** 每次打开签名板递增,强制 remount 以便 dataURL 回填旧签名。 */
+  const [signPadKey, setSignPadKey] = React.useState(0);
   const [submitting, setSubmitting] = React.useState(false);
   const [lastSubmitted, setLastSubmitted] = React.useState<string | null>(null);
   const signRef = React.useRef<SignatureViewRef>(null);
 
+  const openSignPad = React.useCallback(() => {
+    setSignPadKey((k) => k + 1);
+    setShowSignPad(true);
+  }, []);
+
   // 进页拉上次提交时间(离线/失败静默)。
   React.useEffect(() => {
-    if (!id) return;
+    if (!projectId) return;
     let alive = true;
-    fetchLastSubmitted(id)
+    fetchLastSubmitted(projectId)
       .then((d) => {
         if (alive) setLastSubmitted(d);
       })
@@ -73,19 +95,18 @@ export default function KlarTab() {
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [projectId]);
 
   if (!detail) {
     return (
-      <View className="flex-1 items-center justify-center bg-white px-6 dark:bg-neutral-950">
-        {status === 'error' ? (
-          <Text className="text-center text-sm text-red-600">
-            {error ?? 'Kunne ikke laste prosjektet'}
-          </Text>
-        ) : (
-          <ActivityIndicator />
-        )}
-      </View>
+      <ProjectLoadGate
+        detail={detail}
+        status={status}
+        error={error}
+        onRetry={() => void reload()}
+      >
+        {null}
+      </ProjectLoadGate>
     );
   }
 
@@ -226,18 +247,26 @@ export default function KlarTab() {
             Signatur *
           </Text>
           {hasSignature ? (
-            <View className="flex-row items-center gap-3 rounded-xl border border-green-300 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/30">
-              <Ionicons name="checkmark-circle" size={22} color="#16a34a" />
-              <Text className="flex-1 text-sm text-green-700 dark:text-green-300">
-                Signatur registrert
-              </Text>
-              <Pressable onPress={() => setShowSignPad(true)}>
-                <Text className="text-sm font-semibold text-blue-600">Endre</Text>
-              </Pressable>
+            <View className="gap-2 rounded-xl border border-green-300 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/30">
+              <View className="flex-row items-center gap-3">
+                <Ionicons name="checkmark-circle" size={22} color="#16a34a" />
+                <Text className="flex-1 text-sm text-green-700 dark:text-green-300">
+                  Signatur registrert
+                </Text>
+                <Pressable onPress={openSignPad} hitSlop={8}>
+                  <Text className="text-sm font-semibold text-blue-600">Endre</Text>
+                </Pressable>
+              </View>
+              <Image
+                source={{ uri: signature }}
+                className="h-24 w-full rounded-lg bg-white"
+                resizeMode="contain"
+                accessibilityLabel="Lagret signatur"
+              />
             </View>
           ) : (
             <Pressable
-              onPress={() => setShowSignPad(true)}
+              onPress={openSignPad}
               className="flex-row items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-400 bg-white p-4 active:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-900"
             >
               <Ionicons name="create-outline" size={20} color="#1d4ed8" />
@@ -281,42 +310,36 @@ export default function KlarTab() {
         ) : null}
       </ScrollView>
 
-      {/* 签名板(WebView 版) */}
-      <Modal visible={showSignPad} animationType="slide" onRequestClose={() => setShowSignPad(false)}>
-        <View className="flex-1 bg-white dark:bg-neutral-950">
-          <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-            <Pressable onPress={() => setShowSignPad(false)}>
-              <Text className="text-base text-neutral-600 dark:text-neutral-300">Avbryt</Text>
-            </Pressable>
-            <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-              Signatur
-            </Text>
-            <Pressable onPress={() => signRef.current?.readSignature()}>
-              <Text className="text-base font-semibold text-blue-600">Lagre</Text>
-            </Pressable>
-          </View>
-          <View className="flex-1">
-            <SignatureScreen
-              ref={signRef}
-              onOK={handleSignatureOK}
-              onEmpty={() => Alert.alert('Signatur', 'Tegn signaturen din før du lagrer.')}
-              descriptionText="Signér i feltet"
-              clearText="Tøm"
-              confirmText="Lagre"
-              webStyle=".m-signature-pad--footer { display: none; }"
-            />
-          </View>
-          <View className="border-t border-neutral-200 p-4 dark:border-neutral-800">
-            <Pressable
-              onPress={() => signRef.current?.clearSignature()}
-              className="h-11 flex-row items-center justify-center gap-2 rounded-xl border border-neutral-300 active:bg-neutral-100 dark:border-neutral-700"
-            >
-              <Ionicons name="trash-outline" size={18} color="#dc2626" />
-              <Text className="text-sm font-semibold text-red-600">Tøm</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      <FullscreenModal
+        visible={showSignPad}
+        title="Signatur"
+        onClose={() => setShowSignPad(false)}
+        onConfirm={() => signRef.current?.readSignature()}
+        footer={
+          <Pressable
+            onPress={() => signRef.current?.clearSignature()}
+            className="h-11 flex-row items-center justify-center gap-2 rounded-xl border border-neutral-300 active:bg-neutral-100"
+          >
+            <Ionicons name="trash-outline" size={18} color="#dc2626" />
+            <Text className="text-sm font-semibold text-red-600">Tøm</Text>
+          </Pressable>
+        }
+      >
+        <SignatureScreen
+          key={signPadKey}
+          ref={signRef}
+          dataURL={signature || undefined}
+          onOK={handleSignatureOK}
+          onEmpty={() =>
+            Alert.alert('Signatur', 'Tegn signaturen din før du lagrer.')
+          }
+          descriptionText="Signér i feltet under"
+          webStyle={SIGNATURE_WEB_STYLE}
+          style={{ flex: 1, width: '100%', height: '100%' }}
+          backgroundColor="#ffffff"
+          penColor="#111827"
+        />
+      </FullscreenModal>
     </>
   );
 }

@@ -51,17 +51,20 @@ export async function assembleActiveProject(
 
   const detailRes = await client.get<ProjectDetailContainer>(
     endpoints.mobileApp.projectDetail.path,
-    { params: { projectID: projectId } },
+    { params: { ProjectID: projectId } },
   );
   const d = detailRes?.projectDetail;
   if (!d) throw new Error('Fant ikke prosjektdetaljer');
 
-  const checklistsMeta = detailRes.listOfChecklists ?? [];
+  const checklistsMeta = (detailRes.listOfChecklists ?? []).filter(
+    (c) => c.checklistId != null && c.checklistId > 0,
+  );
   const checklists: LocalChecklist[] = await Promise.all(
     checklistsMeta.map(async (c) => {
+      const checklistId = String(c.checklistId);
       const clRes = await client.get<ChecklistItemContainer>(
         endpoints.mobileApp.checklistItems.path,
-        { params: { ChecklistID: c.checklistId ?? '' } },
+        { params: { ChecklistID: checklistId } },
       );
       const items = clRes?.listOfChecklistItems ?? [];
       return {
@@ -206,7 +209,7 @@ interface LogEntry {
  */
 export async function fetchLastSubmitted(projectID: string): Promise<string | null> {
   const res = await getApiClient().get<LogEntry[]>(endpoints.mobileApp.log.path, {
-    params: { projectID },
+    params: { ProjectId: projectID },
   });
   return res?.[0]?.dateTime ?? null;
 }

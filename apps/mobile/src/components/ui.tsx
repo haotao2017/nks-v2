@@ -11,6 +11,7 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export function Button({
   label,
@@ -43,16 +44,46 @@ export function Button({
 
 export function Field({
   label,
+  secureTextEntryToggle,
+  secureTextEntry,
+  className,
   ...props
-}: { label: string } & TextInputProps) {
+}: {
+  label: string;
+  /** 显示眼睛图标,用于切换密码明文/密文。 */
+  secureTextEntryToggle?: boolean;
+} & TextInputProps) {
+  const [passwordVisible, setPasswordVisible] = React.useState(false);
+  const isSecure = secureTextEntryToggle ? !passwordVisible : secureTextEntry;
+
   return (
     <View className="gap-1.5">
       <Text className="text-sm font-medium text-neutral-700">{label}</Text>
-      <TextInput
-        className="h-12 rounded-xl border border-neutral-300 bg-white px-3 text-base text-neutral-900"
-        placeholderTextColor="#a3a3a3"
-        {...props}
-      />
+      <View className="relative">
+        <TextInput
+          className={`h-12 rounded-xl border border-neutral-300 bg-white px-3 text-base text-neutral-900 ${
+            secureTextEntryToggle ? 'pr-12' : ''
+          } ${className ?? ''}`}
+          placeholderTextColor="#a3a3a3"
+          secureTextEntry={isSecure}
+          {...props}
+        />
+        {secureTextEntryToggle ? (
+          <Pressable
+            onPress={() => setPasswordVisible((v) => !v)}
+            className="absolute right-0 top-0 h-12 w-12 items-center justify-center"
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={passwordVisible ? 'Skjul passord' : 'Vis passord'}
+          >
+            <Ionicons
+              name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
+              size={22}
+              color="#737373"
+            />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }

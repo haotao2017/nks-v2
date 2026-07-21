@@ -98,6 +98,10 @@ const activeProjectSlice = createSlice({
   reducers: {
     /** 开始加载某项目;若持久化副本属于别的项目则先清空,避免串数据。 */
     beginLoad(state, action: PayloadAction<string>) {
+      if (state.detail?.projectID === action.payload) {
+        state.projectId = action.payload;
+        return;
+      }
       if (state.detail && state.detail.projectID !== action.payload) {
         state.detail = null;
       }
@@ -119,6 +123,8 @@ const activeProjectSlice = createSlice({
       state.error = null;
     },
     loadFailed(state, action: PayloadAction<string>) {
+      // 已有本地副本时不要让并发 Tab 的失败请求覆盖可展示数据。
+      if (state.detail) return;
       state.status = 'error';
       state.error = action.payload;
     },

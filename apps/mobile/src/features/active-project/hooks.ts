@@ -11,6 +11,7 @@ import { useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { getErrorMessage } from '@/lib/query';
+import { normalizeRouteParam, type RouteParam } from '@/lib/route-params';
 import { store } from '@/store';
 import {
   projectKeys,
@@ -31,75 +32,111 @@ import { assembleActiveProject } from './api';
 import { isOnlineNow, subscribeToOnline, useIsOnline } from './netinfo';
 import { pushChecklistItem, pushProjectUpdate, resyncPending } from './sync';
 
+/** 同一项目并发加载去重(多 Tab 同时 mount 时只发一次请求)。 */
+const inflightLoads = new Map<string, Promise<void>>();
+
 /** 读当前打开项目的本地副本 + 加载状态。 */
 export function useActiveProject() {
   return useAppSelector((s) => s.activeProject);
 }
 
 /** 挂载即加载并组装项目;返回 state + online + reload。 */
-export function useLoadActiveProject(projectId: string) {
+export function useLoadActiveProject(routeId: RouteParam) {
+  const projectId = normalizeRouteParam(routeId);
   const dispatch = useAppDispatch();
   const qc = useQueryClient();
   const online = useIsOnline();
   const state = useAppSelector((s) => s.activeProject);
 
   const load = useCallback(async () => {
-    // 读「最新」state(避免 useCallback 闭包旧值;两个 Tab 都会调用本 load)。
+    if (!projectId) {
+      dispatch(loadFailed('Mangler prosjekt-ID'));
+      return;
+    }
+
+    // 读「最新」state(避免 useCallback 闭包旧值;多个 Tab 都会调用本 load)。
     const current = store.getState().activeProject;
     const hasLocal = current.detail?.projectID === projectId;
-    // 已就绪且是同一项目:沿用本地副本,不重复拉取(可用 reload() 手动刷新)。
-    if (hasLocal && current.status === 'ready') return;
 
-    const hasUnsynced =
-      hasLocal &&
-      Boolean(
-        current.detail?.projectDirty ||
-          current.detail?.checklists.some((cl) =>
-            cl.checkItems.some((it) => it.updated === false),
-          ),
-      );
+    // 已有同一项目本地副本:直接复用(persist 回灌后 status 可能是 idle)。
+    if (hasLocal && current.detail) {
+      if (current.status !== 'ready') {
+        dispatch(loadSucceeded(current.detail));
+      }
+      return;
+    }
 
-    // 冷启动后 status=idle 但 persist 有本地脏数据:先恢复 ready，勿用服务端覆盖。
-    if (hasUnsynced && current.detail) {
-      dispatch(loadSucceeded(current.detail));
-      if (await isOnlineNow()) {
-        try {
-          await resyncPending();
-        } catch {
-          /* 补传失败保留本地 */
+    const existing = inflightLoads.get(projectId);
+    if (existing) {
+      await existing;
+      return;
+    }
+
+    const task = (async () => {
+      const latest = store.getState().activeProject;
+      const local = latest.detail?.projectID === projectId;
+
+      const hasUnsynced =
+        local &&
+        Boolean(
+          latest.detail?.projectDirty ||
+            latest.detail?.checklists.some((cl) =>
+              cl.checkItems.some((it) => it.updated === false),
+            ),
+        );
+
+      // 冷启动后 status=idle 但 persist 有本地脏数据:先恢复 ready，勿用服务端覆盖。
+      if (hasUnsynced && latest.detail) {
+        dispatch(loadSucceeded(latest.detail));
+        if (await isOnlineNow()) {
+          try {
+            await resyncPending();
+          } catch {
+            /* 补传失败保留本地 */
+          }
+        }
+        return;
+      }
+
+      if (!(await isOnlineNow())) {
+        if (local && latest.detail) {
+          dispatch(loadSucceeded(latest.detail));
+        } else {
+          dispatch(beginLoad(projectId));
+          dispatch(loadFailed('Ingen nettverkstilkobling'));
+        }
+        return;
+      }
+
+      dispatch(beginLoad(projectId));
+      try {
+        const list = qc.getQueryData<MobileProjectListItem[]>(projectKeys.list());
+        const seed = list?.find((p) => String(p.projectID) === projectId);
+        const detail = await assembleActiveProject(projectId, seed);
+        dispatch(loadSucceeded(detail));
+      } catch (e) {
+        const after = store.getState().activeProject;
+        if (after.detail?.projectID !== projectId) {
+          dispatch(loadFailed(getErrorMessage(e)));
         }
       }
-      return;
-    }
+    })();
 
-    if (!(await isOnlineNow())) {
-      // 离线:有本地副本就沿用(持久化副本);否则报错。
-      if (hasLocal && current.detail) {
-        dispatch(loadSucceeded(current.detail));
-      } else {
-        dispatch(beginLoad(projectId));
-        dispatch(loadFailed('Ingen nettverkstilkobling'));
-      }
-      return;
-    }
-    dispatch(beginLoad(projectId));
+    inflightLoads.set(projectId, task);
     try {
-      const list = qc.getQueryData<MobileProjectListItem[]>(projectKeys.list());
-      const seed = list?.find((p) => String(p.projectID) === projectId);
-      const detail = await assembleActiveProject(projectId, seed);
-      dispatch(loadSucceeded(detail));
-    } catch (e) {
-      dispatch(loadFailed(getErrorMessage(e)));
+      await task;
+    } finally {
+      if (inflightLoads.get(projectId) === task) {
+        inflightLoads.delete(projectId);
+      }
     }
-    // state.detail 变化不应重新触发,仅项目切换时;闭包读取 hasLocal 足够。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, qc, projectId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  return { ...state, online, reload: load };
+  return { ...state, online, reload: load, projectId };
 }
 
 /** 项目级「本地写 + 尝试同步」。离线/失败保留 dirty,联网后由补传兜底。 */

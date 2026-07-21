@@ -7,7 +7,6 @@
  */
 import * as React from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Pressable,
@@ -15,14 +14,15 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
+import { ProjectLoadGate } from '@/components/screen-states';
 import {
   useLoadActiveProject,
   useSyncProjectUpdate,
 } from '@/features/active-project/hooks';
+import { useProjectRouteId } from '@/lib/use-project-route-id';
 
 function ActionButton({
   icon,
@@ -53,21 +53,20 @@ function ActionButton({
 }
 
 export default function ProjectExteriorTab() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { detail, status, error, online } = useLoadActiveProject(id);
+  const id = useProjectRouteId();
+  const { detail, status, error, online, reload } = useLoadActiveProject(id);
   const { updateProject } = useSyncProjectUpdate();
 
   if (!detail) {
     return (
-      <View className="flex-1 items-center justify-center bg-white px-6 dark:bg-neutral-950">
-        {status === 'error' ? (
-          <Text className="text-center text-sm text-red-600">
-            {error ?? 'Kunne ikke laste prosjektet'}
-          </Text>
-        ) : (
-          <ActivityIndicator />
-        )}
-      </View>
+      <ProjectLoadGate
+        detail={detail}
+        status={status}
+        error={error}
+        onRetry={() => void reload()}
+      >
+        {null}
+      </ProjectLoadGate>
     );
   }
 
