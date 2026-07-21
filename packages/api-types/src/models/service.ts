@@ -16,6 +16,8 @@ export interface ServiceWorkflowCategoryDto {
   id?: number;
   workflowCategoryId?: number;
   serviceId?: number;
+  /** GetProject 填充;选择器用来区分同服务绑定的多条工作流。 */
+  workflowCategoryName?: string;
 }
 
 /** 服务。rate 为 String(不是 number)。@JsonInclude(NON_NULL)。 */

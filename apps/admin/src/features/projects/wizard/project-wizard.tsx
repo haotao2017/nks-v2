@@ -237,6 +237,9 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const onSubmit = form.handleSubmit((values) => {
+    // 防止从第 2 步点「Neste」时,同位置按钮变成 submit 导致误提交并关弹窗。
+    if (step !== STEP_LABEL_KEYS.length - 1) return;
+
     const projectServices: ProjectServiceDto[] = values.services
       .filter((s) => s.serviceId)
       .map((s) => {
@@ -519,86 +522,103 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               <p className="text-muted-foreground text-sm">{t('projectWizard.noServices')}</p>
             )}
             {fields.map((row, index) => (
-              <div key={row.id} className="grid grid-cols-12 items-end gap-2">
-                <div className="col-span-6">
-                  <FormField
-                    control={form.control}
-                    name={`services.${index}.serviceId`}
-                    render={({ field }) => (
-                      <FormItem>
-                        {index === 0 && <FormLabel>{t('projectWizard.fields.service')}</FormLabel>}
-                        <Select
-                          value={field.value}
-                          onValueChange={(v) => handleServiceSelect(index, v)}
-                        >
+              <div key={row.id} className="space-y-2">
+                {index === 0 && (
+                  <div className="grid grid-cols-12 gap-2">
+                    <div className="col-span-6">
+                      <FormLabel>{t('projectWizard.fields.service')}</FormLabel>
+                    </div>
+                    <div className="col-span-2">
+                      <FormLabel>{t('projectWizard.fields.quantity')}</FormLabel>
+                    </div>
+                    <div className="col-span-3">
+                      <FormLabel>{t('projectWizard.fields.price')}</FormLabel>
+                    </div>
+                    <div className="col-span-1" />
+                  </div>
+                )}
+                <div className="grid grid-cols-12 items-start gap-2">
+                  <div className="col-span-6">
+                    <FormField
+                      control={form.control}
+                      name={`services.${index}.serviceId`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select
+                            value={field.value}
+                            onValueChange={(v) => handleServiceSelect(index, v)}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={t('projectWizard.fields.servicePlaceholder')}
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {services.map((s) => (
+                                <SelectItem key={s.id} value={String(s.id)}>
+                                  {s.description
+                                    ? `${s.name} (${s.description})`
+                                    : (s.name ?? `#${s.id}`)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <FormField
+                      control={form.control}
+                      name={`services.${index}.quantity`}
+                      render={({ field }) => (
+                        <FormItem>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('projectWizard.fields.servicePlaceholder')} />
-                            </SelectTrigger>
+                            <Input
+                              type="number"
+                              min={0}
+                              value={field.value ?? ''}
+                              onChange={(e) => handleQuantityChange(index, e.target.value)}
+                            />
                           </FormControl>
-                          <SelectContent>
-                            {services.map((s) => (
-                              <SelectItem key={s.id} value={String(s.id)}>
-                                {s.description ? `${s.name} (${s.description})` : (s.name ?? `#${s.id}`)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <FormField
-                    control={form.control}
-                    name={`services.${index}.quantity`}
-                    render={({ field }) => (
-                      <FormItem>
-                        {index === 0 && <FormLabel>{t('projectWizard.fields.quantity')}</FormLabel>}
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={0}
-                            value={field.value ?? ''}
-                            onChange={(e) => handleQuantityChange(index, e.target.value)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="col-span-3">
-                  <FormField
-                    control={form.control}
-                    name={`services.${index}.price`}
-                    render={({ field }) => (
-                      <FormItem>
-                        {index === 0 && <FormLabel>{t('projectWizard.fields.price')}</FormLabel>}
-                        <FormControl>
-                          <div className="relative">
-                            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
-                              {t('projectWizard.currency')}
-                            </span>
-                            <Input className="pl-8" placeholder="0" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="col-span-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveService(index)}
-                    aria-label={t('projectWizard.removeService')}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <FormField
+                      control={form.control}
+                      name={`services.${index}.price`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+                                {t('projectWizard.currency')}
+                              </span>
+                              <Input className="pl-8" placeholder="0" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="col-span-1 flex h-9 items-center justify-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveService(index)}
+                      aria-label={t('projectWizard.removeService')}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -631,11 +651,11 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
               </Button>
             )}
             {step < STEP_LABEL_KEYS.length - 1 ? (
-              <Button type="button" onClick={goNext}>
+              <Button key="wizard-next" type="button" onClick={goNext}>
                 {t('projectWizard.next')}
               </Button>
             ) : (
-              <Button type="submit" disabled={isPending}>
+              <Button key="wizard-submit" type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
                 {isEdit ? t('projectWizard.save') : t('projectWizard.create')}
               </Button>

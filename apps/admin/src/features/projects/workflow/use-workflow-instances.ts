@@ -38,7 +38,7 @@ export interface UseWorkflowInstancesResult {
 export function useWorkflowInstances(project: ProjectDto | undefined): UseWorkflowInstancesResult {
   const { t } = useTranslation();
 
-  const instances = React.useMemo<WorkflowInstance[]>(() => {
+    const instances = React.useMemo<WorkflowInstance[]>(() => {
     const swcList = project?.projectServiceWorkflowList ?? [];
     const services = project?.projectService ?? [];
     const mapped = swcList
@@ -48,9 +48,13 @@ export function useWorkflowInstances(project: ProjectDto | undefined): UseWorkfl
         const svc = ps?.service;
         const serviceName = svc?.name;
         const serviceDescription = svc?.description;
+        const wfName =
+          swc.workflowCategoryName ||
+          t('workflow.selector.fallback', { id: swc.workflowCategoryId });
+        // 同服务绑多条工作流时用工作流名区分,避免下拉两项显示完全一样。
         const label = serviceName
-          ? `${serviceName}${serviceDescription ? ` – ${serviceDescription}` : ''}`
-          : t('workflow.selector.fallback', { id: swc.workflowCategoryId });
+          ? `${serviceName}${serviceDescription ? ` – ${serviceDescription}` : ''} (${wfName})`
+          : wfName;
         return {
           instanceId: swc.id ?? swc.workflowCategoryId!,
           workflowCategoryId: swc.workflowCategoryId!,

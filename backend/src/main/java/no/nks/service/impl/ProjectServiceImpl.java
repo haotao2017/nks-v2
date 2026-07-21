@@ -789,6 +789,9 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
                     dto.setId(wc.getId());
                     dto.setWorkflowCategoryId(wc.getWorkflowCategoryId());
                     dto.setServiceId(wc.getServiceId());
+                    if (wc.getWorkflowCategory() != null) {
+                        dto.setWorkflowCategoryName(wc.getWorkflowCategory().getName());
+                    }
                     return dto;
                 })
                 .collect(Collectors.toList());
