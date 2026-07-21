@@ -211,6 +211,14 @@ public class ProjectDocServiceImpl implements ProjectDocService {
         return s3Service.createPublicURL(null, null, bucketFolder, fileName);
     }
 
+    /**
+     * 项目文档公开 URL（与 uploadProjectDocument 的 S3 路径一致）。
+     */
+    private String generateProjectDocUrl(Integer companyId, Integer projectId, String fileName) {
+        String bucketFolder = "CompanyID-" + companyId + "/ProjectDocs/" + projectId + "/";
+        return s3Service.createPublicURL(null, null, bucketFolder, fileName);
+    }
+
     @Override
     public RequestResponse sendProjectInspThirPartyEmail(ProjectWorkflowDto projectWorkflow, MultipartFile file, Integer companyId, Integer userId) {
         log.debug("发送项目检查第三方邮件，项目ID: {}", projectWorkflow.getProjectId());
@@ -335,13 +343,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
 
                         // 如果有文件名，构建图片URL
                         if (existingDoc.getFileName() != null && !existingDoc.getFileName().isEmpty()) {
-                            String imageUrl = s3Service.createPublicURL(
-                                companyId.toString(),
-                                "ProjectDocs",
-                                projectId.toString(),
-                                existingDoc.getFileName()
-                            );
-                            docDto.setImageUrl(imageUrl);
+                            docDto.setImageUrl(generateProjectDocUrl(companyId, projectId, existingDoc.getFileName()));
                         }
 
                         docDto.setWorkflowStepId(existingDoc.getWorkflowStepId());
@@ -465,12 +467,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                         docDto.setIsRequired(docType.getIsRequired());
 
                         if (existingDoc.getFileName() != null && !existingDoc.getFileName().isEmpty()) {
-                            String imageUrl = s3Service.createPublicURL(
-                                    companyId.toString(),
-                                    "ProjectDocs",
-                                    projectId.toString(),
-                                    existingDoc.getFileName());
-                            docDto.setImageUrl(imageUrl);
+                            docDto.setImageUrl(generateProjectDocUrl(companyId, projectId, existingDoc.getFileName()));
                         }
 
                         docDto.setWorkflowStepId(existingDoc.getWorkflowStepId());
@@ -494,12 +491,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                     docDto.setProjectPartyId(projectPartyId);
                     docDto.setIsApproved(existingDoc.getIsApproved());
                     if (existingDoc.getFileName() != null && !existingDoc.getFileName().isEmpty()) {
-                        String imageUrl = s3Service.createPublicURL(
-                                companyId.toString(),
-                                "ProjectDocs",
-                                projectId.toString(),
-                                existingDoc.getFileName());
-                        docDto.setImageUrl(imageUrl);
+                        docDto.setImageUrl(generateProjectDocUrl(companyId, projectId, existingDoc.getFileName()));
                     }
                     docDto.setWorkflowStepId(existingDoc.getWorkflowStepId());
                     documentList.add(docDto);
@@ -572,12 +564,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 // 为文档生成URL
                 for (ProjectDocumentDto doc : partyDocuments) {
                     if (doc.getFileName() != null && !doc.getFileName().isEmpty()) {
-                        String imageUrl = s3Service.createPublicURL(
-                                companyId.toString(),
-                                "ProjectDocs",
-                                projectId.toString(),
-                                doc.getFileName());
-                        doc.setImageUrl(imageUrl);
+                        doc.setImageUrl(generateProjectDocUrl(companyId, projectId, doc.getFileName()));
                     }
                 }
 
@@ -872,12 +859,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 docDto.setIsApproved(existingDoc.getIsApproved());
                 docDto.setWorkflowStepId(existingDoc.getWorkflowStepId());
                 if (existingDoc.getFileName() != null && !existingDoc.getFileName().isEmpty()) {
-                    String imageUrl = s3Service.createPublicURL(
-                            companyId.toString(),
-                            "ProjectDocs",
-                            projectId.toString(),
-                            existingDoc.getFileName());
-                    docDto.setImageUrl(imageUrl);
+                    docDto.setImageUrl(generateProjectDocUrl(companyId, projectId, existingDoc.getFileName()));
                 }
                 documentList.add(docDto);
             }

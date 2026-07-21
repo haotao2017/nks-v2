@@ -28,6 +28,7 @@ import no.nks.service.FileStorageService;
 import no.nks.service.MobileAppService;
 import no.nks.service.ProjectService;
 import no.nks.service.ProjectChecklistService;
+import no.nks.service.S3Service;
 import no.nks.util.ChecklistStatusNormalizer;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -46,6 +47,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MobileAppServiceImpl implements MobileAppService {
 
+    /**
+     * Legacy MobileApp ProjectDetail: floor plan is Party.Doc.PartyDocTypeID = 64.
+     * Admin Foretak uploads that DocType into CompanyID-{id}/ProjectDocs/{projectId}/.
+     */
+    private static final int FLOOR_PLAN_DOC_TYPE_ID = 64;
+
+    /** Presigned URL TTL (minutes) for private-bucket PDF fetch on mobile. */
+    private static final int FLOOR_PLAN_URL_TTL_MINUTES = 120;
+
     private final ProjectRepository projectRepository;
     private final ChecklistItemRepository checklistItemRepository;
     private final ChecklistItemImageRepository checklistItemImageRepository;
@@ -54,6 +64,7 @@ public class MobileAppServiceImpl implements MobileAppService {
     private final InspectionLogRepository inspectionLogRepository;
     private final ProjectChecklistRepository projectChecklistRepository;
     private final FileStorageService fileStorageService;
+    private final S3Service s3Service;
     private final ObjectMapper objectMapper;
     private final ContactBookRepository contactBookRepository;
     private final ProjectService projectService;
@@ -171,9 +182,22 @@ public class MobileAppServiceImpl implements MobileAppService {
             details.setSiteImageUrl(fileStorageService.getPublicUrl(project.getProjectImage(), "project-site-images"));
         }
 
-        // 获取平面图文档（类型64）
-        fileStorageService.getDocument(project.getId(), 64)
-                .ifPresent(doc -> details.setFloorPlanUrl(fileStorageService.getPublicUrl(doc.getFileName(), "pdf")));
+        // 平面图：原逻辑 PartyDocTypeId=64；文件在 ProjectDocs（与 Admin 上传一致），私有桶返回预签名 URL
+        fileStorageService.getDocument(project.getId(), FLOOR_PLAN_DOC_TYPE_ID).ifPresent(doc -> {
+            String fileName = doc.getFileName();
+            if (fileName == null || fileName.isEmpty()) {
+                return;
+            }
+            Integer companyIdForDoc = doc.getCompanyId() != null ? doc.getCompanyId() : project.getCompanyId();
+            if (companyIdForDoc == null) {
+                log.warn("平面图文档缺少 companyId，projectId={}, docId={}", project.getId(), doc.getId());
+                return;
+            }
+            String bucketFolder = "CompanyID-" + companyIdForDoc + "/ProjectDocs/" + project.getId() + "/";
+            String publicUrl = s3Service.createPublicUrl(null, null, bucketFolder, fileName);
+            String presigned = s3Service.generatePresignedUrl(publicUrl, FLOOR_PLAN_URL_TTL_MINUTES);
+            details.setFloorPlanUrl(presigned != null && !presigned.isEmpty() ? presigned : publicUrl);
+        });
 
         details.setCreatedOn(project.getInspectionDate() != null ?
                 project.getInspectionDate().toString() : "");
