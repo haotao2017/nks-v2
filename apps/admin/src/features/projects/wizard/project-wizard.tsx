@@ -239,12 +239,17 @@ export function ProjectWizard({ project, onDone, onCancel }: ProjectWizardProps)
   const onSubmit = form.handleSubmit((values) => {
     const projectServices: ProjectServiceDto[] = values.services
       .filter((s) => s.serviceId)
-      .map((s) => ({
-        ...(s.id ? { id: Number(s.id) } : {}),
-        serviceId: strToNum(s.serviceId),
-        quantity: strToNum(s.quantity),
-        price: s.price || undefined,
-      }));
+      .map((s) => {
+        const id = s.id ? Number(s.id) : undefined;
+        return {
+          ...(id ? { id } : {}),
+          // 后端 insert/update 只接收 isNewAdded===true 的新行(对齐旧 PricingTab.js)
+          ...(id ? {} : { isNewAdded: true }),
+          serviceId: strToNum(s.serviceId),
+          quantity: strToNum(s.quantity),
+          price: s.price || undefined,
+        };
+      });
 
     // 以原始 project 为底,仅覆盖编辑字段与关联服务,保留未展示字段。
     // title:旧系统无输入,新建时用 address 派生一个可读标题,编辑保留原 title。

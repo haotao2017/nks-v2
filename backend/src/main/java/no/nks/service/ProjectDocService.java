@@ -45,6 +45,11 @@ public interface ProjectDocService {
     WrapperProjectDocumentDto getProjectSystemGeneratedDocListAllSteps(Integer projectId, Integer workflowId, Integer companyId);
 
     /**
+     * Andre 通用附件列表(OtherDocs=2;兼容历史上未写 OtherDocs 的无参与方上传)。
+     */
+    WrapperProjectDocumentDto getProjectOtherDocList(Integer projectId, Integer workflowId, Integer companyId);
+
+    /**
      * 删除项目文档
      */
     RequestResponse deleteProjectDocument(Integer documentId, Integer projectId, Integer companyId);

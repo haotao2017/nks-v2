@@ -342,7 +342,7 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
         }
 
         List<ProjectServiceDto> newAddedServices = servicesList.stream()
-                .filter(ps -> Boolean.TRUE.equals(ps.getIsNewAdded()))
+                .filter(ps -> Boolean.TRUE.equals(ps.getIsNewAdded()) || ps.getId() == null)
                 .collect(Collectors.toList());
 
         try {
@@ -807,7 +807,8 @@ public class ProjectServiceImpl implements no.nks.service.ProjectService {
         List<ProjectServiceDto> resultList = new ArrayList<>();
 
         for (ProjectServiceDto serviceDto : servicesList) {
-            if (Boolean.TRUE.equals(serviceDto.getIsNewAdded())) {
+            // 兼容未带 isNewAdded 的客户端:无 id 即视为新行
+            if (Boolean.TRUE.equals(serviceDto.getIsNewAdded()) || serviceDto.getId() == null) {
                 ProjectService service = new ProjectService();
                 service.setProjectId(projectId);
                 service.setServiceId(serviceDto.getServiceId());

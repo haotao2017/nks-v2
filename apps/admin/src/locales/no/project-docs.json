@@ -23,6 +23,7 @@
       "uploadedFile": "Opplastet fil",
       "unnamedDocType": "Uten navn",
       "noDocTypes": "Ingen dokumenttyper.",
+      "other": "Other",
       "columns": {
         "docType": "Dokumenttype",
         "file": "Fil"
@@ -40,7 +41,11 @@
     },
     "andre": {
       "description": "Last opp generelle vedlegg som ikke er knyttet til et foretak.",
-      "upload": "Last opp vedlegg"
+      "upload": "Last opp vedlegg",
+      "empty": "Ingen vedlegg lastet opp enda.",
+      "columns": {
+        "file": "Fil"
+      }
     },
     "delete": {
       "title": "Slett dokument",

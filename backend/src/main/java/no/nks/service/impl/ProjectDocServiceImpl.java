@@ -421,45 +421,20 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             for (ProjectParty party : projectParties) {
                 Integer projectPartyId = party.getId();
 
-                // 获取该项目、该相关方上传的文档
-                List<Doc> existingDocs = docRepository.findByProjectIdAndPartyIdAndPartyTypeId(projectId, party.getPartyId(), partyTypeId);
-                Map<Integer, Doc> docTypeMap = existingDocs.stream()
-                    .collect(Collectors.toMap(Doc::getPartyDocTypeId, doc -> doc, (doc1, doc2) -> doc1));
+                // 获取该项目、该相关方上传的文档(同一 DocType 可多文件)
+                List<Doc> existingDocs = docRepository.findByProjectIdAndPartyIdAndPartyTypeId(
+                        projectId, party.getPartyId(), partyTypeId);
+                Map<Integer, List<Doc>> docsByType = existingDocs.stream()
+                        .filter(d -> d.getPartyDocTypeId() != null)
+                        .collect(Collectors.groupingBy(Doc::getPartyDocTypeId));
 
-                // 处理每个文档类型
+                // 处理每个文档类型:已上传的每一份都返回一行;没有则返回占位行供上传
                 for (DocType docType : docTypes) {
-                    ProjectDocumentDto docDto = new ProjectDocumentDto();
+                    List<Doc> uploaded = docsByType.getOrDefault(docType.getId(), List.of());
 
-                    // 检查此类型的文档是否已上传
-                    Doc existingDoc = docTypeMap.get(docType.getId());
-
-                    if (existingDoc != null) {
-                        // 已上传文档
-                        docDto.setDocumentId(existingDoc.getId());
-                        docDto.setPartyId(null); // 根据示例，这里设为null
-                        docDto.setPartyTypeId(partyTypeId);
-                        docDto.setDocumenTypeId(docType.getId());
-                        docDto.setFileName(existingDoc.getFileName());
-                        docDto.setDate(existingDoc.getDate());
-                        docDto.setDocumentName(docType.getDocName());
-                        docDto.setProjectPartyId(projectPartyId);
-                        docDto.setIsApproved(existingDoc.getIsApproved());
-
-                        // 如果有文件名，构建图片URL
-                        if (existingDoc.getFileName() != null && !existingDoc.getFileName().isEmpty()) {
-                            String imageUrl = s3Service.createPublicURL(
-                                companyId.toString(),
-                                "ProjectDocs",
-                                projectId.toString(),
-                                existingDoc.getFileName()
-                            );
-                            docDto.setImageUrl(imageUrl);
-                        }
-
-                        docDto.setWorkflowStepId(existingDoc.getWorkflowStepId());
-                    } else {
-                        // 未上传文档
-                        docDto.setPartyId(null); // 根据示例，这里设为null
+                    if (uploaded.isEmpty()) {
+                        ProjectDocumentDto docDto = new ProjectDocumentDto();
+                        docDto.setPartyId(null);
                         docDto.setPartyTypeId(partyTypeId);
                         docDto.setDocumenTypeId(docType.getId());
                         docDto.setDocumentName(docType.getDocName());
@@ -472,9 +447,61 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                         docDto.setDate(null);
                         docDto.setFileName(null);
                         docDto.setImageUrl(null);
+                        documentList.add(docDto);
+                        continue;
                     }
 
-                    // 添加到列表
+                    for (Doc existingDoc : uploaded) {
+                        ProjectDocumentDto docDto = new ProjectDocumentDto();
+                        docDto.setDocumentId(existingDoc.getId());
+                        docDto.setPartyId(null);
+                        docDto.setPartyTypeId(partyTypeId);
+                        docDto.setDocumenTypeId(docType.getId());
+                        docDto.setFileName(existingDoc.getFileName());
+                        docDto.setDate(existingDoc.getDate());
+                        docDto.setDocumentName(docType.getDocName());
+                        docDto.setProjectPartyId(projectPartyId);
+                        docDto.setIsApproved(existingDoc.getIsApproved());
+                        docDto.setIsRequired(docType.getIsRequired());
+
+                        if (existingDoc.getFileName() != null && !existingDoc.getFileName().isEmpty()) {
+                            String imageUrl = s3Service.createPublicURL(
+                                    companyId.toString(),
+                                    "ProjectDocs",
+                                    projectId.toString(),
+                                    existingDoc.getFileName());
+                            docDto.setImageUrl(imageUrl);
+                        }
+
+                        docDto.setWorkflowStepId(existingDoc.getWorkflowStepId());
+                        documentList.add(docDto);
+                    }
+                }
+
+                // 无 DocType 的参与方级「Other」附件也一并返回(可多文件)
+                List<Doc> otherUploads = existingDocs.stream()
+                        .filter(d -> d.getPartyDocTypeId() == null)
+                        .collect(Collectors.toList());
+                for (Doc existingDoc : otherUploads) {
+                    ProjectDocumentDto docDto = new ProjectDocumentDto();
+                    docDto.setDocumentId(existingDoc.getId());
+                    docDto.setPartyId(null);
+                    docDto.setPartyTypeId(partyTypeId);
+                    docDto.setDocumenTypeId(null);
+                    docDto.setFileName(existingDoc.getFileName());
+                    docDto.setDate(existingDoc.getDate());
+                    docDto.setDocumentName("Other");
+                    docDto.setProjectPartyId(projectPartyId);
+                    docDto.setIsApproved(existingDoc.getIsApproved());
+                    if (existingDoc.getFileName() != null && !existingDoc.getFileName().isEmpty()) {
+                        String imageUrl = s3Service.createPublicURL(
+                                companyId.toString(),
+                                "ProjectDocs",
+                                projectId.toString(),
+                                existingDoc.getFileName());
+                        docDto.setImageUrl(imageUrl);
+                    }
+                    docDto.setWorkflowStepId(existingDoc.getWorkflowStepId());
                     documentList.add(docDto);
                 }
             }
@@ -662,6 +689,8 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             doc.setWorkflowId(uploadDto.getWorkflowId());
             doc.setWorkflowStepId(0);
             doc.setCompanyId(companyId);
+            // Andre 通用附件等依赖此字段;旧实现漏写导致列表永远查不到。
+            doc.setOtherDocs(uploadDto.getOtherDocs());
 
             // 保存数据库记录
             Doc savedDoc = docRepository.save(doc);
@@ -804,6 +833,63 @@ public class ProjectDocServiceImpl implements ProjectDocService {
             response.setProjectDocumentList(new ArrayList<>());
             return response;
         }
+    }
+
+    @Override
+    public WrapperProjectDocumentDto getProjectOtherDocList(Integer projectId, Integer workflowId, Integer companyId) {
+        log.debug("获取 Andre 通用附件列表，项目ID: {}, 工作流ID: {}, 公司ID: {}", projectId, workflowId, companyId);
+
+        WrapperProjectDocumentDto response = new WrapperProjectDocumentDto();
+        response.setProjectId(projectId);
+        response.setWorkflowId(workflowId);
+        response.setWorkflowStepId(0);
+        List<ProjectDocumentDto> documentList = new ArrayList<>();
+
+        try {
+            List<Doc> byFlag = docRepository.findByProjectIdAndWorkflowIdAndOtherDocs(projectId, workflowId, 2);
+            // 兼容:历史上上传漏写 OtherDocs 时,无参与方/无文档类型的行也算 Andre。
+            List<Doc> byOrphan = docRepository.findByProjectIdAndWorkflowId(projectId, workflowId).stream()
+                    .filter(d -> d.getOtherDocs() == null
+                            && d.getPartyId() == null
+                            && d.getPartyTypeId() == null
+                            && d.getPartyDocTypeId() == null)
+                    .collect(Collectors.toList());
+
+            java.util.LinkedHashMap<Integer, Doc> merged = new java.util.LinkedHashMap<>();
+            for (Doc d : byFlag) {
+                if (d.getId() != null) merged.put(d.getId(), d);
+            }
+            for (Doc d : byOrphan) {
+                if (d.getId() != null) merged.putIfAbsent(d.getId(), d);
+            }
+
+            for (Doc existingDoc : merged.values()) {
+                ProjectDocumentDto docDto = new ProjectDocumentDto();
+                docDto.setDocumentId(existingDoc.getId());
+                docDto.setFileName(existingDoc.getFileName());
+                docDto.setDate(existingDoc.getDate());
+                docDto.setDocumentName(existingDoc.getFileName());
+                docDto.setIsApproved(existingDoc.getIsApproved());
+                docDto.setWorkflowStepId(existingDoc.getWorkflowStepId());
+                if (existingDoc.getFileName() != null && !existingDoc.getFileName().isEmpty()) {
+                    String imageUrl = s3Service.createPublicURL(
+                            companyId.toString(),
+                            "ProjectDocs",
+                            projectId.toString(),
+                            existingDoc.getFileName());
+                    docDto.setImageUrl(imageUrl);
+                }
+                documentList.add(docDto);
+            }
+
+            response.setProjectDocumentList(documentList);
+            log.debug("Andre 共返回 {} 个文档", documentList.size());
+        } catch (Exception e) {
+            log.error("获取 Andre 通用附件列表时En feil oppstod", e);
+            response.setProjectDocumentList(new ArrayList<>());
+        }
+
+        return response;
     }
 
     @Override

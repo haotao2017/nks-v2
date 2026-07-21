@@ -7,7 +7,7 @@
  *    每类可上传(带 partyId+partyTypeId+documenTypeId);已上传行显示文件链接 + 删除;
  *    未上传的必需类型标 required 徽标。参与方标题旁另有「通用上传」(仅带 partyId+partyTypeId)。
  *  - Generert:系统生成文档,按工作流步骤名分组,每个文件用 S3 直链(imageURL)下载。
- *  - Andre:通用附件上传(otherDocs:2)。
+ *  - Andre:通用附件上传(otherDocs:2)+ 列表(ProjectOtherDocList)与删除。
  *
  * workflowId 来源:文档按「工作流类别」组织。工作流实例与选中由详情页头部的
  *   useWorkflowInstances 统一持有,选中的 workflowCategoryId 通过 `workflowId` prop 下传
@@ -52,6 +52,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProjectParties } from './api';
 import {
   useDeleteProjectDocument,
+  useOtherDocs,
   useProjectPartyDocGroups,
   useSystemGeneratedDocs,
   useUploadProjectDocument,
@@ -233,6 +234,42 @@ function PartyDocSection({
   const partyId = party.partyId;
   const partyTypeId = party.partyTypeId;
 
+  // 按 DocType 分组(对齐旧 ProjectDocsApp):同一类型可有多份已上传文件。
+  const categories = React.useMemo(() => {
+    type Cat = {
+      key: string;
+      documenTypeId?: number;
+      name: string;
+      isRequired?: boolean;
+      files: ProjectDocumentDto[];
+    };
+    const map = new Map<string, Cat>();
+    for (const doc of docs) {
+      const key =
+        doc.documenTypeId != null ? `type-${doc.documenTypeId}` : 'other';
+      let cat = map.get(key);
+      if (!cat) {
+        cat = {
+          key,
+          documenTypeId: doc.documenTypeId,
+          name:
+            doc.documenTypeId != null
+              ? doc.documentName || t('docsPanel.foretak.unnamedDocType')
+              : t('docsPanel.foretak.other'),
+          isRequired: doc.isRequired,
+          files: [],
+        };
+        map.set(key, cat);
+      }
+      if (doc.imageURL || doc.documentID) {
+        cat.files.push(doc);
+      }
+      if (doc.isRequired) cat.isRequired = true;
+      if (doc.documentName && doc.documenTypeId != null) cat.name = doc.documentName;
+    }
+    return Array.from(map.values());
+  }, [docs, t]);
+
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -251,100 +288,87 @@ function PartyDocSection({
         />
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('docsPanel.foretak.columns.docType')}</TableHead>
-              <TableHead>{t('docsPanel.foretak.columns.file')}</TableHead>
-              <TableHead className="w-40 text-right">
-                <span className="sr-only">{t('common.actions')}</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 2 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
-                  {Array.from({ length: 3 }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : docs.length ? (
-              docs.map((doc, index) => (
-                <TableRow key={doc.documentID ?? `${doc.documenTypeId}-${index}`}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {doc.documentName || t('docsPanel.foretak.unnamedDocType')}
-                      </span>
-                      {doc.isRequired ? (
-                        <Badge variant="destructive">{t('docsPanel.foretak.required')}</Badge>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {doc.imageURL ? (
-                      <a
-                        href={doc.imageURL}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary inline-flex items-center gap-1.5 hover:underline"
-                      >
-                        <FileText className="size-4" aria-hidden />
-                        <span className="truncate">
-                          {doc.fileName || t('docsPanel.foretak.uploadedFile')}
-                        </span>
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        {t('docsPanel.foretak.notUploaded')}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      <UploadButton
-                        pending={pending}
-                        label={t('docsPanel.foretak.upload')}
-                        onPick={(files) =>
-                          onUpload({
-                            files,
-                            partyId,
-                            partyTypeId,
-                            documenTypeId: doc.documenTypeId,
-                          })
-                        }
-                      />
-                      {doc.documentID ? (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8"
-                          disabled={pending}
-                          onClick={() => onDelete(doc)}
-                        >
-                          <Trash2 className="size-4" />
-                          <span className="sr-only">{t('common.delete')}</span>
-                        </Button>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={3} className="text-muted-foreground h-20 text-center">
-                  {t('docsPanel.foretak.noDocTypes')}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {isLoading ? (
+        <Skeleton className="h-32 w-full" />
+      ) : categories.length === 0 ? (
+        <p className="text-muted-foreground py-6 text-center text-sm">
+          {t('docsPanel.foretak.noDocTypes')}
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {categories.map((cat) => (
+            <div key={cat.key} className="rounded-md border">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{cat.name}</span>
+                  {cat.isRequired ? (
+                    <Badge variant="destructive">{t('docsPanel.foretak.required')}</Badge>
+                  ) : null}
+                </div>
+                <UploadButton
+                  pending={pending}
+                  label={t('docsPanel.foretak.upload')}
+                  onPick={(files) =>
+                    onUpload({
+                      files,
+                      partyId,
+                      partyTypeId,
+                      documenTypeId: cat.documenTypeId,
+                    })
+                  }
+                />
+              </div>
+              {cat.files.length === 0 ? (
+                <p className="text-muted-foreground px-3 py-3 text-sm">
+                  {t('docsPanel.foretak.notUploaded')}
+                </p>
+              ) : (
+                <Table>
+                  <TableBody>
+                    {cat.files.map((doc, index) => (
+                      <TableRow key={doc.documentID ?? `${cat.key}-file-${index}`}>
+                        <TableCell>
+                          {doc.imageURL ? (
+                            <a
+                              href={doc.imageURL}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary inline-flex items-center gap-1.5 hover:underline"
+                            >
+                              <FileText className="size-4" aria-hidden />
+                              <span className="truncate">
+                                {doc.fileName || t('docsPanel.foretak.uploadedFile')}
+                              </span>
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              {doc.fileName || t('docsPanel.foretak.uploadedFile')}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="w-24 text-right">
+                          {doc.documentID ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8"
+                              disabled={pending}
+                              onClick={() => onDelete(doc)}
+                            >
+                              <Trash2 className="size-4" />
+                              <span className="sr-only">{t('common.delete')}</span>
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -433,17 +457,120 @@ function GenerertTab({ projectId, workflowId }: { projectId: number; workflowId:
 
 function AndreTab({ projectId, workflowId }: { projectId: number; workflowId: number }) {
   const { t } = useTranslation();
+  const { data: docs = [], isLoading } = useOtherDocs(projectId, workflowId);
   const uploadMutation = useUploadProjectDocument(projectId, workflowId);
+  const deleteMutation = useDeleteProjectDocument(projectId, workflowId);
+  const [deleteTarget, setDeleteTarget] = React.useState<ProjectDocumentDto | null>(null);
+  const pending = uploadMutation.isPending || deleteMutation.isPending;
+
+  const confirmDelete = () => {
+    if (!deleteTarget?.documentID) return;
+    deleteMutation.mutate(deleteTarget.documentID, {
+      onSuccess: () => setDeleteTarget(null),
+    });
+  };
 
   return (
-    <div className="flex flex-col items-start gap-4">
-      <p className="text-muted-foreground text-sm">{t('docsPanel.andre.description')}</p>
-      <UploadButton
-        variant="default"
-        pending={uploadMutation.isPending}
-        label={t('docsPanel.andre.upload')}
-        onPick={(files) => uploadMutation.mutate({ files, otherDocs: 2 })}
-      />
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-muted-foreground text-sm">{t('docsPanel.andre.description')}</p>
+        <UploadButton
+          variant="default"
+          pending={pending}
+          label={t('docsPanel.andre.upload')}
+          onPick={(files) => uploadMutation.mutate({ files, otherDocs: 2 })}
+        />
+      </div>
+
+      {isLoading ? (
+        <Skeleton className="h-32 w-full" />
+      ) : docs.length === 0 ? (
+        <p className="text-muted-foreground py-8 text-center text-sm">{t('docsPanel.andre.empty')}</p>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('docsPanel.andre.columns.file')}</TableHead>
+                <TableHead className="w-40 text-right">
+                  <span className="sr-only">{t('common.actions')}</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {docs.map((doc, index) => (
+                <TableRow key={doc.documentID ?? `other-${index}`}>
+                  <TableCell>
+                    {doc.imageURL ? (
+                      <a
+                        href={doc.imageURL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary inline-flex items-center gap-1.5 hover:underline"
+                      >
+                        <FileText className="size-4" aria-hidden />
+                        <span className="truncate">
+                          {doc.fileName || t('docsPanel.foretak.uploadedFile')}
+                        </span>
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">
+                        {doc.fileName || t('docsPanel.foretak.uploadedFile')}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {doc.documentID ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        disabled={pending}
+                        onClick={() => setDeleteTarget(doc)}
+                      >
+                        <Trash2 className="size-4" />
+                        <span className="sr-only">{t('common.delete')}</span>
+                      </Button>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('docsPanel.delete.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('docsPanel.delete.confirmPrefix')}{' '}
+              <span className="font-medium">
+                {deleteTarget?.fileName || deleteTarget?.documentName}
+              </span>
+              {t('docsPanel.delete.confirmSuffix')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -76,4 +76,9 @@ public interface DocRepository extends JpaRepository<Doc, Integer> {
      * @return 文档列表
      */
     List<Doc> findByProjectIdAndWorkflowStepId(Integer projectId, Integer workflowStepId);
+
+    /**
+     * Andre 通用附件:项目 + 工作流 + OtherDocs 标记。
+     */
+    List<Doc> findByProjectIdAndWorkflowIdAndOtherDocs(Integer projectId, Integer workflowId, Integer otherDocs);
 } 

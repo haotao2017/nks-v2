@@ -194,6 +194,7 @@ export const endpoints = {
     approvalRequiredDocList: { method: 'GET', path: '/Project/ProjectApprovalRequiredDocList', auth: 'jwt' },
     uploadDocument: { method: 'POST', path: '/Project/ProjectUploadDocument', auth: 'jwt', multipart: true },
     systemGeneratedDocListAllSteps: { method: 'GET', path: '/Project/ProjectSystemGeneratedDocListAllSteps', auth: 'jwt' },
+    otherDocList: { method: 'GET', path: '/Project/ProjectOtherDocList', auth: 'jwt' },
     deleteDocument: { method: 'DELETE', path: '/Project/DeleteProjectDocument', auth: 'jwt' },
   },
 

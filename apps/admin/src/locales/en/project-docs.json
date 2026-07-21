@@ -23,6 +23,7 @@
       "uploadedFile": "Uploaded file",
       "unnamedDocType": "Unnamed",
       "noDocTypes": "No document types.",
+      "other": "Other",
       "columns": {
         "docType": "Document type",
         "file": "File"
@@ -40,7 +41,11 @@
     },
     "andre": {
       "description": "Upload general attachments not tied to a specific party.",
-      "upload": "Upload attachment"
+      "upload": "Upload attachment",
+      "empty": "No attachments uploaded yet.",
+      "columns": {
+        "file": "File"
+      }
     },
     "delete": {
       "title": "Delete document",

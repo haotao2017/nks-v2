@@ -53,6 +53,8 @@ export const projectDocKeys = {
     ['project-doc', projectId, workflowId, 'party', partyTypeId, partyId] as const,
   systemGenerated: (projectId: number, workflowId: number) =>
     ['project-doc', projectId, workflowId, 'system'] as const,
+  other: (projectId: number, workflowId: number) =>
+    ['project-doc', projectId, workflowId, 'other'] as const,
 };
 
 /** 一个参与方的文档分组(参与方信息 + 该参与方各文档类型行)。 */
@@ -118,6 +120,21 @@ export function useSystemGeneratedDocs(projectId: number, workflowId: number) {
     queryFn: async () => {
       const res = await getApiClient().get<WrapperProjectDocumentDto>(
         endpoints.projectDoc.systemGeneratedDocListAllSteps.path,
+        { params: { projectId, workflowId } },
+      );
+      return res?.projectDocumentList ?? [];
+    },
+  });
+}
+
+/** Andre —— 通用附件(OtherDocs=2)。解包 res.projectDocumentList。 */
+export function useOtherDocs(projectId: number, workflowId: number) {
+  return useQuery({
+    queryKey: projectDocKeys.other(projectId, workflowId),
+    enabled: workflowId > 0,
+    queryFn: async () => {
+      const res = await getApiClient().get<WrapperProjectDocumentDto>(
+        endpoints.projectDoc.otherDocList.path,
         { params: { projectId, workflowId } },
       );
       return res?.projectDocumentList ?? [];

@@ -314,6 +314,24 @@ public class ProjectDocController {
         return ResponseEntity.ok(response);
     }
 
+    /** Andre 通用附件列表(OtherDocs=2)。 */
+    @GetMapping("/ProjectOtherDocList")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<WrapperProjectDocumentDto> projectOtherDocList(
+            @RequestParam Integer projectId,
+            @RequestParam Integer workflowId,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null || user.getCompanyID() == null) {
+            throw new AccessDeniedException("User authentication error or CompanyID missing.");
+        }
+
+        WrapperProjectDocumentDto response = projectDocService.getProjectOtherDocList(
+                projectId, workflowId, user.getCompanyID());
+
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/DeleteProjectDocument")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<RequestResponse> deleteProjectDocument(
