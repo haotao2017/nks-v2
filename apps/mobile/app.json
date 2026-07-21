@@ -8,10 +8,23 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "no.nks.kontroll"
+      "bundleIdentifier": "no.nks.kontroll",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "16.170.55.219": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
+        }
+      }
     },
     "android": {
-      "package": "no.nks.kontroll"
+      "package": "no.nks.kontroll",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
