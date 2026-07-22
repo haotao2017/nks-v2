@@ -30,6 +30,15 @@ public interface IS3Service {
     String createPublicURL(String bucketName, String urlStaticPart, String bucketFolder, String fileName);
 
     /**
+     * 为(私有桶)文件 URL 生成带签名的临时访问链接。
+     *
+     * @param fileUrl 公开(未签名)URL
+     * @param expirationTimeInMinutes 有效期(分钟)
+     * @return 预签名 URL
+     */
+    String generatePresignedUrl(String fileUrl, int expirationTimeInMinutes);
+
+    /**
      * 从S3中删除文件
      *
      * @param bucketFolder 桶文件夹

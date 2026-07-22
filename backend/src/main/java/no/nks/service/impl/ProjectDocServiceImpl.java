@@ -202,21 +202,34 @@ public class ProjectDocServiceImpl implements ProjectDocService {
         return template;
     }
 
+    /** 私有桶下前端可查看的文档 URL 有效期(分钟)。 */
+    private static final int DOC_URL_TTL_MINUTES = 120;
+
+    /**
+     * 生成前端可直接打开的文档 URL:私有桶必须用预签名 URL,否则普通公开 URL 会 S3 AccessDenied。
+     * 预签名失败则回退到公开 URL(与移动端平面图一致)。
+     */
+    private String presignedDocUrl(String bucketFolder, String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return null;
+        }
+        String publicUrl = s3Service.createPublicURL(null, null, bucketFolder, fileName);
+        String presigned = s3Service.generatePresignedUrl(publicUrl, DOC_URL_TTL_MINUTES);
+        return (presigned != null && !presigned.isEmpty()) ? presigned : publicUrl;
+    }
+
     /**
      * 生成附件URL
      */
     private String generateAttachmentUrl(Integer companyId, String fileName) {
-        // 使用S3Service生成URL
-        String bucketFolder = "CompanyID-" + companyId + "/DevChecklistPdfs/";
-        return s3Service.createPublicURL(null, null, bucketFolder, fileName);
+        return presignedDocUrl("CompanyID-" + companyId + "/DevChecklistPdfs/", fileName);
     }
 
     /**
-     * 项目文档公开 URL（与 uploadProjectDocument 的 S3 路径一致）。
+     * 项目文档 URL(与 uploadProjectDocument 的 S3 路径一致;私有桶返回预签名)。
      */
     private String generateProjectDocUrl(Integer companyId, Integer projectId, String fileName) {
-        String bucketFolder = "CompanyID-" + companyId + "/ProjectDocs/" + projectId + "/";
-        return s3Service.createPublicURL(null, null, bucketFolder, fileName);
+        return presignedDocUrl("CompanyID-" + companyId + "/ProjectDocs/" + projectId + "/", fileName);
     }
 
     @Override
@@ -749,9 +762,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 setWorkflowStepName(docDto);
 
                 // 设置S3链接
-                String s3Url = s3Service.createPublicURL(null, null,
-                        "CompanyID-" + companyId + "/Files/", docDto.getFileName());
-                docDto.setImageUrl(s3Url);
+                docDto.setImageUrl(presignedDocUrl("CompanyID-" + companyId + "/Files/", docDto.getFileName()));
 
                 documentList.add(docDto);
             }
@@ -766,9 +777,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 setWorkflowStepName(docDto);
 
                 // 设置S3链接
-                String s3Url = s3Service.createPublicURL(null, null,
-                        "CompanyID-" + companyId + "/Files/", docDto.getFileName());
-                docDto.setImageUrl(s3Url);
+                docDto.setImageUrl(presignedDocUrl("CompanyID-" + companyId + "/Files/", docDto.getFileName()));
 
                 documentList.add(docDto);
             }
@@ -783,9 +792,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 setWorkflowStepName(docDto);
 
                 // 设置S3链接
-                String s3Url = s3Service.createPublicURL(null, null,
-                        "CompanyID-" + companyId + "/Files/", docDto.getFileName());
-                docDto.setImageUrl(s3Url);
+                docDto.setImageUrl(presignedDocUrl("CompanyID-" + companyId + "/Files/", docDto.getFileName()));
 
                 documentList.add(docDto);
             }
@@ -800,9 +807,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 setWorkflowStepName(docDto);
 
                 // 设置S3链接
-                String s3Url = s3Service.createPublicURL(null, null,
-                        "CompanyID-" + companyId + "/Files/", docDto.getFileName());
-                docDto.setImageUrl(s3Url);
+                docDto.setImageUrl(presignedDocUrl("CompanyID-" + companyId + "/Files/", docDto.getFileName()));
 
                 documentList.add(docDto);
             }
