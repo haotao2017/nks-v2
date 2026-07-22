@@ -66,21 +66,45 @@ export default function ProjectsScreen() {
   const queryClient = useQueryClient();
   const status = useAppSelector((s) => s.auth.status);
   const user = useAppSelector((s) => s.auth.user);
-  const { data, isLoading, isError, error, refetch, isRefetching } = useProjectList();
+  const { data, isLoading, isError, error, refetch, isFetched } = useProjectList();
+  // 仅下拉刷新显示转圈;focus 后台 refetch 不要绑 RefreshControl,否则返回列表时
+  // iOS FlatList 常出现「只露一条 + 顶部转圈、滑动才恢复」。
+  const [pullRefreshing, setPullRefreshing] = React.useState(false);
+  const listRef = React.useRef<FlatList<MobileProjectListItem>>(null);
 
-  // 从后台切回 App / 再次进入列表时强制拉最新(后台可能刚指派检验员)。
+  // 从后台切回 App / 再次进入列表时静默拉最新(后台可能刚指派检验员)。
   useFocusEffect(
     React.useCallback(() => {
       if (status !== 'authenticated') return;
       void refetch();
+      // 导航返回后强制列表重新量一次高度,避免空白要滑动才画出来。
+      const id = requestAnimationFrame(() => {
+        listRef.current?.recordInteraction();
+      });
+      return () => cancelAnimationFrame(id);
     }, [refetch, status]),
   );
+
+  const onPullRefresh = React.useCallback(async () => {
+    setPullRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setPullRefreshing(false);
+    }
+  }, [refetch]);
 
   const onLogout = React.useCallback(async () => {
     await deleteToken();
     clearProjectListCache(queryClient);
     dispatch(setUnauthenticated());
   }, [dispatch, queryClient]);
+
+  // 仅首次无数据时全屏 loading;已有列表时保持 FlatList,避免返回时整树卸载导致布局错乱。
+  // 用可选链算「有数据」:isLoading 分支下 data 被收窄为 undefined,`data && data.length`
+  // 会把 data 收窄成 never 触发 TS2339,故不能内联 data.length。
+  const hasData = (data?.length ?? 0) > 0;
+  const showInitialLoading = isLoading && !isFetched && !hasData;
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-50" edges={['top', 'left', 'right']}>
@@ -100,9 +124,9 @@ export default function ProjectsScreen() {
         </Pressable>
       </View>
 
-      {isLoading ? (
+      {showInitialLoading ? (
         <ScreenLoading embedded label="Laster prosjekter…" />
-      ) : isError ? (
+      ) : isError && !hasData ? (
         <ScreenError
           embedded
           message={getErrorMessage(error)}
@@ -110,14 +134,19 @@ export default function ProjectsScreen() {
         />
       ) : (
         <FlatList
+          ref={listRef}
+          className="flex-1"
+          style={{ flex: 1 }}
           data={data}
           keyExtractor={(item, i) => String(item.projectID ?? i)}
           renderItem={({ item }) => <ProjectCard item={item} />}
-          contentContainerClassName={
-            data && data.length > 0 ? 'gap-3 px-4 pb-8' : 'flex-grow px-4'
+          contentContainerStyle={
+            data && data.length > 0
+              ? { paddingHorizontal: 16, paddingBottom: 32, gap: 12 }
+              : { flexGrow: 1, paddingHorizontal: 16 }
           }
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+            <RefreshControl refreshing={pullRefreshing} onRefresh={onPullRefresh} />
           }
           ListEmptyComponent={
             <ScreenEmpty

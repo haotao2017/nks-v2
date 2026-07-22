@@ -28,7 +28,7 @@ public class JwtService {
             @Value("${nks.jwt.expiration-ms}") long expirationMs) {
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
             throw new IllegalStateException(
-                    "nks.jwt.secret 未配置或长度不足（至少 32 字节 / 256 bit）。请设置环境变量 JWT_SECRET。");
+                    "nks.jwt.secret is missing or too short (need at least 32 bytes / 256 bit). Set JWT_SECRET.");
         }
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;

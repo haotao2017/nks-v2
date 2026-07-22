@@ -186,7 +186,7 @@ export interface ProjectSubmitInput {
  * 请求体照旧客户端 PascalCase 包装:{ ProjectSubmit: { ProjectId, ProjectSubmitDate,
  * InspectorComments, InspectorSignature } }。签名图按旧客户端方式作为字符串字段随 JSON 提交。
  */
-export function postProjectSubmit(input: ProjectSubmitInput) {
+export async function postProjectSubmit(input: ProjectSubmitInput) {
   const payload = {
     ProjectSubmit: {
       ProjectId: input.projectID,
@@ -195,7 +195,15 @@ export function postProjectSubmit(input: ProjectSubmitInput) {
       InspectorSignature: input.inspectorSignature,
     },
   };
-  return getApiClient().post(endpoints.mobileApp.projectSubmit.path, payload);
+  const res = await getApiClient().post<{ status?: string; message?: string }>(
+    endpoints.mobileApp.projectSubmit.path,
+    payload,
+  );
+  // 后端常返回 HTTP 200 + { status:"100" } 表示业务失败。
+  if (res && String(res.status) !== '200') {
+    throw new Error(res.message || 'Innsending feilet');
+  }
+  return res;
 }
 
 /** Log 单条(旧客户端读 res[0].dateTime)。 */

@@ -634,11 +634,11 @@ public class ProjectWorkflowController {
      */
     private ProjectWorkflowDto ensureWorkflowIdentifiers(ProjectWorkflowDto projectWorkflow) {
         if (projectWorkflow == null) {
-            throw new IllegalArgumentException("ProjectWorkflow对象不能为空");
+            throw new IllegalArgumentException("ProjectWorkflow is required");
         }
 
         if (projectWorkflow.getProjectId() == null) {
-            throw new IllegalArgumentException("ProjectId不能为空");
+            throw new IllegalArgumentException("ProjectId is required");
         }
 
         // WorkflowId和WorkflowStepId可能在某些操作中是可选的，

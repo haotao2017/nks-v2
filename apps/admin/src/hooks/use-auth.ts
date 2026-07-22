@@ -52,7 +52,7 @@ export function useAuth() {
         );
 
         if (!res?.token) {
-          throw new Error('登录响应缺少 token');
+          throw new Error('Login response missing token');
         }
 
         const stored: StoredUser = {

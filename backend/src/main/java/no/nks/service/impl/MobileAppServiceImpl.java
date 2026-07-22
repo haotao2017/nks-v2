@@ -11,6 +11,8 @@ import no.nks.entity.ChecklistItem;
 import no.nks.entity.ChecklistItemImage;
 import no.nks.entity.ChecklistTemplate;
 import no.nks.entity.ChecklistItemTemplate;
+import no.nks.entity.Doc;
+import no.nks.entity.DocType;
 import no.nks.entity.InspectionLog;
 import no.nks.entity.Project;
 import no.nks.entity.ProjectChecklist;
@@ -20,6 +22,8 @@ import no.nks.repository.ChecklistItemImageRepository;
 import no.nks.repository.ChecklistItemRepository;
 import no.nks.repository.ChecklistTemplateRepository;
 import no.nks.repository.ChecklistItemTemplateRepository;
+import no.nks.repository.DocRepository;
+import no.nks.repository.DocTypeRepository;
 import no.nks.repository.InspectionLogRepository;
 import no.nks.repository.ProjectChecklistRepository;
 import no.nks.repository.ProjectRepository;
@@ -38,8 +42,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,8 +58,13 @@ public class MobileAppServiceImpl implements MobileAppService {
     /**
      * Legacy MobileApp ProjectDetail: floor plan is Party.Doc.PartyDocTypeID = 64.
      * Admin Foretak uploads that DocType into CompanyID-{id}/ProjectDocs/{projectId}/.
+     * Fresh installs may create the same DocType with another auto ID; name match is the fallback.
      */
     private static final int FLOOR_PLAN_DOC_TYPE_ID = 64;
+
+    /** Legacy DocType name from old frontend mock / seed. */
+    private static final String FLOOR_PLAN_DOC_NAME =
+            "Tegning som viser slukplassering i plan og høyde";
 
     /** Presigned URL TTL (minutes) for private-bucket PDF fetch on mobile. */
     private static final int FLOOR_PLAN_URL_TTL_MINUTES = 120;
@@ -63,6 +76,8 @@ public class MobileAppServiceImpl implements MobileAppService {
     private final ChecklistItemTemplateRepository checklistItemTemplateRepository;
     private final InspectionLogRepository inspectionLogRepository;
     private final ProjectChecklistRepository projectChecklistRepository;
+    private final DocRepository docRepository;
+    private final DocTypeRepository docTypeRepository;
     private final FileStorageService fileStorageService;
     private final S3Service s3Service;
     private final ObjectMapper objectMapper;
@@ -182,12 +197,9 @@ public class MobileAppServiceImpl implements MobileAppService {
             details.setSiteImageUrl(fileStorageService.getPublicUrl(project.getProjectImage(), "project-site-images"));
         }
 
-        // 平面图：原逻辑 PartyDocTypeId=64；文件在 ProjectDocs（与 Admin 上传一致），私有桶返回预签名 URL
-        fileStorageService.getDocument(project.getId(), FLOOR_PLAN_DOC_TYPE_ID).ifPresent(doc -> {
+        // 平面图：原逻辑 PartyDocTypeId=64；名称匹配作回退（Admin 自建类型 ID 往往不是 64）
+        resolveFloorPlanDocument(project).ifPresent(doc -> {
             String fileName = doc.getFileName();
-            if (fileName == null || fileName.isEmpty()) {
-                return;
-            }
             Integer companyIdForDoc = doc.getCompanyId() != null ? doc.getCompanyId() : project.getCompanyId();
             if (companyIdForDoc == null) {
                 log.warn("平面图文档缺少 companyId，projectId={}, docId={}", project.getId(), doc.getId());
@@ -203,6 +215,57 @@ public class MobileAppServiceImpl implements MobileAppService {
                 project.getInspectionDate().toString() : "");
 
         return details;
+    }
+
+    /**
+     * 解析项目平面图文档：优先 DocType 64，否则按旧系统 DocType 名称匹配。
+     */
+    private Optional<Doc> resolveFloorPlanDocument(Project project) {
+        Optional<Doc> byLegacyId = fileStorageService.getDocument(project.getId(), FLOOR_PLAN_DOC_TYPE_ID)
+                .filter(this::hasStoredFile);
+        if (byLegacyId.isPresent()) {
+            return byLegacyId;
+        }
+
+        Set<Integer> floorPlanTypeIds = new HashSet<>();
+        floorPlanTypeIds.add(FLOOR_PLAN_DOC_TYPE_ID);
+        for (DocType docType : docTypeRepository.findAll()) {
+            if (isFloorPlanDocType(docType) && docType.getId() != null) {
+                floorPlanTypeIds.add(docType.getId());
+            }
+        }
+
+        List<Doc> projectDocs = docRepository.findByProjectId(project.getId());
+        Optional<Doc> pdfMatch = projectDocs.stream()
+                .filter(d -> d.getPartyDocTypeId() != null && floorPlanTypeIds.contains(d.getPartyDocTypeId()))
+                .filter(this::hasStoredFile)
+                .filter(d -> d.getFileName().toLowerCase(Locale.ROOT).endsWith(".pdf"))
+                .findFirst();
+        if (pdfMatch.isPresent()) {
+            return pdfMatch;
+        }
+
+        return projectDocs.stream()
+                .filter(d -> d.getPartyDocTypeId() != null && floorPlanTypeIds.contains(d.getPartyDocTypeId()))
+                .filter(this::hasStoredFile)
+                .findFirst();
+    }
+
+    private boolean isFloorPlanDocType(DocType docType) {
+        if (docType.getId() != null && docType.getId() == FLOOR_PLAN_DOC_TYPE_ID) {
+            return true;
+        }
+        String name = docType.getDocName();
+        if (name == null || name.isBlank()) {
+            return false;
+        }
+        String normalized = name.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals(FLOOR_PLAN_DOC_NAME.toLowerCase(Locale.ROOT))
+                || normalized.contains("slukplassering");
+    }
+
+    private boolean hasStoredFile(Doc doc) {
+        return doc.getFileName() != null && !doc.getFileName().isBlank();
     }
 
     @Override
@@ -293,15 +356,16 @@ public class MobileAppServiceImpl implements MobileAppService {
             projectRepository.save(project);
 
             // Add inspection log
-            InspectionLog log = new InspectionLog();
-            log.setProjectId(submitRequest.getProjectID());
-            log.setDateTime(LocalDateTime.now());
-            inspectionLogRepository.save(log);
+            InspectionLog inspectionLog = new InspectionLog();
+            inspectionLog.setProjectId(submitRequest.getProjectID());
+            inspectionLog.setDateTime(LocalDateTime.now());
+            inspectionLogRepository.save(inspectionLog);
 
             return new Response("200", "Success");
 
         } catch (Exception e) {
-            return new Response("100", "Failed");
+            log.error("ProjectSubmit failed", e);
+            return new Response("100", "Failed: " + e.getMessage());
         }
     }
 

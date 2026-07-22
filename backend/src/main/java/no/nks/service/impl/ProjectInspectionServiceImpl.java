@@ -73,7 +73,7 @@ public class ProjectInspectionServiceImpl implements IProjectInspectionService {
 
         // 验证项目是否存在并属于指定公司
         if (!projectRepository.existsByIdAndCompanyId(checklist.getProjectId(), companyId)) {
-            throw new ResourceNotFoundException("Du har ikke tilgang til dette prosjektet的检查单项目");
+            throw new ResourceNotFoundException("Du har ikke tilgang til dette prosjektets sjekklisteelement");
         }
 
         // 更新检查单项目字段
@@ -524,7 +524,7 @@ public class ProjectInspectionServiceImpl implements IProjectInspectionService {
         // 验证项目是否存在并属于指定公司
         Integer projectId = checklist.getProjectId();
         if (!projectRepository.existsByIdAndCompanyId(projectId, companyId)) {
-            throw new ResourceNotFoundException("Du har ikke tilgang til dette prosjektet的检查单项目");
+            throw new ResourceNotFoundException("Du har ikke tilgang til dette prosjektets sjekklisteelement");
         }
 
         // 使用选择性更新，只更新变化的字段

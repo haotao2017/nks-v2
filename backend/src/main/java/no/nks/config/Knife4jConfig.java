@@ -15,19 +15,19 @@ public class Knife4jConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("NBK API 文档")
+                        .title("NKS API")
                         .version("1.0.0")
-                        .description("NBK项目接口文档")
+                        .description("NKS API documentation")
                         .termsOfService("http://doc.xiaominfo.com")
                         .license(new License().name("Apache 2.0").url("http://doc.xiaominfo.com"))
-                        .contact(new Contact().name("NBK Team").url("https://nbk.example.org").email("dev@nbk.example.org"))
+                        .contact(new Contact().name("NKS Team").url("https://nks.example.org").email("dev@nks.example.org"))
                 );
     }
 
     @Bean
     public GroupedOpenApi allApi() {
         return GroupedOpenApi.builder()
-                .group("全部接口")
+                .group("all")
                 .pathsToMatch("/**")
                 .build();
     }

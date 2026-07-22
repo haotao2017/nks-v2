@@ -16,110 +16,111 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * 全局异常处理器
+ * Global exception handler. User-facing messages are Norwegian (product locale).
  */
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    /**
-     * 处理资源未找到异常
-     */
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ApiError> handleEntityNotFound(EntityNotFoundException ex, HttpServletRequest request) {
-        log.error("资源未找到: {}", ex.getMessage());
-        ApiError apiError = new ApiError(HttpStatus.NOT_FOUND, "请求的资源不存在", ex);
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        log.error("Resource not found: {}", ex.getMessage());
+        ApiError apiError = new ApiError(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         apiError.setPath(request.getRequestURI());
         return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
     }
 
-    /**
-     * 处理业务逻辑异常
-     */
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiError> handleEntityNotFound(EntityNotFoundException ex, HttpServletRequest request) {
+        log.error("Resource not found: {}", ex.getMessage());
+        ApiError apiError = new ApiError(HttpStatus.NOT_FOUND, "Ressursen ble ikke funnet", ex);
+        apiError.setPath(request.getRequestURI());
+        return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiError> handleBusinessException(BusinessException ex, HttpServletRequest request) {
-        log.error("业务异常: {}", ex.getMessage());
+        log.error("Business error: {}", ex.getMessage());
         ApiError apiError = new ApiError(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         apiError.setPath(request.getRequestURI());
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * 处理数据完整性违规异常
-     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
-        log.error("数据完整性违规: {}", ex.getMessage());
-        ApiError apiError = new ApiError(HttpStatus.CONFLICT, "数据操作违反约束条件", ex);
+        log.error("Data integrity violation: {}", ex.getMessage());
+        ApiError apiError = new ApiError(HttpStatus.CONFLICT, "Dataoperasjonen brøt en databasebegrensning", ex);
         apiError.setPath(request.getRequestURI());
         return new ResponseEntity<>(apiError, HttpStatus.CONFLICT);
     }
 
-    /**
-     * 处理权限不足异常
-     */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        log.error("权限不足: {}", ex.getMessage());
-        ApiError apiError = new ApiError(HttpStatus.FORBIDDEN, "您没有权限执行此操作", ex);
+        log.error("Access denied: {}", ex.getMessage());
+        ApiError apiError = new ApiError(HttpStatus.FORBIDDEN, "Du har ikke tilgang til denne handlingen", ex);
         apiError.setPath(request.getRequestURI());
         return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
     }
 
-    /**
-     * 处理认证异常（业务层抛出的 no.nks.exception.AuthenticationException）
-     */
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiError> handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
-        log.error("认证失败: {}", ex.getMessage());
-        ApiError apiError = new ApiError(HttpStatus.UNAUTHORIZED, "认证失败，请重新登录", ex);
+        log.error("Authentication failed: {}", ex.getMessage());
+        ApiError apiError = new ApiError(HttpStatus.UNAUTHORIZED, "Autentisering feilet. Logg inn på nytt.", ex);
         apiError.setPath(request.getRequestURI());
         return new ResponseEntity<>(apiError, HttpStatus.UNAUTHORIZED);
     }
 
-    /**
-     * 处理 Spring Security 抛出的认证异常
-     */
     @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
     public ResponseEntity<ApiError> handleSpringSecurityAuthentication(
             org.springframework.security.core.AuthenticationException ex, HttpServletRequest request) {
-        log.error("认证失败(Spring Security): {}", ex.getMessage());
-        ApiError apiError = new ApiError(HttpStatus.UNAUTHORIZED, "认证失败，请重新登录", ex);
+        log.error("Authentication failed (Spring Security): {}", ex.getMessage());
+        ApiError apiError = new ApiError(HttpStatus.UNAUTHORIZED, "Autentisering feilet. Logg inn på nytt.", ex);
         apiError.setPath(request.getRequestURI());
         return new ResponseEntity<>(apiError, HttpStatus.UNAUTHORIZED);
     }
 
-    /**
-     * 处理参数不合法异常
-     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
-        log.error("参数不合法: {}", ex.getMessage());
-        ApiError apiError = new ApiError(HttpStatus.BAD_REQUEST, "请求参数不合法", ex);
+        log.error("Invalid argument: {}", ex.getMessage());
+        String message = ex.getMessage();
+        // Avoid leaking Chinese / internal messages; prefer safe Norwegian when blank.
+        if (message == null || message.isBlank() || containsCjk(message)) {
+            message = "Ugyldig forespørsel";
+        }
+        ApiError apiError = new ApiError(HttpStatus.BAD_REQUEST, message, ex);
         apiError.setPath(request.getRequestURI());
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * 处理数据访问异常
-     */
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ApiError> handleDataAccess(DataAccessException ex, HttpServletRequest request) {
-        log.error("数据访问异常: {}", ex.getMessage());
-        ApiError apiError = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR, "数据访问异常，请联系管理员", ex);
+        log.error("Data access error: {}", ex.getMessage(), ex);
+        ApiError apiError = new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Databasefeil. Kontakt administrator.",
+                ex);
         apiError.setPath(request.getRequestURI());
         return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    /**
-     * 处理所有其他异常
-     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<RequestResponse> handleGlobalException(Exception ex, WebRequest request) {
-        log.error("全局异常捕获: Request: {} Error: {}", request.getDescription(false), ex.getMessage(), ex);
+        log.error("Unhandled exception: Request: {} Error: {}", request.getDescription(false), ex.getMessage(), ex);
         return new ResponseEntity<>(
-                RequestResponse.failure("En intern feil oppstod. Kontakt administrator. Detaljer: " + ex.getMessage()),
+                RequestResponse.failure("En intern feil oppstod. Kontakt administrator."),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
+    }
+
+    private static boolean containsCjk(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            Character.UnicodeBlock block = Character.UnicodeBlock.of(text.charAt(i));
+            if (block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS
+                    || block == Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS
+                    || block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A) {
+                return true;
+            }
+        }
+        return false;
     }
 }

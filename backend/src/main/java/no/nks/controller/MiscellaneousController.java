@@ -40,7 +40,7 @@ public class MiscellaneousController {
             // 验证当前用户的 JWT 令牌
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("未授权访问");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
             }
 
             // 获取所有邮政编码
@@ -48,7 +48,7 @@ public class MiscellaneousController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("获取邮政编码失败: " + e.getMessage());
+                    .body("Failed to fetch post codes: " + e.getMessage());
         }
     }
 
@@ -64,7 +64,7 @@ public class MiscellaneousController {
             // 验证当前用户的 JWT 令牌
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("未授权访问");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
             }
 
             // 获取特定邮政编码
@@ -76,7 +76,7 @@ public class MiscellaneousController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("获取邮政编码失败: " + e.getMessage());
+                    .body("Failed to fetch post code: " + e.getMessage());
         }
     }
 }

@@ -101,7 +101,7 @@ public class Project {
     @Column(name = "InspectorComment", columnDefinition = "nvarchar(max)")
     private String inspectorComment;
     
-    @Column(name = "InspectorSignature", length = 100)
+    @Column(name = "InspectorSignature", columnDefinition = "nvarchar(max)")
     private String inspectorSignature;
     
     @Column(name = "TakkBestillingenCDate")
