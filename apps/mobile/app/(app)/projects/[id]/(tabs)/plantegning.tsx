@@ -1,66 +1,30 @@
 /**
  * Plantegning 屏（Tab「Plantegning」）—— 渲染 detail.floorPlanUrl 的 PDF 户型图。
- * 参考旧 Components/PdfViewer(翻页/旋转/缩放)。
  *
- * PDF 方案:react-native-pdf(原生模块,手势捏合缩放/横向翻页体验最好)。
- *   - 翻页:page 受控 + 底部上一页/下一页;缩放:scale 受控 + 原生捏合(min/max);
- *     旋转:对渲染视图施加 transform rotate,循环 0/90/180/270。
- *   ⚠ 需 EAS/dev build(prebuild),不支持 Expo Go(react-native-pdf 依赖原生模块
- *      react-native-blob-util)。
+ * PDF 方案:react-native-webview。
+ *   - iOS 的 WKWebView 原生渲染远程 PDF(自带滚动 + 捏合缩放),在 Expo 新架构(SDK 57)
+ *     下稳定。此前用 react-native-pdf 在 iOS 新架构下黑屏(原生视图不绘制、回调不触发)。
+ *   - ⚠ Android 的系统 WebView 不原生渲染 PDF;若日后上架 Android 需换方案
+ *     (如原生 PdfRenderer 或本地 pdf.js),不要把预签名链接送第三方在线预览(隐私)。
+ *   ⚠ 需 EAS/dev build,不支持 Expo Go(react-native-webview 依赖原生模块)。
  * floorPlanUrl 为空时显示占位。
  */
 import * as React from 'react';
-import {
-  Pressable,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Pdf from 'react-native-pdf';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 import {
   ProjectLoadGate,
   ScreenEmpty,
+  ScreenError,
 } from '@/components/screen-states';
 import { useLoadActiveProject } from '@/features/active-project/hooks';
 import { useProjectRouteId } from '@/lib/use-project-route-id';
 
-const MIN_SCALE = 1;
-const MAX_SCALE = 3;
-const SCALE_STEP = 0.5;
-
-function ToolButton({
-  icon,
-  onPress,
-  disabled,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      className={`h-11 w-11 items-center justify-center rounded-full ${
-        disabled ? 'opacity-30' : 'active:bg-white/20'
-      }`}
-    >
-      <Ionicons name={icon} size={24} color="#ffffff" />
-    </Pressable>
-  );
-}
-
 export default function PlantegningTab() {
   const id = useProjectRouteId();
   const { detail, status, error, reload } = useLoadActiveProject(id);
-  const { width, height } = useWindowDimensions();
 
-  const [page, setPage] = React.useState(1);
-  const [totalPages, setTotalPages] = React.useState(0);
-  const [scale, setScale] = React.useState(1);
-  const [rotation, setRotation] = React.useState(0);
   const [pdfError, setPdfError] = React.useState<string | null>(null);
 
   if (!detail) {
@@ -89,76 +53,57 @@ export default function PlantegningTab() {
     );
   }
 
-  const goPrev = () => setPage((p) => Math.max(1, p - 1));
-  const goNext = () => setPage((p) => (totalPages ? Math.min(totalPages, p + 1) : p + 1));
-  const rotate = () => setRotation((r) => (r + 90) % 360);
-  const zoomIn = () => setScale((s) => Math.min(MAX_SCALE, s + SCALE_STEP));
-  const zoomOut = () => setScale((s) => Math.max(MIN_SCALE, s - SCALE_STEP));
-
-  const sideways = rotation === 90 || rotation === 270;
+  if (pdfError) {
+    return (
+      <ScreenError
+        embedded
+        message={pdfError}
+        onRetry={() => {
+          setPdfError(null);
+          void reload();
+        }}
+      />
+    );
+  }
 
   return (
-    <View className="flex-1 bg-black">
-      <View className="flex-1 items-center justify-center">
-        {pdfError ? (
-          <View className="items-center gap-3 px-6">
-            <Ionicons name="alert-circle-outline" size={48} color="#f87171" />
-            <Text className="text-center text-sm text-red-400">{pdfError}</Text>
-            <Pressable
-              onPress={() => {
-                setPdfError(null);
-                void reload();
-              }}
-              className="rounded-lg bg-white/20 px-4 py-2"
-            >
-              <Text className="text-sm font-semibold text-white">Prøv igjen</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <Pdf
-            key={url}
-            source={{ uri: url, cache: true }}
-            page={page}
-            scale={scale}
-            minScale={MIN_SCALE}
-            maxScale={MAX_SCALE}
-            onLoadComplete={(numberOfPages) => {
-              setTotalPages(numberOfPages);
-              setPdfError(null);
-            }}
-            onPageChanged={(p) => setPage(p)}
-            onError={() => setPdfError('Kunne ikke åpne plantegningen')}
-            trustAllCerts={false}
-            // 旋转:整页渲染视图做 transform;横向时交换宽高避免被裁切。
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <WebView
+        key={url}
+        source={{ uri: url }}
+        originWhitelist={['*']}
+        style={{ flex: 1, backgroundColor: '#ffffff' }}
+        startInLoadingState
+        renderLoading={() => (
+          <View
             style={{
-              width: sideways ? height : width,
-              height: sideways ? width : height,
-              backgroundColor: '#000000',
-              transform: [{ rotate: `${rotation}deg` }],
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#ffffff',
             }}
-          />
+          >
+            <ActivityIndicator size="large" color="#404040" />
+            <Text style={{ marginTop: 12, color: '#737373' }}>Laster plantegning…</Text>
+          </View>
         )}
-      </View>
-
-      {/* 底部工具条:上一页 / 页码 / 下一页 / 旋转 / 缩放 */}
-      <View className="flex-row items-center justify-between bg-black/80 px-4 py-2">
-        <View className="flex-row items-center">
-          <ToolButton icon="chevron-back" onPress={goPrev} disabled={page <= 1} />
-          <Text className="min-w-16 text-center text-sm font-medium text-white">
-            {totalPages ? `${page} / ${totalPages}` : '…'}
-          </Text>
-          <ToolButton
-            icon="chevron-forward"
-            onPress={goNext}
-            disabled={totalPages > 0 && page >= totalPages}
-          />
-        </View>
-        <View className="flex-row items-center">
-          <ToolButton icon="remove-outline" onPress={zoomOut} disabled={scale <= MIN_SCALE} />
-          <ToolButton icon="add-outline" onPress={zoomIn} disabled={scale >= MAX_SCALE} />
-          <ToolButton icon="sync-outline" onPress={rotate} />
-        </View>
-      </View>
+        onError={() =>
+          setPdfError('Kunne ikke laste plantegningen. Sjekk nettforbindelsen.')
+        }
+        onHttpError={(e) => {
+          const code = e.nativeEvent.statusCode;
+          // 预签名链接可能已过期(403)或对象缺失(404)。
+          setPdfError(
+            code === 403
+              ? 'Lenken til plantegningen er utløpt. Gå ut og inn igjen for å oppdatere.'
+              : `Kunne ikke hente plantegningen (feil ${code}).`,
+          );
+        }}
+      />
     </View>
   );
 }
