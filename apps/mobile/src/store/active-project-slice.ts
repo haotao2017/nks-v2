@@ -111,16 +111,20 @@ const activeProjectSlice = createSlice({
     },
     /** 组装完成:写入本地副本(视为与后端一致,清同步标志)。顺带归一历史状态别名。 */
     loadSucceeded(state, action: PayloadAction<LocalProjectDetail>) {
-      const detail = action.payload;
-      for (const cl of detail.checklists) {
-        for (const item of cl.checkItems) {
-          item.status = normalizeChecklistStatus(item.status);
-        }
-      }
-      state.detail = detail;
-      state.projectId = detail.projectID;
+      // 先写入 draft,再通过 draft 归一化;切勿直接改 action.payload——
+      // 调用方可能传入 store 里已被 Immer 冻结的 detail,直接赋值会抛
+      // "Cannot assign to read-only property"。经 draft 修改由 Immer 写时复制。
+      state.detail = action.payload;
+      state.projectId = action.payload.projectID;
       state.status = 'ready';
       state.error = null;
+      if (state.detail) {
+        for (const cl of state.detail.checklists) {
+          for (const item of cl.checkItems) {
+            item.status = normalizeChecklistStatus(item.status);
+          }
+        }
+      }
     },
     loadFailed(state, action: PayloadAction<string>) {
       // 已有本地副本时不要让并发 Tab 的失败请求覆盖可展示数据。
