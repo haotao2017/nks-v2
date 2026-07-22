@@ -4,13 +4,22 @@
  * PDF 方案:react-native-webview。
  *   - iOS 的 WKWebView 原生渲染远程 PDF(自带滚动 + 捏合缩放),在 Expo 新架构(SDK 57)
  *     下稳定。此前用 react-native-pdf 在 iOS 新架构下黑屏(原生视图不绘制、回调不触发)。
- *   - ⚠ Android 的系统 WebView 不原生渲染 PDF;若日后上架 Android 需换方案
- *     (如原生 PdfRenderer 或本地 pdf.js),不要把预签名链接送第三方在线预览(隐私)。
+ *   - Android:系统 WebView 不原生渲染 PDF,故降级为「在系统查看器打开」(Linking.openURL,
+ *     用户自己的浏览器/PDF app 直取预签名链接,不经第三方在线预览)。日后若要 Android 内联
+ *     渲染,再上原生 PdfRenderer 或本地 pdf.js。
  *   ⚠ 需 EAS/dev build,不支持 Expo Go(react-native-webview 依赖原生模块)。
  * floorPlanUrl 为空时显示占位。
  */
 import * as React from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Platform,
+  Pressable,
+  Text,
+  View,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 
 import {
@@ -63,6 +72,29 @@ export default function PlantegningTab() {
           void reload();
         }}
       />
+    );
+  }
+
+  // Android 的系统 WebView 不原生渲染 PDF —— 在系统查看器中打开(用户自己的浏览器/PDF app
+  // 直接取预签名链接,不经任何第三方在线预览,无隐私外泄)。
+  if (Platform.OS === 'android') {
+    return (
+      <View className="flex-1 items-center justify-center gap-4 bg-white px-6">
+        <Ionicons name="document-text-outline" size={48} color="#a3a3a3" />
+        <Text className="text-center text-base font-medium text-neutral-600">
+          Plantegning (PDF)
+        </Text>
+        <Pressable
+          onPress={() => {
+            void Linking.openURL(url).catch(() =>
+              setPdfError('Fant ingen app som kan åpne PDF-en.'),
+            );
+          }}
+          className="rounded-lg bg-blue-600 px-5 py-3 active:opacity-80"
+        >
+          <Text className="text-sm font-semibold text-white">Åpne plantegning</Text>
+        </Pressable>
+      </View>
     );
   }
 
