@@ -58,12 +58,10 @@ export function useLoadActiveProject(routeId: RouteParam) {
     const current = store.getState().activeProject;
     const hasLocal = current.detail?.projectID === projectId;
 
-    // 已有同一项目本地副本:直接复用(persist 回灌后 status 可能是 idle)。
-    if (hasLocal && current.detail) {
-      if (current.status !== 'ready') {
-        dispatch(loadSucceeded(current.detail));
-      }
-      return;
+    // 有本地副本先即时渲染(避免闪 loading);但不在此 return —— 联网且无未同步改动时,
+    // 仍进入下方任务后台刷新服务端,以拾取服务端侧变更(如新上传的平面图、改派检验员)。
+    if (hasLocal && current.detail && current.status !== 'ready') {
+      dispatch(loadSucceeded(current.detail));
     }
 
     const existing = inflightLoads.get(projectId);
@@ -108,7 +106,11 @@ export function useLoadActiveProject(routeId: RouteParam) {
         return;
       }
 
-      dispatch(beginLoad(projectId));
+      // 联网且无未同步:拉服务端最新。已有本地副本时不 beginLoad(避免闪 loading),后台静默刷新;
+      // 刷新失败(见下方 catch)保留已渲染的本地副本,不降级为错误。
+      if (!local) {
+        dispatch(beginLoad(projectId));
+      }
       try {
         const list = qc.getQueryData<MobileProjectListItem[]>(projectKeys.list());
         const seed = list?.find((p) => String(p.projectID) === projectId);
