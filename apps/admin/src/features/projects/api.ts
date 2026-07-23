@@ -130,6 +130,8 @@ export function useProject(projectId: number | undefined) {
   return useQuery({
     queryKey: projectKeys.detail(projectId ?? -1),
     enabled: typeof projectId === 'number' && projectId > 0,
+    // 服务工作流绑定可能在别处变更;进入详情始终与后端对齐
+    refetchOnMount: 'always',
     queryFn: async () => {
       const res = await getApiClient().get<WrapperProjectDto>(
         endpoints.project.get.path,

@@ -25,6 +25,7 @@ import { endpoints } from '@nks/api-types/endpoints';
 
 import { getApiClient } from '@/lib/api';
 import { useApiMutation } from '@/lib/query';
+import { projectKeys } from '@/features/projects/api';
 
 /** GetAllService 的响应形状:{ multiService: ServiceDto[] }。 */
 interface GetAllServiceResponse {
@@ -63,7 +64,7 @@ export function useCreateService() {
       );
       return res?.service;
     },
-    invalidateKeys: [serviceKeys.list()],
+    invalidateKeys: [serviceKeys.list(), projectKeys.all],
     successMessage: t('services.toast.created'),
     errorMessage: t('services.toast.createError'),
   });
@@ -81,7 +82,8 @@ export function useUpdateService() {
       );
       return res?.service;
     },
-    invalidateKeys: [serviceKeys.list()],
+    // 服务工作流绑定变更后项目详情的 projectServiceWorkflowList 需重拉
+    invalidateKeys: [serviceKeys.list(), projectKeys.all],
     successMessage: t('services.toast.updated'),
     errorMessage: t('services.toast.updateError'),
   });
@@ -105,7 +107,7 @@ export function useDeleteService() {
       }
       return res;
     },
-    invalidateKeys: [serviceKeys.list()],
+    invalidateKeys: [serviceKeys.list(), projectKeys.all],
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {
@@ -132,7 +134,7 @@ export function useBulkDeleteServices() {
       }
       return { deleted };
     },
-    invalidateKeys: [serviceKeys.list()],
+    invalidateKeys: [serviceKeys.list(), projectKeys.all],
     successMessage: false,
     errorMessage: false,
     onSuccess: (data) => {

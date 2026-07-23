@@ -17,6 +17,7 @@ import no.nks.repository.ServiceRepository;
 import no.nks.repository.ServiceWorkflowCategoryRepository;
 import no.nks.service.ServiceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -201,9 +202,11 @@ public class ServiceServiceImpl implements ServiceService {
     /**
      * 更新单个服务
      * 对应C#中的UpdateSingleService方法
+     * 工作流绑定变更会影响项目详情的 projectServiceWorkflowList，需清空项目缓存。
      */
     @Override
     @Transactional
+    @CacheEvict(value = "projectCache", allEntries = true)
     public WrapperService updateSingleService(ServiceDto serviceDto) {
         log.info("更新ID为{}的服务", serviceDto.getId());
 
@@ -261,6 +264,7 @@ public class ServiceServiceImpl implements ServiceService {
      */
     @Override
     @Transactional
+    @CacheEvict(value = "projectCache", allEntries = true)
     public WrapperService createSingleService(ServiceDto serviceDto, String serviceName) {
         log.info("Creating a new service for company with id: {}", getDataCompany() != null ? getDataCompany().getCompanyID() : null);
 
@@ -312,6 +316,7 @@ public class ServiceServiceImpl implements ServiceService {
      */
     @Override
     @Transactional
+    @CacheEvict(value = "projectCache", allEntries = true)
     public RequestResponse deleteSingleService(int id) {
         log.info("删除ID为{}的服务", id);
 
