@@ -4,8 +4,7 @@
  * To-do / Done 步骤列表 —— 对齐旧 admin projectWorkplace/Steps.js 的可点交互。
  *
  *  - To-do 行:整行可点 → 打开该步操作面板;行尾 Overføre(推进/跳过,仅当步有 transfer 端点)。
- *  - Done 行:已完成(isTransfer=false)可点 → 只读面板 + Rediger 重开可编辑;
- *             已推进(isTransfer=true)显示「Overført」只读,不可点(对齐旧系统)。
+ *  - Done 行:一律可查看步骤数据(对齐用户期望);已推进显示「Overført」徽标,仍可打开查看/编辑。
  */
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, ChevronRight, Edit3, FastForward, Loader2 } from 'lucide-react';
@@ -76,30 +75,24 @@ function DoneRow({ step, status, onOpen }: { step: WorkflowStepDef; status: Step
 
   return (
     <li className="bg-card flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5">
-      {isTransferred ? (
-        <span className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="text-muted-foreground tabular-nums text-sm">{step.seq}.</span>
-          <span className="text-muted-foreground truncate text-sm">{t(step.titleKey)}</span>
-          <Badge variant="secondary" className="ml-2">
+      <button
+        type="button"
+        onClick={() => onOpen(step, 'view')}
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+      >
+        <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+        <span className="text-muted-foreground tabular-nums text-sm">{step.seq}.</span>
+        <span className="truncate text-sm font-medium">{t(step.titleKey)}</span>
+        {isTransferred ? (
+          <Badge variant="secondary" className="ml-1 shrink-0">
             {t('workflow.status.transferred')}
           </Badge>
-        </span>
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={() => onOpen(step, 'view')}
-            className="flex min-w-0 flex-1 items-center gap-2 text-left"
-          >
-            <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
-            <span className="truncate text-sm font-medium">{t(step.titleKey)}</span>
-          </button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => onOpen(step, 'edit')}>
-            <Edit3 className="size-4" />
-            {t('workflow.actions.edit')}
-          </Button>
-        </>
-      )}
+        ) : null}
+      </button>
+      <Button type="button" variant="ghost" size="sm" onClick={() => onOpen(step, 'edit')}>
+        <Edit3 className="size-4" />
+        {t('workflow.actions.edit')}
+      </Button>
     </li>
   );
 }

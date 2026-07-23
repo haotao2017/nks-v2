@@ -27,9 +27,30 @@ interface PdfStepPanelProps {
   projectId: number;
   step: WorkflowStepDef;
   disabled?: boolean;
+  onCompleted?: () => void;
+  /** Done 打开时：已完成步骤回填的最终邮件/附件（优先于模板预览）。 */
+  completedData?: ProjectWorkflowDto | null;
 }
 
-export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
+function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
+  if (!data) return false;
+  return Boolean(
+    data.emailContent ||
+      data.emailSubject ||
+      data.emailTo ||
+      data.emailFrom ||
+      data.attachmentURL ||
+      (data.emailHistoryId ?? 0) > 0,
+  );
+}
+
+export function PdfStepPanel({
+  projectId,
+  step,
+  disabled,
+  onCompleted,
+  completedData,
+}: PdfStepPanelProps) {
   const { t } = useTranslation();
   const preview = useEmailPreview(step.preview);
   const execMut = useExecuteStepMultipart(projectId, step, step.execute, {
@@ -42,6 +63,9 @@ export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
   const [emailContent, setEmailContent] = React.useState('');
   const [attachmentURL, setAttachmentURL] = React.useState('');
   const [file, setFile] = React.useState<File | null>(null);
+  const [hydratedFromCompleted, setHydratedFromCompleted] = React.useState(
+    hasSentEmailContent(completedData),
+  );
 
   const previewMutate = preview.mutate;
   const apply = (pw?: ProjectWorkflowDto) => {
@@ -53,9 +77,23 @@ export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
   };
 
   React.useEffect(() => {
-    previewMutate(buildStepBase(projectId, step, { isTransfer: false }), { onSuccess: apply });
+    if (hasSentEmailContent(completedData)) {
+      apply(completedData!);
+      setHydratedFromCompleted(true);
+      return;
+    }
+    if (completedData && completedData.isTransfer) {
+      setHydratedFromCompleted(true);
+      return;
+    }
+    previewMutate(buildStepBase(projectId, step, { isTransfer: false }), {
+      onSuccess: (pw) => {
+        apply(pw);
+        setHydratedFromCompleted(false);
+      },
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, step.key]);
+  }, [projectId, step.key, completedData?.emailHistoryId, completedData?.emailContent, completedData?.isTransfer]);
 
   function handleSubmit() {
     void (async () => {
@@ -73,11 +111,14 @@ export function PdfStepPanel({ projectId, step, disabled }: PdfStepPanelProps) {
         const template = await fetchUrlAsFile(attachmentURL, 'rapport.pdf');
         if (template) filesToSend = [template];
       }
-      execMut.mutate({ extra, files: filesToSend.length ? filesToSend : undefined });
+      execMut.mutate(
+        { extra, files: filesToSend.length ? filesToSend : undefined },
+        { onSuccess: () => onCompleted?.() },
+      );
     })();
   }
 
-  if (preview.isPending) {
+  if (preview.isPending && !hydratedFromCompleted) {
     return (
       <div className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
         <Loader2 className="size-4 animate-spin" /> {t('workflow.panel.reportLoading')}

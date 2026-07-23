@@ -35,6 +35,17 @@ interface EmailStepPanelProps {
   projectId: number;
   step: WorkflowStepDef;
   disabled?: boolean;
+  onCompleted?: () => void;
+  /** Done 打开时：已完成步骤回填的最终邮件内容（优先于模板预览）。 */
+  completedData?: ProjectWorkflowDto | null;
+}
+
+function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
+  if (!data) return false;
+  if (data.emailContent || data.emailSubject || data.emailTo || data.emailFrom) return true;
+  if ((data.emailHistoryId ?? 0) > 0) return true;
+  if ((data.emailProjectPartiesSent?.length ?? 0) > 0) return true;
+  return false;
 }
 
 /** 外部文档上传基址(与旧 admin 的 BaseURLSite 一致)；空 env 时回退到当前 origin。 */
@@ -44,7 +55,13 @@ function resolveSiteUrl(): string {
   return typeof window !== 'undefined' ? window.location.origin : '';
 }
 
-export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProps) {
+export function EmailStepPanel({
+  projectId,
+  step,
+  disabled,
+  onCompleted,
+  completedData,
+}: EmailStepPanelProps) {
   const { t } = useTranslation();
   const preview = useEmailPreview(step.preview);
   // 发信端点:优先 sendEmail(WF8/9),否则普通 execute(WF1/4/12)。
@@ -63,12 +80,46 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
   // WF8:Kopier til prosjektleder → 发信时带 projectLeaderEmailTo。
   const [ccProjectLeader, setCcProjectLeader] = React.useState(false);
   const [projectLeaderEmailTo, setProjectLeaderEmailTo] = React.useState('');
-  // 无预览步骤直接视为已加载;组件按 step.key 重挂载,故初值即等价于旧的进入时重置。
-  const [loaded, setLoaded] = React.useState(!step.preview);
+  // 无预览步骤 / 已有完成数据 → 直接视为已加载。
+  const [loaded, setLoaded] = React.useState(!step.preview || hasSentEmailContent(completedData));
 
-  // 进入步骤时自动取预览一次(setState 仅在 mutation 异步回调里,非 effect 体内同步调用)。
+  // 进入步骤:优先展示 Done 回填的最终内容;纯 Overført 不拉模板;否则拉模板预览。
   const previewMutate = preview.mutate;
   React.useEffect(() => {
+    if (hasSentEmailContent(completedData)) {
+      const sent = completedData!;
+      setEmailFrom(sent.emailFrom ?? '');
+      setEmailTo(sent.emailTo ?? '');
+      setCc(sent.cc ?? '');
+      setEmailSubject(sent.emailSubject ?? '');
+      setEmailContent(sent.emailContent ?? '');
+      // WF9:把已发送记录映射成可展示的参与方列表
+      if (sent.emailProjectPartiesSent?.length) {
+        setParties(
+          sent.emailProjectPartiesSent.map((s) => ({
+            emailFrom: s.emailFrom,
+            emailTo: s.emailTo,
+            title: s.emailSubject,
+            content: s.emailContent,
+            partyID: s.partyID,
+            partyTypeID: s.partyTypeID,
+            sendEmail: true,
+          })),
+        );
+      } else {
+        setParties([]);
+      }
+      setExcluded(new Set());
+      setProjectLeaderEmailTo(sent.projectLeaderEmailTo ?? '');
+      setCcProjectLeader(false);
+      setLoaded(true);
+      return;
+    }
+    // Done 里纯推进、无邮件历史：不要用模板冒充已发内容
+    if (completedData && completedData.isTransfer) {
+      setLoaded(true);
+      return;
+    }
     if (!step.preview) return;
     previewMutate(buildStepBase(projectId, step, { isTransfer: false }), {
       onSuccess: (pw?: ProjectWorkflowDto) => {
@@ -86,7 +137,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
       onError: () => setLoaded(true),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, step.key]);
+  }, [projectId, step.key, completedData?.emailHistoryId, completedData?.emailContent, completedData?.isTransfer]);
 
   const isMulti = step.multiRecipient && parties.length > 0;
   const keptCount = parties.length - excluded.size;
@@ -125,8 +176,8 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
         emailProjectParties: { emailProjectPartiesWorkflowList: list },
         baseURLSite: siteUrl ? `${siteUrl}/external/upload-document` : undefined,
       };
-      if (useSend) sendMut.mutate(extra as ProjectWorkflowDto);
-      else execMut.mutate(extra as ProjectWorkflowDto);
+      if (useSend) sendMut.mutate(extra as ProjectWorkflowDto, { onSuccess: () => onCompleted?.() });
+      else execMut.mutate(extra as ProjectWorkflowDto, { onSuccess: () => onCompleted?.() });
       return;
     }
     const extra: Partial<ProjectWorkflowDto> = {
@@ -140,8 +191,8 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
     if (step.projectLeaderCc && ccProjectLeader && projectLeaderEmailTo) {
       extra.projectLeaderEmailTo = projectLeaderEmailTo;
     }
-    if (useSend) sendMut.mutate(extra as ProjectWorkflowDto);
-    else execMut.mutate(extra as ProjectWorkflowDto);
+    if (useSend) sendMut.mutate(extra as ProjectWorkflowDto, { onSuccess: () => onCompleted?.() });
+    else execMut.mutate(extra as ProjectWorkflowDto, { onSuccess: () => onCompleted?.() });
   }
 
   if (preview.isPending && !loaded) {
@@ -340,7 +391,7 @@ export function EmailStepPanel({ projectId, step, disabled }: EmailStepPanelProp
             type="button"
             variant="secondary"
             disabled={disabled || busy}
-            onClick={() => transferMut.mutate()}
+            onClick={() => transferMut.mutate(undefined, { onSuccess: () => onCompleted?.() })}
           >
             <FastForward className="size-4" />
             {t('workflow.actions.transferWithoutSending')}

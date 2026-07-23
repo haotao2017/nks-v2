@@ -11,7 +11,8 @@
  *  - 按选中服务的 description 过滤要显示的步骤(Kontroll / Innhenting av dokumentasjon)。
  *  - To do / Done 两个子 Tab:
  *      · To-do 行可点 → 打开该步操作面板(可编辑);行尾 Overføre 推进/跳过。
- *      · Done 行可点 → 只读面板(disabled);已推进项显示「Overført」。
+ *      · Done 行一律可点 → 查看/编辑步骤数据;已推进项显示「Overført」徽标。
+ *      · 打开 Done 邮件步骤时优先展示 EmailHistory 最终内容,不再重新拉模板。
  *
  * Done/To-do 划分:GetProjectWorkflowCompletedTransferedSteps 返回已处理步骤,
  *   isTransfer=false → 已完成(Done,可点只读),isTransfer=true → 已推进(Done 内只读标记),
@@ -21,7 +22,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Workflow, AlertCircle, Loader2 } from 'lucide-react';
 
-import type { ProjectDto } from '@nks/api-types';
+import type { ProjectDto, ProjectWorkflowDto } from '@nks/api-types';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,27 +63,86 @@ function StepPanel({
   project,
   step,
   disabled,
+  onCompleted,
+  completedData,
 }: {
   projectId: number;
   project: ProjectDto;
   step: WorkflowStepDef;
   disabled?: boolean;
+  /** 步骤发送/执行成功后关闭弹窗。 */
+  onCompleted?: () => void;
+  /** Done 打开时传入已完成步骤(含 EmailHistory 回填的最终邮件内容)。 */
+  completedData?: ProjectWorkflowDto | null;
 }) {
   switch (step.type) {
     case 'email':
-      return <EmailStepPanel projectId={projectId} step={step} disabled={disabled} />;
+      return (
+        <EmailStepPanel
+          projectId={projectId}
+          step={step}
+          disabled={disabled}
+          onCompleted={onCompleted}
+          completedData={completedData}
+        />
+      );
     case 'upload':
-      return <UploadStepPanel projectId={projectId} step={step} disabled={disabled} />;
+      return (
+        <UploadStepPanel
+          projectId={projectId}
+          step={step}
+          disabled={disabled}
+          onCompleted={onCompleted}
+          completedData={completedData}
+        />
+      );
     case 'date-inspector':
-      return <DateInspectorStepPanel projectId={projectId} step={step} disabled={disabled} />;
+      return (
+        <DateInspectorStepPanel
+          projectId={projectId}
+          step={step}
+          disabled={disabled}
+          onCompleted={onCompleted}
+        />
+      );
     case 'invoice':
-      return <InvoiceStepPanel projectId={projectId} project={project} step={step} disabled={disabled} />;
+      return (
+        <InvoiceStepPanel
+          projectId={projectId}
+          project={project}
+          step={step}
+          disabled={disabled}
+          onCompleted={onCompleted}
+        />
+      );
     case 'pdf':
-      return <PdfStepPanel projectId={projectId} step={step} disabled={disabled} />;
+      return (
+        <PdfStepPanel
+          projectId={projectId}
+          step={step}
+          disabled={disabled}
+          onCompleted={onCompleted}
+          completedData={completedData}
+        />
+      );
     case 'inspect-report':
-      return <InspectReportStepPanel projectId={projectId} step={step} disabled={disabled} />;
+      return (
+        <InspectReportStepPanel
+          projectId={projectId}
+          step={step}
+          disabled={disabled}
+          onCompleted={onCompleted}
+        />
+      );
     case 'simple':
-      return <SimpleStepPanel projectId={projectId} step={step} disabled={disabled} />;
+      return (
+        <SimpleStepPanel
+          projectId={projectId}
+          step={step}
+          disabled={disabled}
+          onCompleted={onCompleted}
+        />
+      );
     default:
       return null;
   }
@@ -143,6 +203,13 @@ export function ProjectWorkflow({
   );
   const openStep: OpenStep = (step, mode) => setDialog({ step, mode });
   const closeDialog = () => setDialog(null);
+
+  const dialogCompletedData = React.useMemo(() => {
+    if (!dialog) return null;
+    return (
+      (progress.data ?? []).find((row) => row.workflowStepId === dialog.step.workflowStepId) ?? null
+    );
+  }, [dialog, progress.data]);
 
   return (
     <WorkflowInstanceProvider serviceWorkflowCategoryId={instance.instanceId}>
@@ -247,6 +314,8 @@ export function ProjectWorkflow({
                 project={project}
                 step={dialog.step}
                 disabled={dialog.mode === 'view'}
+                onCompleted={closeDialog}
+                completedData={dialogCompletedData}
               />
             </>
           )}

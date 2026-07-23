@@ -69,12 +69,14 @@ interface InspectReportStepPanelProps {
   projectId: number;
   step: WorkflowStepDef;
   disabled?: boolean;
+  onCompleted?: () => void;
 }
 
 export function InspectReportStepPanel({
   projectId,
   step,
   disabled,
+  onCompleted,
 }: InspectReportStepPanelProps) {
   const { t } = useTranslation();
   const inspQuery = useProjectChecklistsInspData(projectId);
@@ -122,10 +124,13 @@ export function InspectReportStepPanel({
   }
 
   function handleApprove() {
-    approveMut.mutate({
-      isTransfer: false,
-      isApprovedInspReport: true,
-    } as ProjectWorkflowDto);
+    approveMut.mutate(
+      {
+        isTransfer: false,
+        isApprovedInspReport: true,
+      } as ProjectWorkflowDto,
+      { onSuccess: () => onCompleted?.() },
+    );
   }
 
   if (inspQuery.isPending) {

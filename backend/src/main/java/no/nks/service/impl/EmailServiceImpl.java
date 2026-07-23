@@ -269,11 +269,14 @@ public class EmailServiceImpl implements EmailService {
             // Prefer authenticated company when available; fall back to 1 for legacy callers
             emailHistory.setCompanyId(companyId != null ? companyId : 1);
 
-            // 保存到数据库
-            emailHistoryRepository.save(emailHistory);
+            // 保存到数据库，并把 ID 写回 DTO，供 ProjectWorkflowSteps.taskId 关联已发内容
+            EmailHistory saved = emailHistoryRepository.save(emailHistory);
+            if (saved.getId() != null) {
+                projectWorkflow.setEmailHistoryId(saved.getId());
+            }
 
-            log.debug("Email history saved for project: {}, workflow step: {}",
-                    projectWorkflow.getProjectId(), projectWorkflow.getWorkflowStepId());
+            log.debug("Email history saved for project: {}, workflow step: {}, historyId: {}",
+                    projectWorkflow.getProjectId(), projectWorkflow.getWorkflowStepId(), saved.getId());
             return true;
         } catch (Exception e) {
             log.error("Failed to save email history", e);

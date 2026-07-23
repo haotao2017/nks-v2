@@ -98,47 +98,70 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
         List<Integer> projectStepsWithEmail = List.of(1, 2, 4, 8, 9, 12, 13, 14);
 
         for (ProjectWorkflowDto item : multiProjectWorkflow) {
-            if (item.getIsTransfer() != null && !item.getIsTransfer()) {
-                if (projectStepsWithEmail.contains(item.getWorkflowStepId()) && item.getEmailHistoryId() != null) {
-                    if (item.getWorkflowStepId() != 9) {
-                        emailHistoryRepository.findById(item.getEmailHistoryId()).ifPresent(objEmailHistory -> {
-                            item.setEmailContent(objEmailHistory.getMessage());
-                            item.setEmailFrom(objEmailHistory.getFromEmail());
-                            item.setEmailTo(objEmailHistory.getToEmail());
-                            item.setEmailSubject(objEmailHistory.getSubject());
-                            if (objEmailHistory.getFileName() != null && !objEmailHistory.getFileName().isEmpty()) {
-                                // NOTE: S3 folder logic needs to be verified.
-                                String folder = "pdf/";
-                                if (item.getWorkflowStepId() == 14) {
-                                    folder = "final-report-pdf/";
-                                }
-                                // Assuming s3Service has a method to create a public URL.
-                                item.setAttachmentURL(s3Service.createPublicUrl(null, null, folder, objEmailHistory.getFileName()));
-                            }
-                        });
-                    } else { // Step 9
-                        item.setEmailHistoryId(0);
-                        List<EmailHistory> objEmailHistoryList = emailHistoryRepository.findByProjectIdAndWorkflowStepIdOrderByDateDesc(item.getProjectId(), 9);
+            // 邮件类步骤：从 EmailHistory 回填最终发出内容（含 Overført 后仍有历史的情况）
+            if (!projectStepsWithEmail.contains(item.getWorkflowStepId())) {
+                continue;
+            }
 
-                        Map<Integer, EmailHistory> latestEmailByPartyType = objEmailHistoryList.stream()
-                                .collect(Collectors.toMap(
-                                        EmailHistory::getPartyTypeId,
-                                        Function.identity(),
-                                        (e1, e2) -> e1.getDate().isAfter(e2.getDate()) ? e1 : e2
-                                ));
+            if (item.getWorkflowStepId() == 9) {
+                item.setEmailHistoryId(item.getEmailHistoryId() != null ? item.getEmailHistoryId() : 0);
+                List<EmailHistory> objEmailHistoryList = emailHistoryRepository
+                        .findByProjectIdAndWorkflowStepIdOrderByDateDesc(item.getProjectId(), 9);
 
-                        item.setEmailProjectPartiesSent(latestEmailByPartyType.values().stream().map(emailHistory -> {
-                            var sentDto = new EmailProjectPartiesSentDto();
-                            sentDto.setEmailContent(emailHistory.getMessage());
-                            sentDto.setEmailFrom(emailHistory.getFromEmail());
-                            sentDto.setEmailTo(emailHistory.getToEmail());
-                            sentDto.setEmailSubject(emailHistory.getSubject());
-                            sentDto.setPartyID(emailHistory.getPartyId());
-                            sentDto.setPartyTypeID(emailHistory.getPartyTypeId());
-                            return sentDto;
-                        }).collect(Collectors.toList()));
-                    }
+                Map<Integer, EmailHistory> latestEmailByPartyType = objEmailHistoryList.stream()
+                        .filter(h -> h.getPartyTypeId() != null)
+                        .collect(Collectors.toMap(
+                                EmailHistory::getPartyTypeId,
+                                Function.identity(),
+                                (e1, e2) -> e1.getDate() != null && e2.getDate() != null && e1.getDate().isAfter(e2.getDate())
+                                        ? e1 : e2
+                        ));
+
+                item.setEmailProjectPartiesSent(latestEmailByPartyType.values().stream().map(emailHistory -> {
+                    var sentDto = new EmailProjectPartiesSentDto();
+                    sentDto.setEmailContent(emailHistory.getMessage());
+                    sentDto.setEmailFrom(emailHistory.getFromEmail());
+                    sentDto.setEmailTo(emailHistory.getToEmail());
+                    sentDto.setEmailSubject(emailHistory.getSubject());
+                    sentDto.setPartyID(emailHistory.getPartyId());
+                    sentDto.setPartyTypeID(emailHistory.getPartyTypeId());
+                    return sentDto;
+                }).collect(Collectors.toList()));
+                continue;
+            }
+
+            EmailHistory history = null;
+            if (item.getEmailHistoryId() != null && item.getEmailHistoryId() > 0) {
+                history = emailHistoryRepository.findById(item.getEmailHistoryId()).orElse(null);
+            }
+            // 兼容旧数据：步骤未写 taskId 时按 project+workflow+step 取最新一封
+            if (history == null) {
+                List<EmailHistory> emails = emailHistoryRepository.findByProjectIdAndWorkflowIdAndWorkflowStepId(
+                        item.getProjectId(), item.getWorkflowId(), item.getWorkflowStepId());
+                history = emails.stream()
+                        .sorted(Comparator.comparing(EmailHistory::getId, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                        .findFirst()
+                        .orElse(null);
+            }
+            if (history == null) {
+                continue;
+            }
+
+            item.setEmailContent(history.getMessage());
+            item.setEmailFrom(history.getFromEmail());
+            item.setEmailTo(history.getToEmail());
+            item.setEmailSubject(history.getSubject());
+            if (item.getEmailHistoryId() == null || item.getEmailHistoryId() <= 0) {
+                item.setEmailHistoryId(history.getId());
+            }
+            if (history.getFileName() != null && !history.getFileName().isEmpty()) {
+                String folder = "pdf/";
+                if (item.getWorkflowStepId() != null && item.getWorkflowStepId() == 14) {
+                    folder = "final-report-pdf/";
+                } else if (item.getWorkflowStepId() != null && item.getWorkflowStepId() == 2) {
+                    folder = "workflow/step2/";
                 }
+                item.setAttachmentURL(s3Service.createPublicUrl(null, null, folder, history.getFileName()));
             }
         }
 

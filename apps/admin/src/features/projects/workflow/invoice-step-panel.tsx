@@ -25,9 +25,16 @@ interface InvoiceStepPanelProps {
   project: ProjectDto;
   step: WorkflowStepDef;
   disabled?: boolean;
+  onCompleted?: () => void;
 }
 
-export function InvoiceStepPanel({ projectId, project, step, disabled }: InvoiceStepPanelProps) {
+export function InvoiceStepPanel({
+  projectId,
+  project,
+  step,
+  disabled,
+  onCompleted,
+}: InvoiceStepPanelProps) {
   const { t } = useTranslation();
   const details = useInvoiceDetails(projectId, step);
   const execMut = useExecuteStepJson(projectId, step, step.execute, {
@@ -105,7 +112,11 @@ export function InvoiceStepPanel({ projectId, project, step, disabled }: Invoice
         </dl>
       )}
 
-      <Button type="button" disabled={disabled || execMut.isPending} onClick={() => execMut.mutate({})}>
+      <Button
+        type="button"
+        disabled={disabled || execMut.isPending}
+        onClick={() => execMut.mutate({}, { onSuccess: () => onCompleted?.() })}
+      >
         {execMut.isPending ? <Loader2 className="size-4 animate-spin" /> : <Receipt className="size-4" />}
         {t('workflow.actions.sendInvoice')}
       </Button>

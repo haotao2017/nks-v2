@@ -41,6 +41,7 @@ interface DateInspectorStepPanelProps {
   projectId: number;
   step: WorkflowStepDef;
   disabled?: boolean;
+  onCompleted?: () => void;
 }
 
 /** 默认明天 09:00 的 datetime-local 字符串。 */
@@ -58,7 +59,12 @@ function toLocalInput(iso?: string): string {
   return iso.length >= 16 ? iso.slice(0, 16) : iso;
 }
 
-export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspectorStepPanelProps) {
+export function DateInspectorStepPanel({
+  projectId,
+  step,
+  disabled,
+  onCompleted,
+}: DateInspectorStepPanelProps) {
   const { t } = useTranslation();
   const inspectors = useInspectors();
   const saved = useWfTenSavedDetails(projectId);
@@ -107,7 +113,7 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
           projectInspectionEventComment: comment || undefined,
           isInspectorEmail: notifyInspector,
         };
-    execMut.mutate(extra as ProjectWorkflowDto);
+    execMut.mutate(extra as ProjectWorkflowDto, { onSuccess: () => onCompleted?.() });
   }
 
   return (
@@ -182,7 +188,12 @@ export function DateInspectorStepPanel({ projectId, step, disabled }: DateInspec
           {skip ? t('workflow.actions.completeWithoutInspection') : t('workflow.actions.saveInspectionDate')}
         </Button>
         {step.transfer && (
-          <Button type="button" variant="secondary" disabled={disabled || busy} onClick={() => transferMut.mutate()}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={disabled || busy}
+            onClick={() => transferMut.mutate(undefined, { onSuccess: () => onCompleted?.() })}
+          >
             <Send className="size-4" /> {t('workflow.actions.transfer')}
           </Button>
         )}

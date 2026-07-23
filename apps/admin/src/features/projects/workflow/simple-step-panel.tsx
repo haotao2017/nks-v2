@@ -27,6 +27,7 @@ interface SimpleStepPanelProps {
   projectId: number;
   step: WorkflowStepDef;
   disabled?: boolean;
+  onCompleted?: () => void;
 }
 
 /** datetime-local 字符串 YYYY-MM-DDTHH:mm（默认 09:00，对齐旧 DateTimePicker）。 */
@@ -59,7 +60,7 @@ function toDateTimeInput(value?: string | null): string {
   return toDateTimeLocal(d, d.getHours(), d.getMinutes());
 }
 
-export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelProps) {
+export function SimpleStepPanel({ projectId, step, disabled, onCompleted }: SimpleStepPanelProps) {
   const { t } = useTranslation();
   const execMut = useExecuteStepJson(projectId, step, step.execute);
   const reminderQuery = useReminderDate(step.dateField ? projectId : 0);
@@ -85,7 +86,7 @@ export function SimpleStepPanel({ projectId, step, disabled }: SimpleStepPanelPr
       extra.contactCustomerDate = iso;
     }
     if (step.approve) extra.isApprovedInspReport = true;
-    execMut.mutate(extra as ProjectWorkflowDto);
+    execMut.mutate(extra as ProjectWorkflowDto, { onSuccess: () => onCompleted?.() });
   }
 
   return (

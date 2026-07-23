@@ -28,9 +28,30 @@ interface UploadStepPanelProps {
   projectId: number;
   step: WorkflowStepDef;
   disabled?: boolean;
+  onCompleted?: () => void;
+  /** Done 打开时：已完成步骤回填的最终邮件内容（优先于模板预览）。 */
+  completedData?: ProjectWorkflowDto | null;
 }
 
-export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelProps) {
+function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
+  if (!data) return false;
+  return Boolean(
+    data.emailContent ||
+      data.emailSubject ||
+      data.emailTo ||
+      data.emailFrom ||
+      data.attachmentURL ||
+      (data.emailHistoryId ?? 0) > 0,
+  );
+}
+
+export function UploadStepPanel({
+  projectId,
+  step,
+  disabled,
+  onCompleted,
+  completedData,
+}: UploadStepPanelProps) {
   const { t } = useTranslation();
   const preview = useEmailPreview(step.preview);
   const execMut = useExecuteStepMultipart(projectId, step, step.execute);
@@ -41,11 +62,28 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
   const [emailContent, setEmailContent] = React.useState('');
   const [attachmentURL, setAttachmentURL] = React.useState('');
   const [files, setFiles] = React.useState<File[]>([]);
+  const [hydratedFromCompleted, setHydratedFromCompleted] = React.useState(
+    hasSentEmailContent(completedData),
+  );
 
   const hasEmail = Boolean(step.preview);
   const previewMutate = preview.mutate;
 
   React.useEffect(() => {
+    if (hasSentEmailContent(completedData)) {
+      const sent = completedData!;
+      setEmailFrom(sent.emailFrom ?? '');
+      setEmailTo(sent.emailTo ?? '');
+      setEmailSubject(sent.emailSubject ?? '');
+      setEmailContent(sent.emailContent ?? '');
+      setAttachmentURL(sent.attachmentURL ?? '');
+      setHydratedFromCompleted(true);
+      return;
+    }
+    if (completedData && completedData.isTransfer) {
+      setHydratedFromCompleted(true);
+      return;
+    }
     if (!step.preview) return;
     previewMutate(buildStepBase(projectId, step, { isTransfer: false }), {
       onSuccess: (pw?: ProjectWorkflowDto) => {
@@ -54,10 +92,11 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
         setEmailSubject(pw?.emailSubject ?? '');
         setEmailContent(pw?.emailContent ?? '');
         setAttachmentURL(pw?.attachmentURL ?? '');
+        setHydratedFromCompleted(false);
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, step.key]);
+  }, [projectId, step.key, completedData?.emailHistoryId, completedData?.emailContent, completedData?.isTransfer]);
 
   function handleSubmit() {
     void (async () => {
@@ -75,7 +114,10 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
         const template = await fetchUrlAsFile(attachmentURL, 'ansvarsrett.pdf');
         if (template) filesToSend = [template];
       }
-      execMut.mutate({ extra, files: filesToSend });
+      execMut.mutate(
+        { extra, files: filesToSend },
+        { onSuccess: () => onCompleted?.() },
+      );
     })();
   }
 
@@ -83,7 +125,7 @@ export function UploadStepPanel({ projectId, step, disabled }: UploadStepPanelPr
     <div className="space-y-4">
       {hasEmail && (
         <>
-          {preview.isPending ? (
+          {preview.isPending && !hydratedFromCompleted ? (
             <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
               <Loader2 className="size-4 animate-spin" /> {t('workflow.panel.previewLoading')}
             </div>
