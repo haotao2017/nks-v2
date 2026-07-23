@@ -40,6 +40,15 @@ public class PdfServiceImpl implements PdfService {
     private final ChecklistItemImageRepository checklistItemImageRepository;
     private final ProjectPartyRepository projectPartyRepository;
 
+    /** 私有桶:生成的 PDF 供前端预览需用预签名 URL,否则普通公开 URL 会 S3 AccessDenied。 */
+    private static final int PDF_URL_TTL_MINUTES = 120;
+
+    private String presignedPdfUrl(String folder, String fileName) {
+        String publicUrl = s3Service.createPublicUrl(null, null, folder, fileName);
+        String presigned = s3Service.generatePresignedUrl(publicUrl, PDF_URL_TTL_MINUTES);
+        return (presigned != null && !presigned.isEmpty()) ? presigned : publicUrl;
+    }
+
     @Override
     public String generatePdfForStepTwo(ProjectWorkflowDto param, PdfTemplateData data) throws Exception {
         Project project = data.project;
@@ -102,7 +111,7 @@ public class PdfServiceImpl implements PdfService {
 
         s3Service.uploadFile(newPdfFolder, new ByteArrayInputStream(output.toByteArray()), fileName, "application/pdf");
 
-        return s3Service.createPublicUrl(null, null, newPdfFolder, fileName);
+        return presignedPdfUrl(newPdfFolder, fileName);
     }
 
     @Override
@@ -145,7 +154,7 @@ public class PdfServiceImpl implements PdfService {
 
         s3Service.uploadFile(newPdfFolder, new ByteArrayInputStream(output.toByteArray()), fileName, "application/pdf");
 
-        return s3Service.createPublicUrl(null, null, newPdfFolder, fileName);
+        return presignedPdfUrl(newPdfFolder, fileName);
     }
 
     @Override
@@ -298,7 +307,7 @@ public class PdfServiceImpl implements PdfService {
 
         s3Service.uploadFile(bucketFolder, pdfInputStream, fileName, "application/pdf");
 
-        return s3Service.createPublicUrl(null, null, bucketFolder, fileName);
+        return presignedPdfUrl(bucketFolder, fileName);
     }
 
     private String loadCssFromClasspath(String path) {

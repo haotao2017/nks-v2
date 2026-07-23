@@ -48,6 +48,18 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
     private final ProjectService projectService;
     private final EmailService emailService;
     private final S3Service s3Service;
+
+    /** 私有桶:工作流附件供前端预览需用预签名 URL,否则普通公开 URL 会 S3 AccessDenied。 */
+    private static final int ATTACHMENT_URL_TTL_MINUTES = 120;
+
+    private String presignedAttachmentUrl(String folder, String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return null;
+        }
+        String publicUrl = s3Service.createPublicUrl(null, null, folder, fileName);
+        String presigned = s3Service.generatePresignedUrl(publicUrl, ATTACHMENT_URL_TTL_MINUTES);
+        return (presigned != null && !presigned.isEmpty()) ? presigned : publicUrl;
+    }
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final EmailTemplateRepository emailTemplateRepository;
@@ -161,7 +173,7 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
                 } else if (item.getWorkflowStepId() != null && item.getWorkflowStepId() == 2) {
                     folder = "workflow/step2/";
                 }
-                item.setAttachmentURL(s3Service.createPublicUrl(null, null, folder, history.getFileName()));
+                item.setAttachmentURL(presignedAttachmentUrl(folder, history.getFileName()));
             }
         }
 
@@ -525,7 +537,7 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
         if (docs != null && !docs.isEmpty()) {
             for (Doc doc : docs) {
                 // The folder "pdf/" is used for step 3 uploads in the projectWFThree method.
-                String url = s3Service.createPublicUrl(null, null, "pdf/", doc.getFileName());
+                String url = presignedAttachmentUrl("pdf/", doc.getFileName());
                 attachmentUrls.add(url);
             }
         }
