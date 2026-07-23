@@ -15,6 +15,9 @@
       "fallback": "Arbeidsflyt {{id}}",
       "default": "Arbeidsflyt"
     },
+    "unbound": {
+      "description": "Ingen arbeidsflyt er knyttet til tjenesten på dette prosjektet. Knytt en arbeidsflyt til tjenesten under Tjenester, deretter last prosjektet på nytt."
+    },
     "tabs": {
       "todo": "Å gjøre",
       "done": "Fullført",

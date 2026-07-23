@@ -15,6 +15,9 @@
       "fallback": "Workflow {{id}}",
       "default": "Workflow"
     },
+    "unbound": {
+      "description": "No workflow is linked to the service on this project. Link a workflow to the service under Services, then reload the project."
+    },
     "tabs": {
       "todo": "To do",
       "done": "Done",

@@ -88,12 +88,14 @@ export default function ProjectWorkbenchPage({
             {project.projectStatus && <Badge variant="secondary">{project.projectStatus}</Badge>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {/* 工作流(服务)选择器 —— 常显(≥1 条即显示),驱动 Arbeidsflyt 与 Dokumenter。 */}
-            <WorkflowSelector
-              instances={instances}
-              value={selected.instanceId}
-              onChange={setSelectedId}
-            />
+            {/* 仅有真实服务↔工作流绑定时显示选择器(对齐旧 admin,不伪造 Workflow 1)。 */}
+            {instances.length > 0 && selected ? (
+              <WorkflowSelector
+                instances={instances}
+                value={selected.instanceId}
+                onChange={setSelectedId}
+              />
+            ) : null}
             <ProjectActions project={project} />
           </div>
         </div>
@@ -117,7 +119,16 @@ export default function ProjectWorkbenchPage({
         </TabsList>
 
         <TabsContent value="arbeidsflyt">
-          <ProjectWorkflow project={project} instance={selected} />
+          {selected ? (
+            <ProjectWorkflow project={project} instance={selected} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('workflow.card.title')}</CardTitle>
+                <CardDescription>{t('workflow.unbound.description')}</CardDescription>
+              </CardHeader>
+            </Card>
+          )}
         </TabsContent>
         <TabsContent value="sjekklister">
           <ProjectChecklistsPanel projectId={projectId} />
@@ -126,7 +137,16 @@ export default function ProjectWorkbenchPage({
           <ProjectPartiesPanel projectId={projectId} />
         </TabsContent>
         <TabsContent value="dokumenter">
-          <ProjectDocsPanel projectId={projectId} workflowId={selected.workflowCategoryId} />
+          {selected ? (
+            <ProjectDocsPanel projectId={projectId} workflowId={selected.workflowCategoryId} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('docsPanel.title')}</CardTitle>
+                <CardDescription>{t('workflow.unbound.description')}</CardDescription>
+              </CardHeader>
+            </Card>
+          )}
         </TabsContent>
         </Tabs>
 

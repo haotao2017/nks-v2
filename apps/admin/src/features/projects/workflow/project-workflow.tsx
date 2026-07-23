@@ -36,7 +36,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import {
-  WORKFLOW_ID,
   WORKFLOW_STEPS,
   filterStepsByService,
   type WorkflowStepDef,
@@ -159,7 +158,7 @@ export function ProjectWorkflow({
   const { t } = useTranslation();
   const projectId = Number(project.id);
 
-  const workflowCategoryId = instance.workflowCategoryId ?? WORKFLOW_ID;
+  const workflowCategoryId = instance.workflowCategoryId;
   const isWf2 = workflowCategoryId === WORKFLOW_CATEGORY_LUFTTETHET;
 
   const progress = useWorkflowProgress(projectId, workflowCategoryId);
