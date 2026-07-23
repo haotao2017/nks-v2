@@ -40,6 +40,7 @@ function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
       data.emailTo ||
       data.emailFrom ||
       data.attachmentURL ||
+      (data.attachmentURLs?.length ?? 0) > 0 ||
       (data.emailHistoryId ?? 0) > 0,
   );
 }

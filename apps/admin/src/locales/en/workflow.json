@@ -83,6 +83,7 @@
       "uploadFilesLabel": "Upload files",
       "uploadFileLabel": "Upload file",
       "uploadRequired": "Upload at least one file before completing this step",
+      "uploadedFiles": "Uploaded files",
       "attachmentsLabel": "Attachments",
       "templateAttachment": "View template attachment (PDF)",
       "removeFile": "Remove file",

@@ -5,12 +5,12 @@
  *
  * - WF2:有邮件预览(GetProjectWFTwoEmailFormated 返回 emailFrom/Til/Emne/Innhold + attachmentURL 模板 PDF),
  *   可编辑邮件字段;上传单个 `file`(可选,不传则后端用模板)。
- * - WF3:无预览;上传多个 `files`。
+ * - WF3:无邮件;上传多个 `files`;Done 打开时用 GetProjectWFThree / completedData.attachmentURLs 回看。
  * 提交走 api-client.postForm(request=JSON.stringify({ProjectWorkflow}) + 文件)。
  */
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Eye, FileText, Send, Loader2, X } from 'lucide-react';
+import { Upload, Eye, FileText, Send, Loader2, X, ExternalLink } from 'lucide-react';
 
 import type { ProjectWorkflowDto } from '@nks/api-types';
 
@@ -29,20 +29,53 @@ interface UploadStepPanelProps {
   step: WorkflowStepDef;
   disabled?: boolean;
   onCompleted?: () => void;
-  /** Done 打开时：已完成步骤回填的最终邮件内容（优先于模板预览）。 */
+  /** Done 打开时：已完成步骤回填的最终邮件/附件。 */
   completedData?: ProjectWorkflowDto | null;
 }
 
-function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
+function collectAttachmentUrls(data?: ProjectWorkflowDto | null): string[] {
+  if (!data) return [];
+  const fromList = [
+    ...(data.attachmentURLs ?? []),
+    ...(data.fileUrls ?? []),
+  ].filter((u): u is string => Boolean(u));
+  if (fromList.length > 0) return Array.from(new Set(fromList));
+  if (data.attachmentURL) return [data.attachmentURL];
+  return [];
+}
+
+function hasCompletedPayload(data?: ProjectWorkflowDto | null): boolean {
   if (!data) return false;
+  if (collectAttachmentUrls(data).length > 0) return true;
   return Boolean(
     data.emailContent ||
       data.emailSubject ||
       data.emailTo ||
       data.emailFrom ||
-      data.attachmentURL ||
       (data.emailHistoryId ?? 0) > 0,
   );
+}
+
+function isImageUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    return /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(path);
+  } catch {
+    return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(url);
+  }
+}
+
+function fileLabel(url: string, index: number, names?: string[]): string {
+  const fromName = names?.[index];
+  if (fromName) return fromName;
+  try {
+    const path = new URL(url).pathname;
+    const base = path.split('/').pop();
+    if (base) return decodeURIComponent(base);
+  } catch {
+    /* ignore */
+  }
+  return `File ${index + 1}`;
 }
 
 export function UploadStepPanel({
@@ -61,22 +94,31 @@ export function UploadStepPanel({
   const [emailSubject, setEmailSubject] = React.useState('');
   const [emailContent, setEmailContent] = React.useState('');
   const [attachmentURL, setAttachmentURL] = React.useState('');
+  const [attachmentURLs, setAttachmentURLs] = React.useState<string[]>([]);
+  const [fileNames, setFileNames] = React.useState<string[]>([]);
   const [files, setFiles] = React.useState<File[]>([]);
   const [hydratedFromCompleted, setHydratedFromCompleted] = React.useState(
-    hasSentEmailContent(completedData),
+    hasCompletedPayload(completedData),
   );
 
-  const hasEmail = Boolean(step.preview);
+  const hasEmail = Boolean(step.preview) && step.key !== 'igangsettingstillatelse';
+  const isIgUpload = step.key === 'igangsettingstillatelse' || Boolean(step.multiFile && !hasEmail);
   const previewMutate = preview.mutate;
 
+  const applyPayload = (pw?: ProjectWorkflowDto) => {
+    setEmailFrom(pw?.emailFrom ?? '');
+    setEmailTo(pw?.emailTo ?? '');
+    setEmailSubject(pw?.emailSubject ?? '');
+    setEmailContent(pw?.emailContent ?? '');
+    const urls = collectAttachmentUrls(pw);
+    setAttachmentURLs(urls);
+    setAttachmentURL(pw?.attachmentURL ?? urls[0] ?? '');
+    setFileNames(pw?.fileNames ?? []);
+  };
+
   React.useEffect(() => {
-    if (hasSentEmailContent(completedData)) {
-      const sent = completedData!;
-      setEmailFrom(sent.emailFrom ?? '');
-      setEmailTo(sent.emailTo ?? '');
-      setEmailSubject(sent.emailSubject ?? '');
-      setEmailContent(sent.emailContent ?? '');
-      setAttachmentURL(sent.attachmentURL ?? '');
+    if (hasCompletedPayload(completedData)) {
+      applyPayload(completedData!);
       setHydratedFromCompleted(true);
       return;
     }
@@ -87,21 +129,25 @@ export function UploadStepPanel({
     if (!step.preview) return;
     previewMutate(buildStepBase(projectId, step, { isTransfer: false }), {
       onSuccess: (pw?: ProjectWorkflowDto) => {
-        setEmailFrom(pw?.emailFrom ?? '');
-        setEmailTo(pw?.emailTo ?? '');
-        setEmailSubject(pw?.emailSubject ?? '');
-        setEmailContent(pw?.emailContent ?? '');
-        setAttachmentURL(pw?.attachmentURL ?? '');
-        setHydratedFromCompleted(false);
+        applyPayload(pw);
+        setHydratedFromCompleted(Boolean(collectAttachmentUrls(pw).length > 0 || pw?.emailContent));
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, step.key, completedData?.emailHistoryId, completedData?.emailContent, completedData?.isTransfer]);
+  }, [
+    projectId,
+    step.key,
+    completedData?.emailHistoryId,
+    completedData?.emailContent,
+    completedData?.isTransfer,
+    completedData?.attachmentURL,
+    completedData?.attachmentURLs?.join('|'),
+  ]);
 
   function handleSubmit() {
     void (async () => {
       // IG (wf3): 无文件不允许完成（对齐旧 Wf1S3）
-      if (!hasEmail && files.length === 0) {
+      if (isIgUpload && files.length === 0) {
         toast.error(t('workflow.panel.uploadRequired'));
         return;
       }
@@ -120,6 +166,9 @@ export function UploadStepPanel({
       );
     })();
   }
+
+  const savedUrls = attachmentURLs.length > 0 ? attachmentURLs : attachmentURL ? [attachmentURL] : [];
+  const showSavedAttachments = savedUrls.length > 0;
 
   return (
     <div className="space-y-4">
@@ -149,94 +198,122 @@ export function UploadStepPanel({
                 <Label>{t('workflow.panel.content')}</Label>
                 <RichTextEditor value={emailContent} onChange={setEmailContent} disabled={disabled} />
               </div>
-              {attachmentURL && (
-                <div className="space-y-1.5">
-                  <Label>{t('workflow.panel.templateAttachment')}</Label>
-                  <iframe
-                    title={t('workflow.panel.templateAttachment')}
-                    src={attachmentURL}
-                    className="h-96 w-full rounded-md border"
-                  />
-                  <a
-                    href={attachmentURL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary inline-flex items-center gap-1.5 text-sm underline"
-                  >
-                    <FileText className="size-4" /> {t('workflow.panel.templateAttachment')}
-                  </a>
-                </div>
-              )}
             </>
           )}
         </>
       )}
 
-      {/* Filopplasting */}
-      <div className="space-y-1.5">
-        <Label htmlFor="wf-up-files">
-          {hasEmail
-            ? t('workflow.panel.attachmentsLabel')
-            : step.multiFile
-              ? t('workflow.panel.uploadFilesLabel')
-              : t('workflow.panel.uploadFileLabel')}
-          {hasEmail && (
-            <span className="text-muted-foreground font-normal"> {t('workflow.panel.optional')}</span>
-          )}
-        </Label>
-        <Input
-          id="wf-up-files"
-          type="file"
-          multiple={step.multiFile || hasEmail}
-          disabled={disabled}
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-        />
-        {files.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {files.map((f, i) => (
-              <li key={`${f.name}-${i}`} className="text-muted-foreground flex items-center gap-2 text-sm">
-                <FileText className="size-3.5" />
-                <span className="truncate">{f.name}</span>
-                <button
-                  type="button"
-                  className="hover:text-destructive"
-                  aria-label={t('workflow.panel.removeFile')}
-                  onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
+      {isIgUpload && preview.isPending && !hydratedFromCompleted && !showSavedAttachments ? (
+        <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
+          <Loader2 className="size-4 animate-spin" /> {t('workflow.panel.previewLoading')}
+        </div>
+      ) : null}
+
+      {/* Done / 已存附件：可点击预览(预签名 URL) */}
+      {showSavedAttachments ? (
+        <div className="space-y-2">
+          <Label>{t('workflow.panel.uploadedFiles')}</Label>
+          <ul className="space-y-3">
+            {savedUrls.map((url, i) => (
+              <li key={`${url}-${i}`} className="rounded-md border p-3">
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary mb-2 inline-flex items-center gap-1.5 text-sm font-medium underline"
                 >
-                  <X className="size-3.5" />
-                </button>
+                  <ExternalLink className="size-3.5" />
+                  {fileLabel(url, i, fileNames)}
+                </a>
+                {isImageUrl(url) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={url}
+                    alt={fileLabel(url, i, fileNames)}
+                    className="mt-2 max-h-96 w-full rounded-md border object-contain"
+                  />
+                ) : (
+                  <iframe
+                    title={fileLabel(url, i, fileNames)}
+                    src={url}
+                    className="mt-2 h-80 w-full rounded-md border"
+                  />
+                )}
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
-        {step.preview && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={disabled || preview.isPending}
-            onClick={() =>
-              previewMutate(buildStepBase(projectId, step, { isTransfer: false }), {
-                onSuccess: (pw?: ProjectWorkflowDto) => {
-                  setEmailFrom(pw?.emailFrom ?? '');
-                  setEmailTo(pw?.emailTo ?? '');
-                  setEmailSubject(pw?.emailSubject ?? '');
-                  setEmailContent(pw?.emailContent ?? '');
-                  setAttachmentURL(pw?.attachmentURL ?? '');
-                },
-              })
-            }
-          >
-            <Eye className="size-4" /> {t('workflow.actions.updatePreview')}
+      {/* 新上传(编辑模式) */}
+      {!disabled ? (
+        <div className="space-y-1.5">
+          <Label htmlFor="wf-up-files">
+            {hasEmail
+              ? t('workflow.panel.attachmentsLabel')
+              : step.multiFile
+                ? t('workflow.panel.uploadFilesLabel')
+                : t('workflow.panel.uploadFileLabel')}
+            {hasEmail && (
+              <span className="text-muted-foreground font-normal"> {t('workflow.panel.optional')}</span>
+            )}
+          </Label>
+          <Input
+            id="wf-up-files"
+            type="file"
+            multiple={step.multiFile || hasEmail}
+            disabled={disabled}
+            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+          />
+          {files.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {files.map((f, i) => (
+                <li key={`${f.name}-${i}`} className="text-muted-foreground flex items-center gap-2 text-sm">
+                  <FileText className="size-3.5" />
+                  <span className="truncate">{f.name}</span>
+                  <button
+                    type="button"
+                    className="hover:text-destructive"
+                    aria-label={t('workflow.panel.removeFile')}
+                    onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+
+      {!disabled ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {step.preview && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={preview.isPending}
+              onClick={() =>
+                previewMutate(buildStepBase(projectId, step, { isTransfer: false }), {
+                  onSuccess: (pw?: ProjectWorkflowDto) => applyPayload(pw),
+                })
+              }
+            >
+              <Eye className="size-4" /> {t('workflow.actions.updatePreview')}
+            </Button>
+          )}
+          <Button type="button" disabled={execMut.isPending} onClick={handleSubmit}>
+            {execMut.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : hasEmail ? (
+              <Send className="size-4" />
+            ) : (
+              <Upload className="size-4" />
+            )}
+            {hasEmail ? t('workflow.actions.sendWithAttachment') : t('workflow.actions.uploadAndComplete')}
           </Button>
-        )}
-        <Button type="button" disabled={disabled || execMut.isPending} onClick={handleSubmit}>
-          {execMut.isPending ? <Loader2 className="size-4 animate-spin" /> : hasEmail ? <Send className="size-4" /> : <Upload className="size-4" />}
-          {hasEmail ? t('workflow.actions.sendWithAttachment') : t('workflow.actions.uploadAndComplete')}
-        </Button>
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

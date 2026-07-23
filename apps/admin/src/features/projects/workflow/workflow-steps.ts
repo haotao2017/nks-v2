@@ -113,6 +113,7 @@ export const WORKFLOW_STEPS: WorkflowStepDef[] = [
     type: 'upload',
     workflowId: WORKFLOW_ID,
     workflowStepId: 3,
+    preview: pw.getWFThree, // Done 回看已上传附件(attachmentURLs)
     execute: pw.wfThree, // multipart, felt: files (flere)
     transfer: pw.wfThree, // multipart transfer (request-only FormData)
     multiFile: true,

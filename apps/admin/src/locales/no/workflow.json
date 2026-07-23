@@ -83,6 +83,7 @@
       "uploadFilesLabel": "Last opp filer",
       "uploadFileLabel": "Last opp fil",
       "uploadRequired": "Last opp minst én fil før du fullfører steget",
+      "uploadedFiles": "Opplastede filer",
       "attachmentsLabel": "Vedlegg",
       "templateAttachment": "Vis mal-vedlegg (PDF)",
       "removeFile": "Fjern fil",

@@ -53,12 +53,60 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
     private static final int ATTACHMENT_URL_TTL_MINUTES = 120;
 
     private String presignedAttachmentUrl(String folder, String fileName) {
-        if (fileName == null || fileName.isEmpty()) {
+        if (fileName == null || fileName.isBlank()) {
             return null;
         }
         String publicUrl = s3Service.createPublicUrl(null, null, folder, fileName);
         String presigned = s3Service.generatePresignedUrl(publicUrl, ATTACHMENT_URL_TTL_MINUTES);
-        return (presigned != null && !presigned.isEmpty()) ? presigned : publicUrl;
+        // 预签名失败时不要回退公开 URL(私有桶会 AccessDenied)
+        return (presigned != null && !presigned.isEmpty()) ? presigned : null;
+    }
+
+    /** 按步骤尝试可能的 S3 目录(生成 PDF 与用户重传可能落在不同目录)。 */
+    private String resolvePresignedAttachment(Integer workflowStepId, String fileName) {
+        List<String> folders = new ArrayList<>();
+        if (workflowStepId != null && workflowStepId == 2) {
+            folders.add("workflow/step2/");
+            folders.add("pdf/");
+        } else if (workflowStepId != null && (workflowStepId == 14 || workflowStepId == 18)) {
+            folders.add("final-report-pdf/");
+            folders.add("pdf/");
+        } else {
+            folders.add("pdf/");
+        }
+        for (String folder : folders) {
+            String url = presignedAttachmentUrl(folder, fileName);
+            if (url != null) {
+                return url;
+            }
+        }
+        return null;
+    }
+
+    private void applyAttachmentUrls(ProjectWorkflowDto item, List<String> fileNames) {
+        if (fileNames == null || fileNames.isEmpty()) {
+            return;
+        }
+        List<String> urls = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        for (String raw : fileNames) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            String name = raw.trim();
+            String url = resolvePresignedAttachment(item.getWorkflowStepId(), name);
+            if (url != null) {
+                urls.add(url);
+                names.add(name);
+            }
+        }
+        if (urls.isEmpty()) {
+            return;
+        }
+        item.setAttachmentURL(urls.get(0));
+        item.setAttachmentURLs(urls);
+        item.setFileNames(names);
+        item.setFileUrls(urls);
     }
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -107,15 +155,55 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
         );
         multiProjectWorkflow.sort(Comparator.comparing(ProjectWorkflowDto::getWorkflowStepId));
 
-        List<Integer> projectStepsWithEmail = List.of(1, 2, 4, 8, 9, 12, 13, 14);
+        List<Integer> projectStepsWithEmail = List.of(1, 2, 4, 8, 9, 12, 13, 14, 18);
+
+        boolean needProjectFields = multiProjectWorkflow.stream().anyMatch(item -> {
+            Integer sid = item.getWorkflowStepId();
+            return sid != null && (sid == 7 || sid == 10 || sid == 11);
+        });
+        Project projectSnapshot = null;
+        if (needProjectFields) {
+            projectSnapshot = projectRepository.findById(projectId).orElse(null);
+        }
 
         for (ProjectWorkflowDto item : multiProjectWorkflow) {
-            // 邮件类步骤：从 EmailHistory 回填最终发出内容（含 Overført 后仍有历史的情况）
-            if (!projectStepsWithEmail.contains(item.getWorkflowStepId())) {
+            Integer stepId = item.getWorkflowStepId();
+
+            // 步骤 3(IG):上传文件在 Doc 表,不在 EmailHistory
+            if (stepId != null && stepId == 3) {
+                List<Doc> docs = docRepository.findByProjectIdAndWorkflowStepId(item.getProjectId(), 3);
+                if (docs != null && !docs.isEmpty()) {
+                    List<String> names = docs.stream()
+                            .map(Doc::getFileName)
+                            .filter(n -> n != null && !n.isBlank())
+                            .collect(Collectors.toList());
+                    applyAttachmentUrls(item, names);
+                }
                 continue;
             }
 
-            if (item.getWorkflowStepId() == 9) {
+            // 非邮件类:回填项目字段(提醒日 / 检验日 / 报告批准)
+            if (stepId != null && !projectStepsWithEmail.contains(stepId)) {
+                if (projectSnapshot != null) {
+                    if (stepId == 7) {
+                        item.setContactCustomerDate(projectSnapshot.getRemContactCustomerDate());
+                    } else if (stepId == 10) {
+                        item.setProjectInspectionDate(projectSnapshot.getInspectionDate());
+                        item.setProjectInspectorId(projectSnapshot.getInspectorId());
+                        item.setProjectSkipInspection(projectSnapshot.getSkipInspection());
+                    } else if (stepId == 11) {
+                        item.setIsApprovedInspReport(projectSnapshot.getIsApprovedInspReport());
+                    }
+                }
+                continue;
+            }
+
+            // 邮件类步骤：从 EmailHistory 回填最终发出内容（含 Overført 后仍有历史的情况）
+            if (!projectStepsWithEmail.contains(stepId)) {
+                continue;
+            }
+
+            if (stepId == 9) {
                 item.setEmailHistoryId(item.getEmailHistoryId() != null ? item.getEmailHistoryId() : 0);
                 List<EmailHistory> objEmailHistoryList = emailHistoryRepository
                         .findByProjectIdAndWorkflowStepIdOrderByDateDesc(item.getProjectId(), 9);
@@ -167,13 +255,11 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
                 item.setEmailHistoryId(history.getId());
             }
             if (history.getFileName() != null && !history.getFileName().isEmpty()) {
-                String folder = "pdf/";
-                if (item.getWorkflowStepId() != null && item.getWorkflowStepId() == 14) {
-                    folder = "final-report-pdf/";
-                } else if (item.getWorkflowStepId() != null && item.getWorkflowStepId() == 2) {
-                    folder = "workflow/step2/";
-                }
-                item.setAttachmentURL(presignedAttachmentUrl(folder, history.getFileName()));
+                List<String> names = Arrays.stream(history.getFileName().split("[,;]"))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
+                applyAttachmentUrls(item, names);
             }
         }
 
@@ -537,13 +623,18 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
         List<String> attachmentUrls = new ArrayList<>();
         if (docs != null && !docs.isEmpty()) {
             for (Doc doc : docs) {
-                // The folder "pdf/" is used for step 3 uploads in the projectWFThree method.
-                String url = presignedAttachmentUrl("pdf/", doc.getFileName());
-                attachmentUrls.add(url);
+                String url = resolvePresignedAttachment(projectWorkflow.getWorkflowStepId(), doc.getFileName());
+                if (url != null) {
+                    attachmentUrls.add(url);
+                }
             }
         }
 
         projectWorkflow.setAttachmentURLs(attachmentUrls);
+        if (!attachmentUrls.isEmpty()) {
+            projectWorkflow.setAttachmentURL(attachmentUrls.get(0));
+            projectWorkflow.setFileUrls(attachmentUrls);
+        }
 
         WrapperProjectWorkflowDto result = new WrapperProjectWorkflowDto();
         result.setProjectWorkflow(projectWorkflow);

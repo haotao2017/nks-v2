@@ -11,7 +11,7 @@
  */
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Mail, Eye, Send, FastForward, Loader2, X, Plus } from 'lucide-react';
+import { Mail, Eye, Send, FastForward, Loader2, X, Plus, FileText } from 'lucide-react';
 
 import type { EmailProjectPartiesWorkflowEntDto, ProjectWorkflowDto } from '@nks/api-types';
 
@@ -45,6 +45,7 @@ function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
   if (data.emailContent || data.emailSubject || data.emailTo || data.emailFrom) return true;
   if ((data.emailHistoryId ?? 0) > 0) return true;
   if ((data.emailProjectPartiesSent?.length ?? 0) > 0) return true;
+  if (data.attachmentURL || (data.attachmentURLs?.length ?? 0) > 0) return true;
   return false;
 }
 
@@ -74,6 +75,7 @@ export function EmailStepPanel({
   const [cc, setCc] = React.useState('');
   const [emailSubject, setEmailSubject] = React.useState('');
   const [emailContent, setEmailContent] = React.useState('');
+  const [attachmentURLs, setAttachmentURLs] = React.useState<string[]>([]);
   const [parties, setParties] = React.useState<EmailProjectPartiesWorkflowEntDto[]>([]);
   // multiRecipient(WF9):被移除(排除发送)的参与方索引;仅保留者提交 sendEmail:true。
   const [excluded, setExcluded] = React.useState<Set<number>>(new Set());
@@ -93,6 +95,12 @@ export function EmailStepPanel({
       setCc(sent.cc ?? '');
       setEmailSubject(sent.emailSubject ?? '');
       setEmailContent(sent.emailContent ?? '');
+      const urls = [
+        ...(sent.attachmentURLs ?? []),
+        ...(sent.fileUrls ?? []),
+        ...(sent.attachmentURL ? [sent.attachmentURL] : []),
+      ].filter(Boolean);
+      setAttachmentURLs(Array.from(new Set(urls)));
       // WF9:把已发送记录映射成可展示的参与方列表
       if (sent.emailProjectPartiesSent?.length) {
         setParties(
@@ -128,6 +136,12 @@ export function EmailStepPanel({
         setCc(pw?.cc ?? '');
         setEmailSubject(pw?.emailSubject ?? '');
         setEmailContent(pw?.emailContent ?? '');
+        const urls = [
+          ...(pw?.attachmentURLs ?? []),
+          ...(pw?.fileUrls ?? []),
+          ...(pw?.attachmentURL ? [pw.attachmentURL] : []),
+        ].filter(Boolean);
+        setAttachmentURLs(Array.from(new Set(urls)));
         setParties(pw?.emailProjectParties?.emailProjectPartiesWorkflowList ?? []);
         setExcluded(new Set());
         setProjectLeaderEmailTo(pw?.projectLeaderEmailTo ?? '');
@@ -265,6 +279,27 @@ export function EmailStepPanel({
             <Label>{t('workflow.panel.content')}</Label>
             <RichTextEditor value={emailContent} onChange={setEmailContent} disabled={disabled} />
           </div>
+          {attachmentURLs.length > 0 ? (
+            <div className="space-y-2">
+              <Label>{t('workflow.panel.uploadedFiles')}</Label>
+              <ul className="space-y-2">
+                {attachmentURLs.map((url, i) => (
+                  <li key={`${url}-${i}`}>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary inline-flex items-center gap-1.5 text-sm underline"
+                    >
+                      <FileText className="size-3.5" />
+                      {t('workflow.panel.attachmentsLabel')} {i + 1}
+                    </a>
+                    <iframe title={`att-${i}`} src={url} className="mt-2 h-64 w-full rounded-md border" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </>
       ) : (
         <div className="space-y-4">

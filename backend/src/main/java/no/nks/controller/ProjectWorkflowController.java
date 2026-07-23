@@ -187,15 +187,18 @@ public class ProjectWorkflowController {
 
     @PostMapping("/GetProjectWFThree")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<WrapperProjectWorkflowDto> getProjectWFThree(@RequestParam("request") String requestJson, @AuthenticationPrincipal User user) throws IOException {
-        WrapperProjectWorkflowDto wrapperDto = objectMapper.readValue(requestJson, WrapperProjectWorkflowDto.class);
-        ProjectWorkflowDto projectWorkflow = wrapperDto.getProjectWorkflow();
+    public ResponseEntity<WrapperProjectWorkflowDto> getProjectWFThree(
+            @RequestBody WrapperProjectWorkflowDto param,
+            @AuthenticationPrincipal User user) {
+        ProjectWorkflowDto projectWorkflow = param.getProjectWorkflow();
+        if (projectWorkflow == null) {
+            return ResponseEntity.badRequest().build();
+        }
 
         if (user != null) {
             projectWorkflow.setInsertedBy(user.getId());
         }
 
-        // 确保有必要的三元组字段
         projectWorkflow = ensureWorkflowIdentifiers(projectWorkflow);
 
         WrapperProjectWorkflowDto data = projectWorkflowService.getProjectWFThree(projectWorkflow);
