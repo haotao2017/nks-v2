@@ -1,7 +1,7 @@
 /**
  * Info 屏（Tab「Info」）—— 参考旧 ProjectInfo.tsx。
  *  - 项目名
- *  - 检验日期(可改:DateTimePicker → ProjectUpdate)
+ *  - 检验日期(可改:弹窗日历确认后 → ProjectUpdate)
  *  - 地址(Kart:复制 / Google Maps / Apple Maps,用 Linking + Clipboard)
  *  - 联系人电话(Prosjektleder / UTF Våtrom,tel: 拨号)
  *  - 可编辑描述(Lagre → ProjectUpdate)
@@ -16,6 +16,7 @@ import {
   ScrollView,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -107,12 +108,19 @@ function MenuItem({
   );
 }
 
+function parseInspectionDate(value: string): Date {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
 export default function ProjectInfoTab() {
   const id = useProjectRouteId();
   const { detail, status, error, online, reload } = useLoadActiveProject(id);
   const { updateProject } = useSyncProjectUpdate();
+  const { width: windowWidth } = useWindowDimensions();
 
   const [showDatePicker, setShowDatePicker] = React.useState(false);
+  const [draftDate, setDraftDate] = React.useState(() => new Date());
   const [showMapMenu, setShowMapMenu] = React.useState(false);
   const [descDraft, setDescDraft] = React.useState('');
 
@@ -137,14 +145,20 @@ export default function ProjectInfoTab() {
   const address = detail.address;
   const canMap = address.trim().length > 0;
 
-  const onPickDate = (event: DateTimePickerEvent, date?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios'); // Android 选完即关
-    if (event.type === 'set' && date) {
-      if (Platform.OS !== 'ios') setShowDatePicker(false);
-      void updateProject({ inspectionDate: date.toISOString() });
-    } else if (event.type === 'dismissed') {
-      setShowDatePicker(false);
-    }
+  const openDatePicker = () => {
+    setDraftDate(parseInspectionDate(detail.inspectionDate));
+    setShowDatePicker(true);
+  };
+
+  const closeDatePicker = () => setShowDatePicker(false);
+
+  const onDraftDateChange = (_event: DateTimePickerEvent, date?: Date) => {
+    if (date) setDraftDate(date);
+  };
+
+  const confirmDate = () => {
+    void updateProject({ inspectionDate: draftDate.toISOString() });
+    setShowDatePicker(false);
   };
 
   const copyAddress = async () => {
@@ -159,10 +173,8 @@ export default function ProjectInfoTab() {
     if (number) void Linking.openURL(`tel:${number}`);
   };
 
-  const dateValue = (() => {
-    const d = new Date(detail.inspectionDate);
-    return Number.isNaN(d.getTime()) ? new Date() : d;
-  })();
+  // 日历在弹窗内居中;宽度略小于屏宽,避免 inline 日历挤偏。
+  const pickerWidth = Math.min(340, windowWidth - 48);
 
   return (
     <ScrollView
@@ -191,7 +203,7 @@ export default function ProjectInfoTab() {
         <Row
           icon="calendar-outline"
           text={formatDate(detail.inspectionDate)}
-          action={<LinkButton label="Rediger" onPress={() => setShowDatePicker(true)} />}
+          action={<LinkButton label="Rediger" onPress={openDatePicker} />}
         />
         <Divider />
         <Row
@@ -251,14 +263,59 @@ export default function ProjectInfoTab() {
         />
       </View>
 
-      {showDatePicker ? (
-        <DateTimePicker
-          value={dateValue}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          onChange={onPickDate}
-        />
-      ) : null}
+      <Modal
+        visible={showDatePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={closeDatePicker}
+      >
+        <View className="flex-1 items-center justify-center bg-black/45 px-4">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Lukk"
+            className="absolute inset-0"
+            onPress={closeDatePicker}
+          />
+          <View className="w-full max-w-md overflow-hidden rounded-2xl bg-white dark:bg-neutral-900">
+            <View className="border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+              <Text className="text-center text-base font-semibold text-neutral-900 dark:text-neutral-50">
+                Velg kontrolldato
+              </Text>
+            </View>
+            <View className="items-center px-2 py-3">
+              <View style={{ width: pickerWidth, alignItems: 'center' }}>
+                <DateTimePicker
+                  value={draftDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
+                  onChange={onDraftDateChange}
+                  style={
+                    Platform.OS === 'ios'
+                      ? { width: pickerWidth, alignSelf: 'center' }
+                      : undefined
+                  }
+                />
+              </View>
+            </View>
+            <View className="flex-row gap-2 border-t border-neutral-200 p-3 dark:border-neutral-800">
+              <Pressable
+                onPress={closeDatePicker}
+                className="flex-1 items-center rounded-xl bg-neutral-100 py-3 active:bg-neutral-200 dark:bg-neutral-800 dark:active:bg-neutral-700"
+              >
+                <Text className="text-base font-medium text-neutral-600 dark:text-neutral-300">
+                  Avbryt
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={confirmDate}
+                className="flex-1 items-center rounded-xl bg-brand py-3 active:bg-brand/90"
+              >
+                <Text className="text-base font-semibold text-white">Bekreft</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showMapMenu}

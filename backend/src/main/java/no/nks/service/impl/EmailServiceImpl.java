@@ -13,7 +13,6 @@ import no.nks.service.CalendarService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -307,30 +306,27 @@ public class EmailServiceImpl implements EmailService {
      */
     private void setFromAddress(MimeMessageHelper helper, Integer companyId) throws MessagingException {
         try {
-            // 尝试获取公司特定的发件人信息
-            JavaMailSender mailSender = mailSenderService.getJavaMailSender(companyId);
-            if (mailSender instanceof JavaMailSenderImpl) {
-                JavaMailSenderImpl mailSenderImpl = (JavaMailSenderImpl) mailSender;
-                String username = mailSenderImpl.getUsername();
-
-                // 由于我们无法直接从JavaMailSenderImpl获取displayName，所以使用fallback方式
-                if (username != null && !username.isBlank()) {
-                    helper.setFrom(username);
-                    return;
+            // 发件地址用「配置的发件邮箱(SenderEmailAddress)+显示名」,与异步发送路径一致。
+            // 切勿用 SMTP 登录用户名(getUsername())当发件地址 —— 用户名不保证是合法邮箱
+            // (例如含空格),会触发 jakarta.mail AddressException 导致整封邮件发送失败。
+            String senderEmail = mailSenderService.getSenderEmail(companyId);
+            String displayName = mailSenderService.getSenderDisplayName(companyId);
+            if (senderEmail != null && !senderEmail.isBlank()) {
+                senderEmail = senderEmail.trim();
+                if (displayName != null && !displayName.isBlank()) {
+                    helper.setFrom(new InternetAddress(senderEmail, displayName.trim(), "UTF-8"));
+                } else {
+                    helper.setFrom(senderEmail);
                 }
+                return;
             }
 
-            // 如果无法从公司配置获取，则回退到现有逻辑
-            // 优先使用配置的SMTP发件人
+            // 回退:配置的SMTP发件人 / 默认发件人 / 系统默认
             if (smtpFrom != null && !smtpFrom.isBlank()) {
-                helper.setFrom(smtpFrom);
-            }
-            // 其次使用配置的默认发件人
-            else if (defaultFromEmail != null && !defaultFromEmail.isBlank()) {
-                helper.setFrom(defaultFromEmail);
-            }
-            // 最后使用系统默认值
-            else {
+                helper.setFrom(smtpFrom.trim());
+            } else if (defaultFromEmail != null && !defaultFromEmail.isBlank()) {
+                helper.setFrom(defaultFromEmail.trim());
+            } else {
                 helper.setFrom(new InternetAddress("noreply@example.com", "NBK System", "UTF-8"));
             }
         } catch (UnsupportedEncodingException e) {
