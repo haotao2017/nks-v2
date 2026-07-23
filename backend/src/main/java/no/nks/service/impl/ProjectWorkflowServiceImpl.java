@@ -406,8 +406,9 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
             if (Boolean.FALSE.equals(projectWorkflow.getIsTransfer())) {
                 if (file != null && !file.isEmpty()) {
                     String fileName = generateUniqueFileName(file.getOriginalFilename());
-                    // Assuming a specific S3 folder for this step
-                    String bucketFolder = "workflow/step2/" + fileName;
+                    // 目录只到文件夹级别;把 fileName 拼进目录会导致 S3 key 里文件名重复
+                    // (workflow/step2/<fn><fn>),Generert/工作流预览按 workflow/step2/<fn> 就取不到。
+                    String bucketFolder = "workflow/step2/";
                     s3Service.uploadFile(bucketFolder, file, fileName);
                     // The original C# code seems to imply the filename is set on the DTO
                     projectWorkflow.setFileName(fileName);

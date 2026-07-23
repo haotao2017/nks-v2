@@ -762,7 +762,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 setWorkflowStepName(docDto);
 
                 // 设置S3链接
-                docDto.setImageUrl(presignedDocUrl("CompanyID-" + companyId + "/Files/", docDto.getFileName()));
+                docDto.setImageUrl(presignedDocUrl("workflow/step2/", docDto.getFileName()));
 
                 documentList.add(docDto);
             }
@@ -777,7 +777,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 setWorkflowStepName(docDto);
 
                 // 设置S3链接
-                docDto.setImageUrl(presignedDocUrl("CompanyID-" + companyId + "/Files/", docDto.getFileName()));
+                docDto.setImageUrl(presignedDocUrl("pdf/", docDto.getFileName()));
 
                 documentList.add(docDto);
             }
@@ -792,7 +792,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 setWorkflowStepName(docDto);
 
                 // 设置S3链接
-                docDto.setImageUrl(presignedDocUrl("CompanyID-" + companyId + "/Files/", docDto.getFileName()));
+                docDto.setImageUrl(presignedDocUrl("pdf/", docDto.getFileName()));
 
                 documentList.add(docDto);
             }
@@ -807,7 +807,7 @@ public class ProjectDocServiceImpl implements ProjectDocService {
                 setWorkflowStepName(docDto);
 
                 // 设置S3链接
-                docDto.setImageUrl(presignedDocUrl("CompanyID-" + companyId + "/Files/", docDto.getFileName()));
+                docDto.setImageUrl(presignedDocUrl("final-report-pdf/", docDto.getFileName()));
 
                 documentList.add(docDto);
             }
