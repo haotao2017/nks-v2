@@ -153,10 +153,7 @@ export function InspectReportStepPanel({
 
   return (
     <div className="space-y-4">
-      {step.descriptionKey && (
-        <p className="text-muted-foreground text-sm">{t(step.descriptionKey)}</p>
-      )}
-
+      {/* 描述已由父级 DialogHeader 的 DialogDescription 渲染，此处不再重复。 */}
       <Tabs defaultValue="deviations">
         <TabsList>
           <TabsTrigger value="deviations">
