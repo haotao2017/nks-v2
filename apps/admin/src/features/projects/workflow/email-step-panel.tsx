@@ -49,6 +49,22 @@ function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
   return false;
 }
 
+/** 对齐旧 Wf1S10:同一 partyType 只保留一条(后出现的覆盖先前的)。 */
+function dedupePartiesByType(
+  list: EmailProjectPartiesWorkflowEntDto[],
+): EmailProjectPartiesWorkflowEntDto[] {
+  const byType = new Map<number, EmailProjectPartiesWorkflowEntDto>();
+  const noType: EmailProjectPartiesWorkflowEntDto[] = [];
+  for (const p of list) {
+    if (p.partyTypeID == null) {
+      noType.push(p);
+      continue;
+    }
+    byType.set(p.partyTypeID, p);
+  }
+  return [...byType.values(), ...noType];
+}
+
 /** 外部文档上传基址(与旧 admin 的 BaseURLSite 一致)；空 env 时回退到当前 origin。 */
 function resolveSiteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL ?? '';
@@ -104,15 +120,17 @@ export function EmailStepPanel({
       // WF9:把已发送记录映射成可展示的参与方列表
       if (sent.emailProjectPartiesSent?.length) {
         setParties(
-          sent.emailProjectPartiesSent.map((s) => ({
-            emailFrom: s.emailFrom,
-            emailTo: s.emailTo,
-            title: s.emailSubject,
-            content: s.emailContent,
-            partyID: s.partyID,
-            partyTypeID: s.partyTypeID,
-            sendEmail: true,
-          })),
+          dedupePartiesByType(
+            sent.emailProjectPartiesSent.map((s) => ({
+              emailFrom: s.emailFrom,
+              emailTo: s.emailTo,
+              title: s.emailSubject,
+              content: s.emailContent,
+              partyID: s.partyID,
+              partyTypeID: s.partyTypeID,
+              sendEmail: true,
+            })),
+          ),
         );
       } else {
         setParties([]);
@@ -142,7 +160,9 @@ export function EmailStepPanel({
           ...(pw?.attachmentURL ? [pw.attachmentURL] : []),
         ].filter(Boolean);
         setAttachmentURLs(Array.from(new Set(urls)));
-        setParties(pw?.emailProjectParties?.emailProjectPartiesWorkflowList ?? []);
+        setParties(
+          dedupePartiesByType(pw?.emailProjectParties?.emailProjectPartiesWorkflowList ?? []),
+        );
         setExcluded(new Set());
         setProjectLeaderEmailTo(pw?.projectLeaderEmailTo ?? '');
         setCcProjectLeader(false);
@@ -403,7 +423,9 @@ export function EmailStepPanel({
                   setCc(pw?.cc ?? '');
                   setEmailSubject(pw?.emailSubject ?? '');
                   setEmailContent(pw?.emailContent ?? '');
-                  setParties(pw?.emailProjectParties?.emailProjectPartiesWorkflowList ?? []);
+                  setParties(
+          dedupePartiesByType(pw?.emailProjectParties?.emailProjectPartiesWorkflowList ?? []),
+        );
                   setExcluded(new Set());
                 },
               })

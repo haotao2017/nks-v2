@@ -789,10 +789,17 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
         WrapperProjectWorkflowDto wrapper = formatEmail(projectWorkflow);
         ProjectWorkflowDto formattedDto = wrapper.getProjectWorkflow();
 
-        // C# logic fetches all non-dummy project parties.
+        // 拉取项目参与方；按 partyTypeId 去重(后写覆盖前写)，避免更换联系人后历史重复行叠出多封邮件
         List<ProjectPartyDetailsDto> parties = projectPartyRepository.findProjectPartyDetailsByProjectId(projectWorkflow.getProjectId());
+        Map<Integer, ProjectPartyDetailsDto> uniqueByPartyType = new LinkedHashMap<>();
+        for (ProjectPartyDetailsDto party : parties) {
+            if (party.getPartyTypeId() == null) {
+                continue;
+            }
+            uniqueByPartyType.put(party.getPartyTypeId(), party);
+        }
 
-        List<EmailProjectPartiesWorkflowEntDto> partyEmails = parties.stream().map(party -> {
+        List<EmailProjectPartiesWorkflowEntDto> partyEmails = uniqueByPartyType.values().stream().map(party -> {
             var sentDto = new EmailProjectPartiesWorkflowEntDto();
             sentDto.setPartyID(party.getPartyId());
             sentDto.setPartyTypeID(party.getPartyTypeId());

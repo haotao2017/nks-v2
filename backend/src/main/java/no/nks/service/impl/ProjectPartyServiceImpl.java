@@ -16,7 +16,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -45,8 +48,17 @@ public class ProjectPartyServiceImpl implements ProjectPartyService {
         // 获取项目参与方列表（优化查询，一次性获取关联数据）
         List<ProjectParty> projectParties = projectPartyRepository.findByProjectId(projectId);
 
-        // 批量转换为DTO以提高性能
-        List<ProjectPartyDto> projectPartyDtos = projectParties.stream()
+        // 同一角色只保留最新一条(兼容历史「更换=插入」叠出来的重复)
+        Map<Integer, ProjectParty> uniqueByType = new LinkedHashMap<>();
+        projectParties.stream()
+                .sorted(Comparator.comparing(ProjectParty::getId, Comparator.nullsLast(Integer::compareTo)))
+                .forEach(pp -> {
+                    if (pp.getPartyTypeId() != null) {
+                        uniqueByType.put(pp.getPartyTypeId(), pp);
+                    }
+                });
+
+        List<ProjectPartyDto> projectPartyDtos = uniqueByType.values().stream()
             .map(this::convertToDto)
             .collect(Collectors.toList());
 
@@ -65,22 +77,58 @@ public class ProjectPartyServiceImpl implements ProjectPartyService {
                 param.getProjectParty().getPartyId(), param.getProjectParty().getPartyTypeId());
 
         try {
-            // 验证项目是否存在且属于该公司
-            validateProjectBelongsToCompany(param.getProjectParty().getProjectId(), companyId);
-
-            // 检查是否已存在相同的关联 - 使用更高效的查询
-            boolean exists = projectPartyRepository.existsByProjectIdAndPartyIdAndPartyTypeId(
-                    param.getProjectParty().getProjectId(),
-                    param.getProjectParty().getPartyId(),
-                    param.getProjectParty().getPartyTypeId());
-
-            if (exists) {
-                log.warn("Koblingen mellom part og parttype finnes allerede");
-                return RequestResponse.failure("Koblingen mellom part og parttype finnes allerede");
+            ProjectPartyDto incoming = param.getProjectParty();
+            if (incoming == null
+                    || incoming.getProjectId() == null
+                    || incoming.getPartyId() == null
+                    || incoming.getPartyTypeId() == null) {
+                return RequestResponse.failure("Prosjekt, part og parttype er påkrevd");
             }
 
-            // 创建新的关联
-            ProjectParty projectParty = convertToEntity(param.getProjectParty());
+            validateProjectBelongsToCompany(incoming.getProjectId(), companyId);
+
+            Integer projectId = incoming.getProjectId();
+            Integer partyId = incoming.getPartyId();
+            Integer partyTypeId = incoming.getPartyTypeId();
+
+            // 同一项目+角色只保留一条：已是同一联系人则直接成功；否则替换 partyId 并清理多余行
+            List<ProjectParty> forType =
+                    projectPartyRepository.findByProjectIdAndPartyTypeId(projectId, partyTypeId);
+
+            if (!forType.isEmpty()) {
+                ProjectParty keep = forType.stream()
+                        .max(java.util.Comparator.comparing(
+                                ProjectParty::getId, java.util.Comparator.nullsLast(Integer::compareTo)))
+                        .orElse(forType.get(0));
+
+                if (partyId.equals(keep.getPartyId())) {
+                    // 清理历史上同角色的重复行
+                    List<ProjectParty> extras = forType.stream()
+                            .filter(pp -> keep.getId() == null || !keep.getId().equals(pp.getId()))
+                            .collect(Collectors.toList());
+                    if (!extras.isEmpty()) {
+                        projectPartyRepository.deleteAll(extras);
+                    }
+                    log.debug("Part allerede koblet til parttype, ingen endring");
+                    return RequestResponse.success("Part koblet til prosjektets parttype");
+                }
+
+                keep.setPartyId(partyId);
+                projectPartyRepository.save(keep);
+
+                List<ProjectParty> extras = forType.stream()
+                        .filter(pp -> keep.getId() == null || !keep.getId().equals(pp.getId()))
+                        .collect(Collectors.toList());
+                if (!extras.isEmpty()) {
+                    projectPartyRepository.deleteAll(extras);
+                }
+
+                log.debug("Parttype-binding oppdatert (erstattet kontakt)");
+                return RequestResponse.success("Part koblet til prosjektets parttype");
+            }
+
+            ProjectParty projectParty = convertToEntity(incoming);
+            projectParty.setId(null);
             projectPartyRepository.save(projectParty);
 
             log.debug("Part koblet til prosjektets parttype");
