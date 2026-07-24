@@ -38,7 +38,7 @@ import {
 } from '@/components/screen-states';
 import { useLoadActiveProject } from '@/features/active-project/hooks';
 import { fetchLastSubmitted, postProjectSubmit } from '@/features/active-project/api';
-import { hasUnsyncedLocalChanges, resyncPending } from '@/features/active-project/sync';
+import { resyncPendingOrThrow } from '@/features/active-project/sync';
 import { projectKeys } from '@/features/projects/api';
 import { useProjectRouteId } from '@/lib/use-project-route-id';
 import { clearActiveProject } from '@/store/active-project-slice';
@@ -131,14 +131,8 @@ export default function KlarTab() {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      // 1. 补传所有未 updated 的检查项 + 未同步的项目级改动。
-      await resyncPending();
-      // 补传仍有失败时禁止终交:否则会 clearActiveProject,再进项目只能拉到「空」服务端状态。
-      if (hasUnsyncedLocalChanges()) {
-        throw new Error(
-          'Noen endringer ble ikke lagret på server. Sjekk nettverket og prøv igjen.',
-        );
-      }
+      // 1. 补传未同步改动;失败时保留本地并抛出真实原因。
+      await resyncPendingOrThrow();
       // 2. 最终提交(带签名/总评/时间)。
       await postProjectSubmit({
         projectID: detail.projectID,

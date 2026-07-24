@@ -59,14 +59,17 @@ public class MobileAppController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Response> projectUpdate(
             @RequestParam("request") String requestJson,
+            // 旧 App / 新 App 字段名不一致:file(新后端曾用) 与 image(旧 kontoll-app)
             @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "image", required = false) MultipartFile image,
             @AuthenticationPrincipal User user) {
 
         if (user == null || user.getCompanyID() == null) {
             return ResponseEntity.ok(new Response("100", "User not found"));
         }
 
-        Response response = mobileAppService.updateProject(requestJson, file, user.getCompanyID());
+        MultipartFile siteImage = (file != null && !file.isEmpty()) ? file : image;
+        Response response = mobileAppService.updateProject(requestJson, siteImage, user.getCompanyID());
         return ResponseEntity.ok(response);
     }
 
@@ -104,8 +107,10 @@ public class MobileAppController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ChecklistItemUpdateResponse> checklistUpdate(
             @RequestParam("request") String requestJson,
+            // 兼容:file / files(新) 与 image0/image1...(旧 kontoll-app)
             @RequestParam(value = "file", required = false) List<MultipartFile> singleFiles,
             @RequestParam(value = "files", required = false) List<MultipartFile> files,
+            org.springframework.web.multipart.MultipartHttpServletRequest multipartRequest,
             @AuthenticationPrincipal User user) {
 
         if (user == null || user.getCompanyID() == null) {
@@ -114,7 +119,6 @@ public class MobileAppController {
             return ResponseEntity.ok(errorResponse);
         }
 
-        // Merge possible file lists into one
         List<MultipartFile> combinedFiles = new java.util.ArrayList<>();
         if (singleFiles != null) {
             combinedFiles.addAll(singleFiles);
@@ -122,11 +126,27 @@ public class MobileAppController {
         if (files != null) {
             combinedFiles.addAll(files);
         }
-        if (combinedFiles.isEmpty()) {
-            combinedFiles = null; // pass null if no files to simplify service logic
+        // 旧客户端:image0 / image1 / ...
+        if (multipartRequest != null) {
+            java.util.Iterator<String> names = multipartRequest.getFileNames();
+            while (names.hasNext()) {
+                String name = names.next();
+                if (name == null) continue;
+                String lower = name.toLowerCase(java.util.Locale.ROOT);
+                if ("request".equals(lower) || "file".equals(lower) || "files".equals(lower)) {
+                    continue;
+                }
+                if (lower.startsWith("image")) {
+                    List<MultipartFile> named = multipartRequest.getFiles(name);
+                    if (named != null) {
+                        combinedFiles.addAll(named);
+                    }
+                }
+            }
         }
+        List<MultipartFile> filesToProcess = combinedFiles.isEmpty() ? null : combinedFiles;
 
-        ChecklistItemUpdateResponse response = mobileAppService.updateChecklistItem(requestJson, combinedFiles, user.getCompanyID());
+        ChecklistItemUpdateResponse response = mobileAppService.updateChecklistItem(requestJson, filesToProcess, user.getCompanyID());
         return ResponseEntity.ok(response);
     }
 

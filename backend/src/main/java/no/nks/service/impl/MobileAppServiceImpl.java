@@ -40,7 +40,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -287,13 +291,14 @@ public class MobileAppServiceImpl implements MobileAppService {
                 project.setDescription(updateRequest.getProjectDescription());
             }
 
-            // Update inspection date if provided
-            if (updateRequest.getProjectDate() != null) {
-                project.setInspectionDate(updateRequest.getProjectDate());
+            // Update inspection date if provided(兼容本地 ISO 与带 Z 的 toISOString)
+            LocalDateTime parsedDate = parseFlexibleDateTime(updateRequest.getProjectDate());
+            if (parsedDate != null) {
+                project.setInspectionDate(parsedDate);
             }
 
             // Upload and update image if provided
-            if (file != null) {
+            if (file != null && !file.isEmpty()) {
                 String fileName = "ProjectSiteImage-" + System.currentTimeMillis() + ".jpg";
                 boolean uploadSuccess = fileStorageService.uploadFile(file, fileName, "project-site-images");
 
@@ -317,7 +322,37 @@ public class MobileAppServiceImpl implements MobileAppService {
             return new Response("200", "Success");
 
         } catch (Exception e) {
-            return new Response("100", "Failed");
+            log.error("ProjectUpdate failed", e);
+            return new Response("100", "Failed: " + e.getMessage());
+        }
+    }
+
+    /** 兼容 LocalDateTime / OffsetDateTime / Instant(ISO with Z) / 空格分隔。 */
+    private static LocalDateTime parseFlexibleDateTime(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String value = raw.trim();
+        try {
+            return LocalDateTime.parse(value);
+        } catch (DateTimeParseException ignored) {
+            // continue
+        }
+        try {
+            return OffsetDateTime.parse(value).toLocalDateTime();
+        } catch (DateTimeParseException ignored) {
+            // continue
+        }
+        try {
+            return Instant.parse(value).atZone(ZoneId.systemDefault()).toLocalDateTime();
+        } catch (DateTimeParseException ignored) {
+            // continue
+        }
+        // "2026-07-24 09:00:00" → T
+        try {
+            return LocalDateTime.parse(value.replace(' ', 'T'));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid ProjectDate: " + raw, e);
         }
     }
 

@@ -19,13 +19,23 @@ import {
 import { isLocalImageUri } from './image';
 import { isOnlineNow } from './netinfo';
 
-/** 后端常 HTTP 200 + { status:"100" } / { response:{ status:"100" } } 表示业务失败。 */
+/** 后端常 HTTP 200 + { status:"100" } / { Status:"100" } / { response:{…} } 表示业务失败。 */
 function assertMobileOk(res: unknown, fallback: string): void {
   if (res == null || typeof res !== 'object') return;
-  const root = res as { status?: string; message?: string; response?: { status?: string; message?: string } };
-  const status = root.response?.status ?? root.status;
+  const root = res as Record<string, unknown>;
+  const nested =
+    root.response && typeof root.response === 'object'
+      ? (root.response as Record<string, unknown>)
+      : null;
+  const status = nested?.status ?? nested?.Status ?? root.status ?? root.Status;
+  const message =
+    (typeof nested?.message === 'string' && nested.message) ||
+    (typeof nested?.Message === 'string' && nested.Message) ||
+    (typeof root.message === 'string' && root.message) ||
+    (typeof root.Message === 'string' && root.Message) ||
+    fallback;
   if (status != null && String(status) !== '200') {
-    throw new Error(root.response?.message || root.message || fallback);
+    throw new Error(message);
   }
 }
 
@@ -35,6 +45,44 @@ export function hasUnsyncedLocalChanges(): boolean {
   if (!detail) return false;
   if (detail.projectDirty) return true;
   return detail.checklists.some((cl) => cl.checkItems.some((it) => !it.updated));
+}
+
+/**
+ * 补传未同步改动;若仍有残留则抛出最后一次失败原因(供 Last opp 展示真实错误)。
+ */
+export async function resyncPendingOrThrow(): Promise<void> {
+  await resyncPending();
+  if (!hasUnsyncedLocalChanges()) return;
+
+  let lastError: Error | null = null;
+  const detail = store.getState().activeProject.detail;
+  if (!detail) throw new Error('Prosjektdata mangler');
+
+  if (detail.projectDirty) {
+    try {
+      await pushProjectUpdate();
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+  for (const cl of detail.checklists) {
+    for (const it of cl.checkItems) {
+      if (it.updated) continue;
+      try {
+        await pushChecklistItem(cl.checklistId, it.checklistItemId);
+      } catch (e) {
+        lastError = e instanceof Error ? e : new Error(String(e));
+      }
+    }
+  }
+  if (hasUnsyncedLocalChanges()) {
+    throw (
+      lastError ??
+      new Error(
+        'Noen endringer ble ikke lagret på server. Sjekk nettverket og prøv igjen.',
+      )
+    );
+  }
 }
 
 /** 推送项目级更新(描述/日期/外景图)。返回是否已推送成功。 */
