@@ -31,6 +31,9 @@ public class EmailHistory {
     
     @Column(name = "ToEmail")
     private String toEmail;
+
+    @Column(name = "Cc")
+    private String cc;
     
     @Column(name = "FromEmail")
     private String fromEmail;

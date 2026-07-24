@@ -28,6 +28,18 @@ public interface EmailService {
     boolean sendEmail(Integer companyId, String to, String subject, String content);
 
     /**
+     * Send an email with optional CC.
+     *
+     * @param companyId company ID
+     * @param to        recipient email address
+     * @param cc        comma/semicolon-separated CC addresses (nullable)
+     * @param subject   email subject
+     * @param content   email body content
+     * @return true if email was sent successfully, false otherwise
+     */
+    boolean sendEmail(Integer companyId, String to, String cc, String subject, String content);
+
+    /**
      * Send an email with attachment
      *
      * @param to      recipient email address
@@ -49,6 +61,11 @@ public interface EmailService {
      * @return true if email was sent successfully, false otherwise
      */
     boolean sendEmailWithAttachment(Integer companyId, String to, String subject, String content, MultipartFile file);
+
+    /**
+     * Send an email with attachment and optional CC.
+     */
+    boolean sendEmailWithAttachment(Integer companyId, String to, String cc, String subject, String content, MultipartFile file);
 
     /**
      * Send an email with multiple attachments

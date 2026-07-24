@@ -62,7 +62,8 @@ public class EmailServiceImpl implements EmailService {
         return sendEmail(companyId, to, null, subject, content);
     }
 
-    private boolean sendEmail(Integer companyId, String to, String cc, String subject, String content) {
+    @Override
+    public boolean sendEmail(Integer companyId, String to, String cc, String subject, String content) {
         try {
             if (to == null || to.isBlank()) {
                 log.error("Unable to send email: recipient email address is empty");
@@ -84,7 +85,7 @@ public class EmailServiceImpl implements EmailService {
             setFromAddress(helper, companyId);
 
             sender.send(message);
-            log.info("Email sent successfully to: {}", to);
+            log.info("Email sent successfully to: {}{}", to, (cc != null && !cc.isBlank()) ? (" (cc: " + cc + ")") : "");
             return true;
         } catch (MessagingException e) {
             log.error("Failed to send email to: {}", to, e);
@@ -106,7 +107,8 @@ public class EmailServiceImpl implements EmailService {
         return sendEmailWithAttachment(companyId, to, null, subject, content, file);
     }
 
-    private boolean sendEmailWithAttachment(Integer companyId, String to, String cc, String subject, String content, MultipartFile file) {
+    @Override
+    public boolean sendEmailWithAttachment(Integer companyId, String to, String cc, String subject, String content, MultipartFile file) {
         try {
             if (to == null || to.isBlank()) {
                 log.error("Unable to send email with attachment: recipient email address is empty");
@@ -213,18 +215,21 @@ public class EmailServiceImpl implements EmailService {
             // 设置项目ID
             emailHistory.setProjectId(projectWorkflow.getProjectId());
 
-            // 设置收件人ID（如果可用）
-            if (projectWorkflow.getEmailProjectParties() != null) {
+            // 设置收件人ID / 类型（优先显式字段；否则从 emailProjectParties 取）
+            if (projectWorkflow.getPartyId() != null) {
+                emailHistory.setPartyId(projectWorkflow.getPartyId());
+            } else if (projectWorkflow.getEmailProjectParties() != null) {
                 emailHistory.setPartyId(projectWorkflow.getEmailProjectParties().getPartyId());
-
-                // 设置PartyTypeId（如果可用）
-                if (projectWorkflow.getEmailProjectParties().getEmailProjectPartiesWorkflowList() != null &&
-                        !projectWorkflow.getEmailProjectParties().getEmailProjectPartiesWorkflowList().isEmpty()) {
-                    EmailProjectPartiesWorkflowEntDto partyDetails =
-                            projectWorkflow.getEmailProjectParties().getEmailProjectPartiesWorkflowList().get(0);
-                    if (partyDetails != null) {
-                        emailHistory.setPartyTypeId(partyDetails.getPartyTypeID());
-                    }
+            }
+            if (projectWorkflow.getPartyTypeId() != null) {
+                emailHistory.setPartyTypeId(projectWorkflow.getPartyTypeId());
+            } else if (projectWorkflow.getEmailProjectParties() != null
+                    && projectWorkflow.getEmailProjectParties().getEmailProjectPartiesWorkflowList() != null
+                    && !projectWorkflow.getEmailProjectParties().getEmailProjectPartiesWorkflowList().isEmpty()) {
+                EmailProjectPartiesWorkflowEntDto partyDetails =
+                        projectWorkflow.getEmailProjectParties().getEmailProjectPartiesWorkflowList().get(0);
+                if (partyDetails != null) {
+                    emailHistory.setPartyTypeId(partyDetails.getPartyTypeID());
                 }
             }
 
@@ -235,6 +240,11 @@ public class EmailServiceImpl implements EmailService {
             String toEmail = projectWorkflow.getToEmail() != null ?
                     projectWorkflow.getToEmail() : projectWorkflow.getEmailTo();
             emailHistory.setToEmail(toEmail);
+
+            // 抄送(可选)
+            if (projectWorkflow.getCc() != null && !projectWorkflow.getCc().isBlank()) {
+                emailHistory.setCc(projectWorkflow.getCc().trim());
+            }
 
             // 设置发件人邮箱
             String fromEmail = projectWorkflow.getFromEmail() != null ?
@@ -366,7 +376,13 @@ public class EmailServiceImpl implements EmailService {
             // Also send to project leader if specified, replicating C# logic
             if (projectWorkflow.getProjectLeaderEmailTo() != null && !projectWorkflow.getProjectLeaderEmailTo().isEmpty()) {
                 log.info("Sending additional step 8 email to project leader: {}", projectWorkflow.getProjectLeaderEmailTo());
-                sendEmail(companyId, projectWorkflow.getProjectLeaderEmailTo(), projectWorkflow.getEmailSubject(), projectWorkflow.getEmailContent());
+                sendEmail(
+                        companyId,
+                        projectWorkflow.getProjectLeaderEmailTo(),
+                        projectWorkflow.getCc(),
+                        projectWorkflow.getEmailSubject(),
+                        projectWorkflow.getEmailContent()
+                );
             }
 
             if (emailSent) {
@@ -412,6 +428,7 @@ public class EmailServiceImpl implements EmailService {
                         historyDto.setEmailTo(party.getEmailTo());
                         historyDto.setEmailFrom(party.getEmailFrom());
                         historyDto.setEmailContent(emailContent);
+                        historyDto.setCc(projectWorkflow.getCc());
                         // This is where we store party-specific info
                         historyDto.setPartyId(party.getPartyID());
                         historyDto.setPartyTypeId(party.getPartyTypeID());

@@ -42,7 +42,7 @@ interface EmailStepPanelProps {
 
 function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
   if (!data) return false;
-  if (data.emailContent || data.emailSubject || data.emailTo || data.emailFrom) return true;
+  if (data.emailContent || data.emailSubject || data.emailTo || data.emailFrom || data.cc) return true;
   if ((data.emailHistoryId ?? 0) > 0) return true;
   if ((data.emailProjectPartiesSent?.length ?? 0) > 0) return true;
   if (data.attachmentURL || (data.attachmentURLs?.length ?? 0) > 0) return true;
@@ -207,6 +207,7 @@ export function EmailStepPanel({
         emailSubject: '',
         emailTo: '',
         emailFrom,
+        cc: cc.trim() || undefined,
         emailProjectParties: { emailProjectPartiesWorkflowList: list },
         baseURLSite: siteUrl ? `${siteUrl}/external/upload-document` : undefined,
       };
@@ -324,6 +325,16 @@ export function EmailStepPanel({
       ) : (
         <div className="space-y-4">
           <p className="text-muted-foreground text-sm">{t('workflow.panel.multiHint')}</p>
+          <div className="space-y-1.5">
+            <Label htmlFor="wf-email-cc-multi">{t('workflow.panel.cc')}</Label>
+            <Input
+              id="wf-email-cc-multi"
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              placeholder={t('workflow.panel.ccPlaceholder')}
+              disabled={disabled}
+            />
+          </div>
           {excluded.size > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-2">
               <span className="text-muted-foreground text-xs font-medium">

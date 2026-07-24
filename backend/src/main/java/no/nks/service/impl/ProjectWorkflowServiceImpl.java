@@ -217,6 +217,12 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
                                         ? e1 : e2
                         ));
 
+                // 抄送通常各 party 相同，取最近一封带 Cc 的记录
+                objEmailHistoryList.stream()
+                        .filter(h -> h.getCc() != null && !h.getCc().isBlank())
+                        .findFirst()
+                        .ifPresent(h -> item.setCc(h.getCc()));
+
                 item.setEmailProjectPartiesSent(latestEmailByPartyType.values().stream().map(emailHistory -> {
                     var sentDto = new EmailProjectPartiesSentDto();
                     sentDto.setEmailContent(emailHistory.getMessage());
@@ -251,6 +257,7 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
             item.setEmailFrom(history.getFromEmail());
             item.setEmailTo(history.getToEmail());
             item.setEmailSubject(history.getSubject());
+            item.setCc(history.getCc());
             if (item.getEmailHistoryId() == null || item.getEmailHistoryId() <= 0) {
                 item.setEmailHistoryId(history.getId());
             }
@@ -383,6 +390,7 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
                 boolean emailSent = emailService.sendEmail(
                         companyId,
                         projectWorkflow.getEmailTo(),
+                        projectWorkflow.getCc(),
                         projectWorkflow.getEmailSubject(),
                         projectWorkflow.getEmailContent()
                 );
@@ -503,6 +511,7 @@ public class ProjectWorkflowServiceImpl implements ProjectWorkflowService {
                 boolean emailSent = emailService.sendEmailWithAttachment(
                         companyId,
                         projectWorkflow.getEmailTo(),
+                        projectWorkflow.getCc(),
                         projectWorkflow.getEmailSubject(),
                         projectWorkflow.getEmailContent(),
                         file

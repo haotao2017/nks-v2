@@ -52,6 +52,7 @@ function hasCompletedPayload(data?: ProjectWorkflowDto | null): boolean {
       data.emailSubject ||
       data.emailTo ||
       data.emailFrom ||
+      data.cc ||
       (data.emailHistoryId ?? 0) > 0,
   );
 }
@@ -91,6 +92,7 @@ export function UploadStepPanel({
 
   const [emailFrom, setEmailFrom] = React.useState('');
   const [emailTo, setEmailTo] = React.useState('');
+  const [cc, setCc] = React.useState('');
   const [emailSubject, setEmailSubject] = React.useState('');
   const [emailContent, setEmailContent] = React.useState('');
   const [attachmentURL, setAttachmentURL] = React.useState('');
@@ -108,6 +110,7 @@ export function UploadStepPanel({
   const applyPayload = (pw?: ProjectWorkflowDto) => {
     setEmailFrom(pw?.emailFrom ?? '');
     setEmailTo(pw?.emailTo ?? '');
+    setCc(pw?.cc ?? '');
     setEmailSubject(pw?.emailSubject ?? '');
     setEmailContent(pw?.emailContent ?? '');
     const urls = collectAttachmentUrls(pw);
@@ -152,7 +155,7 @@ export function UploadStepPanel({
         return;
       }
       const extra: Partial<ProjectWorkflowDto> = hasEmail
-        ? { isTransfer: false, emailFrom, emailTo, emailSubject, emailContent, attachmentURL }
+        ? { isTransfer: false, emailFrom, emailTo, cc: cc.trim() || undefined, emailSubject, emailContent, attachmentURL }
         : { isTransfer: false };
       let filesToSend = [...files];
       // Ansvarsrett: 无用户附件时仍拉取模板 PDF（对齐旧 Wf1S2）
@@ -189,6 +192,16 @@ export function UploadStepPanel({
                   <Label htmlFor="wf-up-to">{t('workflow.panel.to')}</Label>
                   <Input id="wf-up-to" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} disabled={disabled} />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="wf-up-cc">{t('workflow.panel.cc')}</Label>
+                <Input
+                  id="wf-up-cc"
+                  value={cc}
+                  onChange={(e) => setCc(e.target.value)}
+                  placeholder={t('workflow.panel.ccPlaceholder')}
+                  disabled={disabled}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="wf-up-subject">{t('workflow.panel.subject')}</Label>

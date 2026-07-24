@@ -39,6 +39,7 @@ function hasSentEmailContent(data?: ProjectWorkflowDto | null): boolean {
       data.emailSubject ||
       data.emailTo ||
       data.emailFrom ||
+      data.cc ||
       data.attachmentURL ||
       (data.attachmentURLs?.length ?? 0) > 0 ||
       (data.emailHistoryId ?? 0) > 0,
@@ -60,6 +61,7 @@ export function PdfStepPanel({
 
   const [emailFrom, setEmailFrom] = React.useState('');
   const [emailTo, setEmailTo] = React.useState('');
+  const [cc, setCc] = React.useState('');
   const [emailSubject, setEmailSubject] = React.useState('');
   const [emailContent, setEmailContent] = React.useState('');
   const [attachmentURL, setAttachmentURL] = React.useState('');
@@ -72,6 +74,7 @@ export function PdfStepPanel({
   const apply = (pw?: ProjectWorkflowDto) => {
     setEmailFrom(pw?.emailFrom ?? '');
     setEmailTo(pw?.emailTo ?? '');
+    setCc(pw?.cc ?? '');
     setEmailSubject(pw?.emailSubject ?? '');
     setEmailContent(pw?.emailContent ?? '');
     setAttachmentURL(pw?.attachmentURL ?? '');
@@ -102,6 +105,7 @@ export function PdfStepPanel({
         isTransfer: false,
         emailFrom,
         emailTo,
+        cc: cc.trim() || undefined,
         emailSubject,
         emailContent,
         attachmentURL,
@@ -155,6 +159,16 @@ export function PdfStepPanel({
           <Label htmlFor="wf-pdf-to">{t('workflow.panel.to')}</Label>
           <Input id="wf-pdf-to" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} disabled={disabled} />
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="wf-pdf-cc">{t('workflow.panel.cc')}</Label>
+        <Input
+          id="wf-pdf-cc"
+          value={cc}
+          onChange={(e) => setCc(e.target.value)}
+          placeholder={t('workflow.panel.ccPlaceholder')}
+          disabled={disabled}
+        />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="wf-pdf-subject">{t('workflow.panel.subject')}</Label>
