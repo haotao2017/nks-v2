@@ -19,6 +19,24 @@ import {
 import { isLocalImageUri } from './image';
 import { isOnlineNow } from './netinfo';
 
+/** 后端常 HTTP 200 + { status:"100" } / { response:{ status:"100" } } 表示业务失败。 */
+function assertMobileOk(res: unknown, fallback: string): void {
+  if (res == null || typeof res !== 'object') return;
+  const root = res as { status?: string; message?: string; response?: { status?: string; message?: string } };
+  const status = root.response?.status ?? root.status;
+  if (status != null && String(status) !== '200') {
+    throw new Error(root.response?.message || root.message || fallback);
+  }
+}
+
+/** 当前本地是否还有未推到后端的改动。 */
+export function hasUnsyncedLocalChanges(): boolean {
+  const detail = store.getState().activeProject.detail;
+  if (!detail) return false;
+  if (detail.projectDirty) return true;
+  return detail.checklists.some((cl) => cl.checkItems.some((it) => !it.updated));
+}
+
 /** 推送项目级更新(描述/日期/外景图)。返回是否已推送成功。 */
 export async function pushProjectUpdate(): Promise<boolean> {
   const detail = store.getState().activeProject.detail;
@@ -36,7 +54,8 @@ export async function pushProjectUpdate(): Promise<boolean> {
     projectDescription: detail.description,
     newImageUri,
   });
-  await postProjectUpdate(form);
+  const res = await postProjectUpdate(form);
+  assertMobileOk(res, 'Kunne ikke lagre prosjektendringer');
   store.dispatch(markProjectSynced());
   return true;
 }
@@ -63,7 +82,8 @@ export async function pushChecklistItem(
     comment: item.comment,
     imageUris: item.itemImageUrls,
   });
-  await postChecklistUpdate(form);
+  const res = await postChecklistUpdate(form);
+  assertMobileOk(res, 'Kunne ikke lagre sjekklistepunkt');
   store.dispatch(markChecklistItemSynced({ checklistId, checklistItemId }));
   return true;
 }

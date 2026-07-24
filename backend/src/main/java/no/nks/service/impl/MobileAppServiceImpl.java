@@ -445,39 +445,46 @@ public class MobileAppServiceImpl implements MobileAppService {
             // Translate status from Norwegian aliases to wire values (OK/Dev/NA)
             String status = ChecklistStatusNormalizer.normalize(request.getStatus());
 
-            // Remove existing images - optimized to a single delete operation
-            checklistItemImageRepository.deleteByChecklistItemId(checklistItemId);
+            // 仅在有新图上传时替换图片;无文件时保留已有图。
+            // 否则 App 二次同步(仅改状态/备注、图片已是 https)会先删光再因无 multipart 变「无图」。
+            boolean hasNewFiles = files != null && !files.isEmpty();
+            if (hasNewFiles) {
+                checklistItemImageRepository.deleteByChecklistItemId(checklistItemId);
 
-            // Process image uploads if status is not "NA"
-            if (ChecklistStatusNormalizer.isPhotoEligible(status) && files != null && !files.isEmpty()) {
-                LocalDateTime now = LocalDateTime.now();
-                for (int i = 0; i < files.size(); i++) {
-                    MultipartFile file = files.get(i);
+                // Process image uploads if status is not "NA"
+                if (ChecklistStatusNormalizer.isPhotoEligible(status)) {
+                    LocalDateTime now = LocalDateTime.now();
+                    for (int i = 0; i < files.size(); i++) {
+                        MultipartFile file = files.get(i);
 
-                    // Generate unique filename
-                    String fileName = "ChecklistItemImg-" + System.currentTimeMillis() + "-" + i + ".jpg";
+                        // Generate unique filename
+                        String fileName = "ChecklistItemImg-" + System.currentTimeMillis() + "-" + i + ".jpg";
 
-                    // Upload file to S3
-                    boolean uploadSuccess = fileStorageService.uploadFile(file, fileName, "inspection-checklist-images");
-                    if (!uploadSuccess) {
-                        // If upload fails, return error response
-                        response.setChecklistItemUpdate(responseData);
-                        response.setResponse(new Response("100", "Issue with file upload"));
-                        return response;
+                        // Upload file to S3
+                        boolean uploadSuccess = fileStorageService.uploadFile(file, fileName, "inspection-checklist-images");
+                        if (!uploadSuccess) {
+                            // If upload fails, return error response
+                            response.setChecklistItemUpdate(responseData);
+                            response.setResponse(new Response("100", "Issue with file upload"));
+                            return response;
+                        }
+
+                        // Create and save ChecklistItemImage entity
+                        ChecklistItemImage image = new ChecklistItemImage();
+                        image.setChecklistItemId(checklistItemId);
+                        image.setImageName(fileName);
+                        image.setImageType(".jpg");
+                        image.setCaptureDate(now);
+
+                        // Set isOkForFinalPdf based on status
+                        image.setIsOkForFinalPdf(!ChecklistStatusNormalizer.isDeviation(status));
+
+                        checklistItemImageRepository.save(image);
                     }
-
-                    // Create and save ChecklistItemImage entity
-                    ChecklistItemImage image = new ChecklistItemImage();
-                    image.setChecklistItemId(checklistItemId);
-                    image.setImageName(fileName);
-                    image.setImageType(".jpg");
-                    image.setCaptureDate(now);
-
-                    // Set isOkForFinalPdf based on status
-                    image.setIsOkForFinalPdf(!ChecklistStatusNormalizer.isDeviation(status));
-
-                    checklistItemImageRepository.save(image);
                 }
+            } else if (status != null && !ChecklistStatusNormalizer.isPhotoEligible(status)) {
+                // NA 等不需要照片的状态:清掉旧图,与「不可配图」语义一致
+                checklistItemImageRepository.deleteByChecklistItemId(checklistItemId);
             }
 
             // Update checklist item
