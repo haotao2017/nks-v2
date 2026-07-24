@@ -6,6 +6,13 @@ spring:
     # 默认激活 dev；生产环境用 SPRING_PROFILES_ACTIVE 覆盖
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
+  # 文件上传上限。默认 max-file-size=1MB 会让一张手机照片(1920px/q0.8 常 >1MB)
+  # 触发 MaxUploadSizeExceededException → Spring Boot 3 映射为 HTTP 413；这里放宽。
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 50MB
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -103,3 +110,8 @@ knife4j:
 
 server:
   port: ${SERVER_PORT:8080}
+  tomcat:
+    # 与 multipart 上限匹配：允许读取大体积表单/multipart 请求体，
+    # 否则超限时连接层会直接中断(客户端见 network error)而非干净的 413。
+    max-http-form-post-size: 50MB
+    max-swallow-size: 50MB
