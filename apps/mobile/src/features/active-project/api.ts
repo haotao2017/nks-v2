@@ -99,9 +99,10 @@ export async function assembleActiveProject(
   };
 }
 
-// FormData.append 的文件部件:RN 接受 {uri,type,name},DOM 类型是 Blob,故 cast。
-function appendFilePart(form: FormData, field: string, part: { uri: string; type: string; name: string }) {
-  form.append(field, part as unknown as Blob);
+// WinterCG FormData(Expo SDK 54+ 全局 fetch)只接受 string / Blob;用 append(name, Blob, filename)
+// 追加文件部件。第三参 filename 让后端 Spring 将其识别为文件(MultipartFile)而非普通字段。
+function appendFilePart(form: FormData, field: string, part: { blob: Blob; name: string }) {
+  (form.append as (name: string, value: Blob, filename?: string) => void)(field, part.blob, part.name);
 }
 
 export interface ProjectUpdateInput {
